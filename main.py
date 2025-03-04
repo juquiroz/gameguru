@@ -210,4 +210,4 @@ def main(page: ft.Page):
         ft.Row([boton_actualizar], alignment=ft.MainAxisAlignment.CENTER)  
     )  # Agregar la lista y el botón a la página
 
-ft.app(target=main, host="0.0.0.0", port=8000)
+ft.app(target=main, host="0.0.0.0", port=80)
