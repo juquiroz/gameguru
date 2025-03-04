@@ -52,5 +52,5 @@ jobs:
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             # Iniciar sesión y ejecutar Docker en EC2
             docker pull ${{ secrets.DOCKER_USERNAME }}/flet-app:latest
-            docker run -d -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/flet-app:latest
+            docker run -d -p 80:80 ${{ secrets.DOCKER_USERNAME }}/flet-app:latest
           EOF
