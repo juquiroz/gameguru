@@ -11,7 +11,7 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Exponer el puerto que usará la aplicación (8000 según tu código)
-EXPOSE 8000
+EXPOSE 80
 
 # Comando para ejecutar la aplicación Flet
 CMD ["python", "main.py"]
