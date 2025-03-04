@@ -1,9 +1,6 @@
 name: Deploy Flet App to EC2
 
 on:
-  pull_request:
-    branches:
-      - development
   push:
     branches:
       - development
