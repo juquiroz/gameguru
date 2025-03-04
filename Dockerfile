@@ -15,4 +15,3 @@ EXPOSE 8000
 
 # Comando para ejecutar la aplicación Flet
 CMD ["python", "main.py"]
-
