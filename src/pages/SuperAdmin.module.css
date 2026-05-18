@@ -1,0 +1,215 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.loadBtn {
+  padding: 0.7rem 1.25rem;
+  background: linear-gradient(135deg, #22C55E, #16A34A);
+  color: #0D0D0D;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  border-radius: var(--r-sm);
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+}
+.loadBtn:hover { opacity: 0.9; }
+.loadBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.statsBar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 0.85rem 1rem;
+  text-align: center;
+}
+
+.statVal {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.statLabel {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+.weekCount {
+  font-size: 0.6rem;
+  background: var(--surface2);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 6px;
+}
+
+.addForm {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 1rem;
+}
+
+.addForm .field:nth-last-child(2) {
+  grid-column: 1 / -1;
+}
+
+.addForm button {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .addForm {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gamesGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 560px) { .gamesGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .gamesGrid { grid-template-columns: repeat(3, 1fr); } }
+
+.gameCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gameTime {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+
+.teamsRow {
+  display: grid;
+  grid-template-columns: 1fr 28px 1fr;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.teamInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.teamEmoji {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.teamAbbr {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.teamName {
+  font-size: 0.62rem;
+  color: var(--text2);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.vs {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text3);
+  text-align: center;
+}
+
+.gameId {
+  font-size: 0.6rem;
+  color: var(--text3);
+  font-family: monospace;
+}
+
+.delBtn {
+  padding: 0.35rem 0.75rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red);
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  align-self: flex-end;
+  background: none;
+  cursor: pointer;
+}
+
+.delBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--red);
+}
+
+.dangerBtn {
+  padding: 0.7rem 1.25rem;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--r-sm);
+  transition: all 0.2s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.dangerBtn:hover { background: rgba(239, 68, 68, 0.25); border-color: var(--red); }
+.dangerBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.dangerBtn.active {
+  background: var(--red);
+  color: #0D0D0D;
+  border-color: var(--red);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}

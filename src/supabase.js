@@ -89,3 +89,81 @@ export const profilesApi = {
   upsert: (data) =>
     supabase.from('profiles').upsert(data),
 }
+
+// ─── Master Games helpers (global calendar managed by superadmin) ─────────────
+export const masterGamesApi = {
+  insertAll: (games) =>
+    supabase.from('master_games').insert(games),
+
+  getAll: (sport, season) =>
+    supabase
+      .from('master_games')
+      .select('*')
+      .eq('sport', sport)
+      .eq('season', season)
+      .order('week')
+      .order('game_id'),
+
+  getByWeek: (sport, season, week) =>
+    supabase
+      .from('master_games')
+      .select('*')
+      .eq('sport', sport)
+      .eq('season', season)
+      .eq('week', week)
+      .order('game_id'),
+
+  insert: (game) =>
+    supabase.from('master_games').insert(game).select().single(),
+
+  update: (id, data) =>
+    supabase.from('master_games').update(data).eq('id', id).select().single(),
+
+  remove: (id) =>
+    supabase.from('master_games').delete().eq('id', id),
+
+  deleteAll: (sport, season) =>
+    supabase
+      .from('master_games')
+      .delete()
+      .eq('sport', sport)
+      .eq('season', season),
+}
+
+// ─── League Games helpers (games selected by each league) ─────────────────────
+export const leagueGamesApi = {
+  insertAll: (games) =>
+    supabase.from('league_games').insert(games),
+
+  getForLeague: (leagueId) =>
+    supabase
+      .from('league_games')
+      .select('*')
+      .eq('league_id', leagueId)
+      .order('week')
+      .order('game_id'),
+
+  getForWeek: (leagueId, week) =>
+    supabase
+      .from('league_games')
+      .select('*')
+      .eq('league_id', leagueId)
+      .eq('week', week)
+      .order('game_id'),
+
+  addGame: (game) =>
+    supabase.from('league_games').insert(game).select().single(),
+
+  removeFromLeague: (leagueId, gameId) =>
+    supabase
+      .from('league_games')
+      .delete()
+      .eq('league_id', leagueId)
+      .eq('game_id', gameId),
+
+  setResult: (id, result) =>
+    supabase.from('league_games').update({ result }).eq('id', id).select().single(),
+
+  setFinished: (id, finished) =>
+    supabase.from('league_games').update({ finished }).eq('id', id).select().single(),
+}

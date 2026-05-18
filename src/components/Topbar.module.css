@@ -90,6 +90,16 @@
 }
 @media (min-width: 360px) { .userName { display: inline; } }
 
+.adminNav {
+  color: var(--accent) !important;
+  position: relative;
+}
+.adminNav::before {
+  content: '👑';
+  margin-right: 4px;
+  font-size: 0.8rem;
+}
+
 .logoutBtn {
   padding: 0.38rem 0.85rem;
   font-family: 'Barlow Condensed', sans-serif;

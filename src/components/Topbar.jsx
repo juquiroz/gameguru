@@ -1,6 +1,6 @@
 import styles from './Topbar.module.css'
 
-export default function Topbar({ user, league, onChangeLeague, onLogout, activePage, onNavigate }) {
+export default function Topbar({ user, league, onChangeLeague, onLogout, activePage, onNavigate, isSuperAdmin }) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'picks',     label: 'Mis Picks' },
@@ -12,7 +12,6 @@ export default function Topbar({ user, league, onChangeLeague, onLogout, activeP
     <header className={styles.topbar}>
       <span className={styles.brand}>GameGuru</span>
 
-      {/* Desktop nav */}
       <nav className={styles.desktopNav}>
         {navItems.map(item => (
           <button
@@ -23,9 +22,16 @@ export default function Topbar({ user, league, onChangeLeague, onLogout, activeP
             {item.label}
           </button>
         ))}
+        {isSuperAdmin && (
+          <button
+            className={`${styles.navBtn} ${styles.adminNav} ${activePage === 'superadmin' ? styles.active : ''}`}
+            onClick={() => onNavigate('superadmin')}
+          >
+            ⚙️ Admin
+          </button>
+        )}
       </nav>
 
-      {/* Right side */}
       <div className={styles.right}>
         {league && (
           <>

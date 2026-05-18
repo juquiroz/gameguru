@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SPORTS } from '../data/nflData'
 import InviteModal from '../components/InviteModal'
+import LeagueGamesManager from '../components/LeagueGamesManager'
 
 export default function LeaguePage({ user, league }) {
   const [showModal, setShowModal] = useState(false)
@@ -36,7 +37,6 @@ export default function LeaguePage({ user, league }) {
       <div className="page-title">Mi Liga</div>
       <div className="page-sub">{league.name} · {league.sport}</div>
 
-      {/* League info */}
       <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(2,1fr)', marginBottom: '1.5rem' }}>
         <div className="stat-card">
           <div className="s-label">Deporte</div>
@@ -52,7 +52,6 @@ export default function LeaguePage({ user, league }) {
         </div>
       </div>
 
-      {/* Invite section — visible to everyone but emphasized for admin */}
       <div style={{
         background: 'var(--bg2)',
         border: `1px solid ${isAdmin ? 'rgba(245,166,35,.3)' : 'var(--border)'}`,
@@ -91,12 +90,22 @@ export default function LeaguePage({ user, league }) {
         )}
       </div>
 
-      {/* Invite modal */}
       {showModal && (
         <InviteModal
           league={league}
           onClose={() => setShowModal(false)}
         />
+      )}
+
+      {isAdmin && (
+        <div style={{
+          background: 'var(--bg2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)',
+          padding: '1.5rem',
+        }}>
+          <LeagueGamesManager league={league} />
+        </div>
       )}
     </div>
   )

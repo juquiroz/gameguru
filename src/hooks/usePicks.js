@@ -2,11 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { picksApi } from '../supabase'
 
 export function usePicks(user, league, week) {
-  const [picks,     setPicks]     = useState({}) // { gameId: teamAbbr }
+  const [picks,     setPicks]     = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [saving,    setSaving]    = useState(false)
 
-  // Load picks from Supabase when context changes
   useEffect(() => {
     if (!user || !league || !week) return
     loadPicks()
@@ -53,5 +52,5 @@ export function usePicks(user, league, week) {
     return { success: true }
   }, [user, league, week, picks])
 
-  return { picks, submitted, saving, selectPick, submitPicks }
+  return { picks, submitted, saving, selectPick, submitPicks, loadPicks }
 }

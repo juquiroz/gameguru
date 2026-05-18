@@ -1,4 +1,4 @@
-import { teamLogo } from '../data/nflData'
+import TeamLogo from './TeamLogo'
 import styles from './GameCard.module.css'
 
 export default function GameCard({ game, pick, onPick, results, locked }) {
@@ -27,26 +27,24 @@ export default function GameCard({ game, pick, onPick, results, locked }) {
       <div className={styles.time}>{game.time}</div>
 
       <div className={styles.teamsRow}>
-        {/* Away team */}
         <button
           className={`${styles.teamBtn} ${teamClass(game.aA)}`}
           onClick={() => !locked && onPick(game.id, game.aA)}
           disabled={locked}
         >
-          <span className={styles.emoji}>{teamLogo(game.aA)}</span>
+          <TeamLogo abbr={game.aA} className={styles.emoji} size={28} />
           <span className={styles.abbr}>{game.aA}</span>
           <span className={styles.name}>{game.away.split(' ').slice(-1)[0]}</span>
         </button>
 
         <span className={styles.vs}>@</span>
 
-        {/* Home team */}
         <button
           className={`${styles.teamBtn} ${teamClass(game.hA)}`}
           onClick={() => !locked && onPick(game.id, game.hA)}
           disabled={locked}
         >
-          <span className={styles.emoji}>{teamLogo(game.hA)}</span>
+          <TeamLogo abbr={game.hA} className={styles.emoji} size={28} />
           <span className={styles.abbr}>{game.hA}</span>
           <span className={styles.name}>{game.home.split(' ').slice(-1)[0]}</span>
         </button>
