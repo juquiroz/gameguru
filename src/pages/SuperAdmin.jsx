@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { masterGamesApi } from '../supabase'
 import { NFL_TEAMS } from '../data/nflData'
 import TeamLogo from '../components/TeamLogo'
+import GameTime from '../components/GameTime'
 import nflSchedule from '../data/nflSchedule2026.json'
 import styles from './SuperAdmin.module.css'
 
@@ -277,7 +278,7 @@ export default function SuperAdmin() {
         <div className={styles.gamesGrid}>
           {weekGames.map(g => (
             <div key={g.id} className={styles.gameCard}>
-              <div className={styles.gameTime}>{g.game_time}</div>
+              <div className={styles.gameTime}><GameTime when={g.game_time} /></div>
               <div className={styles.teamsRow}>
                 <div className={styles.teamInfo}>
                   <TeamLogo abbr={g.away_abbr} className={styles.teamEmoji} size={32} />

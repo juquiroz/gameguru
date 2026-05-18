@@ -36,7 +36,7 @@ export default function Topbar({ user, league, onChangeLeague, onLogout, activeP
         {league && (
           <>
             <span className={styles.leagueName}>{league.name}</span>
-            <button className={styles.changeBtn} onClick={onChangeLeague}>Cambiar</button>
+            <button className={styles.changeBtn} onClick={onChangeLeague}>⚑ Mis Ligas</button>
           </>
         )}
         <span className={styles.userName}>{user?.email?.split('@')[0]}</span>

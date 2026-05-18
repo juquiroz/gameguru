@@ -1,4 +1,5 @@
 import TeamLogo from './TeamLogo'
+import GameTime from './GameTime'
 import styles from './GameCard.module.css'
 
 export default function GameCard({ game, pick, onPick, results, locked }) {
@@ -24,7 +25,7 @@ export default function GameCard({ game, pick, onPick, results, locked }) {
 
   return (
     <div className={`${styles.card} ${locked ? styles.locked : ''}`}>
-      <div className={styles.time}>{game.time}</div>
+      <div className={styles.time}><GameTime when={game.time} /></div>
 
       <div className={styles.teamsRow}>
         <button

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { masterGamesApi, leagueGamesApi } from '../supabase'
 import { NFL_TEAMS } from '../data/nflData'
 import TeamLogo from './TeamLogo'
+import GameTime from './GameTime'
 import styles from './LeagueGamesManager.module.css'
 
 const TOTAL_WEEKS = 18
@@ -178,7 +179,7 @@ export default function LeagueGamesManager({ league }) {
                     <span className={styles.vs}>@</span>
                     <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
                     <span className={styles.abbr}>{g.home_abbr}</span>
-                    <span className={styles.time}>{g.game_time}</span>
+                    <span className={styles.time}><GameTime when={g.game_time} /></span>
                   </div>
                 ))
               )}
@@ -206,7 +207,7 @@ export default function LeagueGamesManager({ league }) {
                 <span className={styles.vs}>@</span>
                 <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
                 <span className={styles.abbr}>{g.home_abbr}</span>
-                <span className={styles.time}>{g.game_time}</span>
+                <span className={styles.time}><GameTime when={g.game_time} /></span>
                 <button
                   className={styles.removeBtn}
                   onClick={() => handleRemoveGame(g.game_id)}

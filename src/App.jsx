@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth }   from './hooks/useAuth'
 import { useLeague } from './hooks/useLeague'
 import { useSuperAdmin } from './hooks/useSuperAdmin'
@@ -12,6 +12,14 @@ import LeaguePage  from './pages/LeaguePage'
 import SuperAdmin  from './pages/SuperAdmin'
 import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
+
+const PAGE_TITLES = {
+  dashboard:  'Dashboard',
+  picks:      'Mis Picks',
+  board:      'Tabla de Posiciones',
+  league:     'Mi Liga',
+  superadmin: 'Admin Global',
+}
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard')
@@ -29,11 +37,23 @@ export default function App() {
     leaveCurrentLeague,
   } = useLeague(user)
 
-  const handleNavigate = (page) => setActivePage(page)
+  // Sync URL with active page
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '')
+    if (hash && hash !== activePage) {
+      setActivePage(hash)
+    }
+  }, [])
+
+  const handleNavigate = (page) => {
+    setActivePage(page)
+    window.location.hash = page
+    document.title = `${PAGE_TITLES[page] || 'GameGuru'} · GameGuru`
+  }
 
   const handleChangeLeague = () => {
     leaveCurrentLeague()
-    setActivePage('dashboard')
+    handleNavigate('dashboard')
   }
 
   if (loading || adminChecking) {
@@ -77,7 +97,7 @@ export default function App() {
         loadingLeagues={loadingLeagues}
         onCreateLeague={createLeague}
         onJoinLeague={joinByCode}
-        onEnterLeague={(lg) => { enterLeague(lg); setActivePage('dashboard') }}
+        onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard') }}
       />
     )
   }
