@@ -1,0 +1,105 @@
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  height: 60px;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  gap: 0.75rem;
+}
+
+.brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #F5A623, #FF4B4B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.desktopNav {
+  display: none;
+  gap: 4px;
+}
+@media (min-width: 768px) { .desktopNav { display: flex; } }
+
+.navBtn {
+  padding: 0.5rem 1.1rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text2);
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+}
+.navBtn:hover  { background: var(--surface); color: var(--text); }
+.navBtn.active { background: var(--surface2); color: var(--accent); }
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.leagueName {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-transform: uppercase;
+  opacity: 0.85;
+  display: none;
+}
+@media (min-width: 480px) { .leagueName { display: inline; } }
+
+.changeBtn {
+  padding: 0.35rem 0.8rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  display: none;
+}
+@media (min-width: 480px) { .changeBtn { display: inline; } }
+.changeBtn:hover { border-color: var(--accent); color: var(--accent); }
+
+.userName {
+  font-size: 0.78rem;
+  color: var(--text2);
+  font-family: 'Barlow Condensed', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+  display: none;
+}
+@media (min-width: 360px) { .userName { display: inline; } }
+
+.logoutBtn {
+  padding: 0.38rem 0.85rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.logoutBtn:hover { border-color: var(--accent2); color: var(--accent2); }

@@ -1,0 +1,112 @@
+import { useState } from 'react'
+import { useAuth }   from './hooks/useAuth'
+import { useLeague } from './hooks/useLeague'
+
+import Auth        from './pages/Auth'
+import Lobby       from './pages/Lobby'
+import Dashboard   from './pages/Dashboard'
+import Picks       from './pages/Picks'
+import Leaderboard from './pages/Leaderboard'
+import LeaguePage  from './pages/LeaguePage'
+import Topbar      from './components/Topbar'
+import BottomNav   from './components/BottomNav'
+
+export default function App() {
+  const [activePage, setActivePage] = useState('dashboard')
+
+  // ── Auth ────────────────────────────────────────────────
+  const { user, loading, signIn, signUp, signOut } = useAuth()
+
+  // ── League ──────────────────────────────────────────────
+  const {
+    myLeagues,
+    currentLeague,
+    loadingLeagues,
+    createLeague,
+    joinByCode,
+    enterLeague,
+    leaveCurrentLeague,
+  } = useLeague(user)
+
+  // ── Handle navigation ────────────────────────────────────
+  const handleNavigate = (page) => setActivePage(page)
+
+  const handleChangeLeague = () => {
+    leaveCurrentLeague()
+    setActivePage('dashboard')
+  }
+
+  // ── Loading splash ───────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '1rem',
+        background: 'var(--bg)',
+      }}>
+        <div style={{
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: '2.5rem',
+          letterSpacing: '.08em',
+          background: 'linear-gradient(135deg, #F5A623, #FF4B4B)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}>
+          GameGuru
+        </div>
+        <div style={{ color: 'var(--text3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '.1em' }}>
+          Cargando...
+        </div>
+      </div>
+    )
+  }
+
+  // ── Not logged in → Auth screen ──────────────────────────
+  if (!user) {
+    return <Auth onAuth={{ signIn, signUp }} />
+  }
+
+  // ── Logged in but no league selected → Lobby ─────────────
+  if (!currentLeague) {
+    return (
+      <Lobby
+        user={user}
+        myLeagues={myLeagues}
+        loadingLeagues={loadingLeagues}
+        onCreateLeague={createLeague}
+        onJoinLeague={joinByCode}
+        onEnterLeague={(lg) => { enterLeague(lg); setActivePage('dashboard') }}
+      />
+    )
+  }
+
+  // ── Inside a league → Full app ───────────────────────────
+  const pageProps = { user, league: currentLeague, onNavigate: handleNavigate }
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Topbar
+        user={user}
+        league={currentLeague}
+        activePage={activePage}
+        onNavigate={handleNavigate}
+        onChangeLeague={handleChangeLeague}
+        onLogout={signOut}
+      />
+
+      <main style={{ flex: 1, paddingBottom: '64px' }}>
+        {activePage === 'dashboard'  && <Dashboard   {...pageProps} />}
+        {activePage === 'picks'      && <Picks        {...pageProps} />}
+        {activePage === 'board'      && <Leaderboard  {...pageProps} />}
+        {activePage === 'league'     && <LeaguePage    {...pageProps} />}
+      </main>
+
+      <BottomNav activePage={activePage} onNavigate={handleNavigate} />
+    </div>
+  )
+}

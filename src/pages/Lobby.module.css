@@ -1,0 +1,194 @@
+.wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+  background:
+    radial-gradient(ellipse at 10% 70%, rgba(1,51,105,.4)   0%, transparent 55%),
+    radial-gradient(ellipse at 90% 10%, rgba(213,10,10,.18)  0%, transparent 50%),
+    var(--bg);
+}
+
+.header { text-align: center; margin-bottom: 2rem; margin-top: 1rem; }
+
+.brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 8vw, 3rem);
+  letter-spacing: .08em;
+  background: linear-gradient(135deg, #F5A623, #FF4B4B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.welcome {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .85rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-top: 6px;
+}
+.uname { color: var(--accent); }
+
+.body {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl);
+  padding: 1.75rem 1.5rem;
+}
+@media (max-width: 400px) { .card { padding: 1.25rem 1rem; } }
+
+.cardTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: .06em;
+  margin-bottom: .25rem;
+}
+.cardSub {
+  font-size: .85rem;
+  color: var(--text2);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.loadingText {
+  font-family: 'Barlow Condensed', sans-serif;
+  color: var(--text3);
+  letter-spacing: .08em;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* My leagues list */
+.leagueList { display: flex; flex-direction: column; gap: .6rem; }
+
+.leagueItem {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .9rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  width: 100%;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.leagueItem:hover { border-color: var(--border2); background: var(--surface); }
+
+.leagueIcon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+.leagueInfo { flex: 1; min-width: 0; }
+.leagueName {
+  font-weight: 600;
+  font-size: .95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.leagueMeta {
+  font-size: .78rem;
+  color: var(--text2);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .05em;
+  margin-top: 2px;
+}
+.adminBadge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: rgba(245,166,35,.15);
+  color: var(--accent);
+  border: 1px solid rgba(245,166,35,.3);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.arrow { color: var(--text3); font-size: 1.2rem; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  color: var(--text3);
+  font-size: .78rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-top: 1.25rem;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Sport selector */
+.sportGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 1.1rem;
+}
+.sportBtn {
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: .65rem .3rem;
+  text-align: center;
+  transition: all .15s;
+  cursor: pointer;
+}
+.sportBtn:hover   { border-color: var(--border2); background: var(--surface); }
+.sportBtn.sportActive { border-color: var(--accent); background: rgba(245,166,35,.1); }
+
+.sportIcon  { font-size: 1.5rem; display: block; margin-bottom: 3px; }
+.sportLabel {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .85rem;
+  letter-spacing: .05em;
+  display: block;
+  color: var(--text2);
+}
+.sportBtn.sportActive .sportLabel { color: var(--accent); }
+
+/* Join row */
+.joinRow { display: flex; gap: 8px; }
+
+.codeInput {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: 1rem;
+  padding: .8rem 1rem;
+  outline: none;
+  transition: border-color .2s;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  -webkit-appearance: none;
+}
+.codeInput:focus { border-color: var(--accent); }
+.codeInput::placeholder { color: var(--text3); letter-spacing: .04em; text-transform: none; }
+
+.joinBtn { white-space: nowrap; flex-shrink: 0; }

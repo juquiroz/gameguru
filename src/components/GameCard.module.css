@@ -1,0 +1,72 @@
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1rem;
+  transition: border-color 0.2s;
+}
+.card:hover:not(.locked) { border-color: var(--border2); }
+.card.locked { opacity: 0.72; }
+
+.time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 0.85rem;
+}
+
+.teamsRow {
+  display: grid;
+  grid-template-columns: 1fr 28px 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.teamBtn {
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 0.65rem 0.5rem;
+  text-align: center;
+  transition: all 0.15s;
+  width: 100%;
+  touch-action: manipulation;
+}
+.teamBtn:not(:disabled):hover  { border-color: var(--border2); background: var(--surface); }
+.teamBtn:not(:disabled):active { transform: scale(0.97); }
+.teamBtn:disabled { cursor: default; }
+
+.teamBtn.selected { border-color: var(--accent);  background: rgba(245,166,35,.1); }
+.teamBtn.correct  { border-color: var(--green);   background: rgba(34,197,94,.1);  }
+.teamBtn.wrong    { border-color: var(--red);     background: rgba(239,68,68,.07); opacity: 0.6; }
+
+.emoji { font-size: 1.6rem; display: block; margin-bottom: 3px; line-height: 1; }
+.abbr  {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  display: block;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.name { font-size: 0.65rem; color: var(--text2); line-height: 1.2; display: block; }
+
+.vs { font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; color: var(--text3); text-align: center; }
+
+.indicator {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.indicator.hasPick { color: var(--accent); }
+.indicator.correct  { color: var(--green);  }
+.indicator.wrong    { color: var(--red);    }

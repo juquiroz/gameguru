@@ -1,0 +1,85 @@
+import { useState, useEffect, useCallback } from 'react'
+import { leaguesApi, membersApi } from '../supabase'
+import { genInviteCode } from '../data/nflData'
+
+export function useLeague(user) {
+  const [myLeagues,      setMyLeagues]      = useState([])
+  const [currentLeague,  setCurrentLeague]  = useState(null)
+  const [loadingLeagues, setLoadingLeagues] = useState(false)
+
+  // Load leagues when user is available
+  useEffect(() => {
+    if (!user) { setMyLeagues([]); setCurrentLeague(null); return }
+    fetchMyLeagues()
+  }, [user])
+
+  const fetchMyLeagues = useCallback(async () => {
+    if (!user) return
+    setLoadingLeagues(true)
+    const { data, error } = await leaguesApi.getMyLeagues(user.id)
+    if (!error && data) {
+      const leagues = data
+        .map(row => ({ ...row.leagues, role: row.role }))
+        .filter(Boolean)
+      setMyLeagues(leagues)
+    }
+    setLoadingLeagues(false)
+  }, [user])
+
+  const createLeague = useCallback(async (name, sport) => {
+    if (!user) return { error: { message: 'No hay sesión activa.' } }
+    const code = genInviteCode()
+
+    const { data: league, error } = await leaguesApi.create({
+      name,
+      sport,
+      code,
+      admin_id: user.id,
+    })
+    if (error) return { error }
+
+    // Creator joins as admin
+    await membersApi.join(league.id, user.id, 'admin')
+
+    const newLeague = { ...league, role: 'admin' }
+    setMyLeagues(prev => [newLeague, ...prev])
+    return { data: newLeague }
+  }, [user])
+
+  const joinByCode = useCallback(async (code) => {
+    if (!user) return { error: { message: 'No hay sesión activa.' } }
+
+    // Already a member?
+    const existing = myLeagues.find(l => l.code === code.toUpperCase())
+    if (existing) return { data: existing, alreadyMember: true }
+
+    const { data: league, error: fetchError } = await leaguesApi.getByCode(code.toUpperCase())
+    if (fetchError || !league) return { error: { message: 'Código no válido.' } }
+
+    const { error: joinError } = await membersApi.join(league.id, user.id)
+    if (joinError) return { error: joinError }
+
+    const joined = { ...league, role: 'member' }
+    setMyLeagues(prev => [joined, ...prev])
+    return { data: joined }
+  }, [user, myLeagues])
+
+  const enterLeague = useCallback((league) => {
+    setCurrentLeague(league)
+  }, [])
+
+  const leaveCurrentLeague = useCallback(() => {
+    setCurrentLeague(null)
+  }, [])
+
+  return {
+    myLeagues,
+    currentLeague,
+    loadingLeagues,
+    fetchMyLeagues,
+    createLeague,
+    joinByCode,
+    enterLeague,
+    leaveCurrentLeague,
+  }
+}
