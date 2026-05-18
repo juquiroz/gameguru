@@ -7,10 +7,14 @@ const NAV_ITEMS = [
   { id: 'league',    label: 'Liga',    icon: '⚙️' },
 ]
 
-export default function BottomNav({ activePage, onNavigate }) {
+export default function BottomNav({ activePage, onNavigate, isSuperAdmin }) {
+  const items = isSuperAdmin
+    ? [...NAV_ITEMS, { id: 'superadmin', label: 'Admin', icon: '👑' }]
+    : NAV_ITEMS
+
   return (
     <nav className={styles.nav}>
-      {NAV_ITEMS.map(item => (
+      {items.map(item => (
         <button
           key={item.id}
           className={`${styles.btn} ${activePage === item.id ? styles.active : ''}`}

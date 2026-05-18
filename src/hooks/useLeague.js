@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { leaguesApi, membersApi } from '../supabase'
+import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
 import { genInviteCode } from '../data/nflData'
 
 export function useLeague(user) {
@@ -40,6 +40,25 @@ export function useLeague(user) {
 
     // Creator joins as admin
     await membersApi.join(league.id, user.id, 'admin')
+
+    // Auto-import master games for this sport/season
+    const { data: masterGames } = await masterGamesApi.getAll(sport, '2026')
+    if (masterGames?.length) {
+      const rows = masterGames.map(g => ({
+        league_id: league.id,
+        master_game_id: g.id,
+        sport: g.sport,
+        season: g.season,
+        week: g.week,
+        game_id: g.game_id,
+        home_team: g.home_team,
+        away_team: g.away_team,
+        home_abbr: g.home_abbr,
+        away_abbr: g.away_abbr,
+        game_time: g.game_time,
+      }))
+      await leagueGamesApi.insertAll(rows)
+    }
 
     const newLeague = { ...league, role: 'admin' }
     setMyLeagues(prev => [newLeague, ...prev])

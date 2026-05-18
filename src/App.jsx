@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth }   from './hooks/useAuth'
 import { useLeague } from './hooks/useLeague'
+import { useSuperAdmin } from './hooks/useSuperAdmin'
 
 import Auth        from './pages/Auth'
 import Lobby       from './pages/Lobby'
@@ -8,16 +9,24 @@ import Dashboard   from './pages/Dashboard'
 import Picks       from './pages/Picks'
 import Leaderboard from './pages/Leaderboard'
 import LeaguePage  from './pages/LeaguePage'
+import SuperAdmin  from './pages/SuperAdmin'
 import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
+
+const PAGE_TITLES = {
+  dashboard:  'Dashboard',
+  picks:      'Mis Picks',
+  board:      'Tabla de Posiciones',
+  league:     'Mi Liga',
+  superadmin: 'Admin Global',
+}
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard')
 
-  // ── Auth ────────────────────────────────────────────────
   const { user, loading, signIn, signUp, signOut } = useAuth()
+  const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
 
-  // ── League ──────────────────────────────────────────────
   const {
     myLeagues,
     currentLeague,
@@ -28,16 +37,26 @@ export default function App() {
     leaveCurrentLeague,
   } = useLeague(user)
 
-  // ── Handle navigation ────────────────────────────────────
-  const handleNavigate = (page) => setActivePage(page)
+  // Sync URL with active page
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '')
+    if (hash && hash !== activePage) {
+      setActivePage(hash)
+    }
+  }, [])
+
+  const handleNavigate = (page) => {
+    setActivePage(page)
+    window.location.hash = page
+    document.title = `${PAGE_TITLES[page] || 'GameGuru'} · GameGuru`
+  }
 
   const handleChangeLeague = () => {
     leaveCurrentLeague()
-    setActivePage('dashboard')
+    handleNavigate('dashboard')
   }
 
-  // ── Loading splash ───────────────────────────────────────
-  if (loading) {
+  if (loading || adminChecking) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -66,12 +85,10 @@ export default function App() {
     )
   }
 
-  // ── Not logged in → Auth screen ──────────────────────────
   if (!user) {
     return <Auth onAuth={{ signIn, signUp }} />
   }
 
-  // ── Logged in but no league selected → Lobby ─────────────
   if (!currentLeague) {
     return (
       <Lobby
@@ -80,12 +97,11 @@ export default function App() {
         loadingLeagues={loadingLeagues}
         onCreateLeague={createLeague}
         onJoinLeague={joinByCode}
-        onEnterLeague={(lg) => { enterLeague(lg); setActivePage('dashboard') }}
+        onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard') }}
       />
     )
   }
 
-  // ── Inside a league → Full app ───────────────────────────
   const pageProps = { user, league: currentLeague, onNavigate: handleNavigate }
 
   return (
@@ -97,16 +113,26 @@ export default function App() {
         onNavigate={handleNavigate}
         onChangeLeague={handleChangeLeague}
         onLogout={signOut}
+        isSuperAdmin={isSuperAdmin}
       />
 
       <main style={{ flex: 1, paddingBottom: '64px' }}>
-        {activePage === 'dashboard'  && <Dashboard   {...pageProps} />}
-        {activePage === 'picks'      && <Picks        {...pageProps} />}
-        {activePage === 'board'      && <Leaderboard  {...pageProps} />}
-        {activePage === 'league'     && <LeaguePage    {...pageProps} />}
+        {activePage === 'superadmin' && isSuperAdmin ? (
+          <SuperAdmin />
+        ) : activePage === 'dashboard' ? (
+          <Dashboard {...pageProps} />
+        ) : activePage === 'picks' ? (
+          <Picks {...pageProps} />
+        ) : activePage === 'board' ? (
+          <Leaderboard {...pageProps} />
+        ) : activePage === 'league' ? (
+          <LeaguePage {...pageProps} />
+        ) : (
+          <Dashboard {...pageProps} />
+        )}
       </main>
 
-      <BottomNav activePage={activePage} onNavigate={handleNavigate} />
+      <BottomNav activePage={activePage} onNavigate={handleNavigate} isSuperAdmin={isSuperAdmin} />
     </div>
   )
 }
