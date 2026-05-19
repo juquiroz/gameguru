@@ -54,28 +54,31 @@
 
 .leagueName {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   letter-spacing: 0.08em;
   color: var(--accent);
   text-transform: uppercase;
   opacity: 0.85;
-  display: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100px;
+  flex-shrink: 1;
+  min-width: 0;
 }
-@media (min-width: 480px) { .leagueName { display: inline; } }
 
 .changeBtn {
-  padding: 0.35rem 0.8rem;
+  padding: 0.35rem 0.7rem;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   border: 1px solid var(--border2);
   color: var(--text3);
   border-radius: var(--r-sm);
   transition: all 0.15s;
-  display: none;
+  flex-shrink: 0;
 }
-@media (min-width: 480px) { .changeBtn { display: inline; } }
 .changeBtn:hover { border-color: var(--accent); color: var(--accent); }
 
 .userName {
