@@ -46,6 +46,16 @@ export const leaguesApi = {
       .from('league_members')
       .select('user_id, role, profiles(username)')
       .eq('league_id', leagueId),
+
+  delete: async (leagueId) => {
+    await Promise.allSettled([
+      supabase.from('league_games').delete().eq('league_id', leagueId),
+      supabase.from('league_members').delete().eq('league_id', leagueId),
+    ])
+    const { error } = await supabase.from('leagues').delete().eq('id', leagueId)
+    if (error) return { error: { message: error.message } }
+    return { data: null }
+  },
 }
 
 // ─── League Members helpers ─────────────────────────────────────────────────
@@ -84,7 +94,7 @@ export const picksApi = {
 // ─── Profiles helpers ───────────────────────────────────────────────────────
 export const profilesApi = {
   get: (userId) =>
-    supabase.from('profiles').select('*').eq('id', userId).single(),
+    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
 
   upsert: (data) =>
     supabase.from('profiles').upsert(data),
@@ -158,6 +168,13 @@ export const leagueGamesApi = {
     supabase
       .from('league_games')
       .delete()
+      .eq('league_id', leagueId)
+      .eq('game_id', gameId),
+
+  setActive: (leagueId, gameId, active) =>
+    supabase
+      .from('league_games')
+      .update({ active })
       .eq('league_id', leagueId)
       .eq('game_id', gameId),
 

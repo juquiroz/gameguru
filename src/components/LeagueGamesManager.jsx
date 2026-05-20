@@ -77,12 +77,15 @@ export default function LeagueGamesManager({ league }) {
     importToLeague(selected)
   }
 
-  const handleRemoveGame = async (gameId) => {
-    const { error } = await leagueGamesApi.removeFromLeague(league.id, gameId)
-    if (error) setMsg({ type: 'error', text: 'Error al eliminar.' })
+  const handleToggleActive = async (gameId, currentlyActive) => {
+    const newActive = !currentlyActive
+    const { error } = await leagueGamesApi.setActive(league.id, gameId, newActive)
+    if (error) setMsg({ type: 'error', text: 'Error al actualizar.' })
     else {
-      setLeagueGames(prev => prev.filter(g => g.game_id !== gameId))
-      setMsg({ type: 'success', text: 'Juego eliminado de la liga.' })
+      setLeagueGames(prev => prev.map(g =>
+        g.game_id === gameId ? { ...g, active: newActive } : g
+      ))
+      setMsg({ type: 'success', text: newActive ? 'Juego habilitado.' : 'Juego inhabilitado.' })
     }
   }
 
@@ -201,7 +204,11 @@ export default function LeagueGamesManager({ league }) {
         ) : (
           <div className={styles.gamesList}>
             {leagueWeekGames.map(g => (
-              <div key={g.id} className={styles.gameRow}>
+              <div
+                key={g.id}
+                className={`${styles.gameRow} ${g.active === false ? styles.inactive : ''}`}
+              >
+                {g.active === false && <span className={styles.inactiveBadge}>🚫</span>}
                 <TeamLogo abbr={g.away_abbr} className={styles.emoji} size={24} />
                 <span className={styles.abbr}>{g.away_abbr}</span>
                 <span className={styles.vs}>@</span>
@@ -209,10 +216,11 @@ export default function LeagueGamesManager({ league }) {
                 <span className={styles.abbr}>{g.home_abbr}</span>
                 <span className={styles.time}><GameTime when={g.game_time} /></span>
                 <button
-                  className={styles.removeBtn}
-                  onClick={() => handleRemoveGame(g.game_id)}
+                  className={g.active === false ? styles.enableBtn : styles.disableBtn}
+                  onClick={() => handleToggleActive(g.game_id, g.active !== false)}
+                  title={g.active === false ? 'Habilitar' : 'Inhabilitar'}
                 >
-                  ✕
+                  {g.active === false ? '✓' : '✕'}
                 </button>
               </div>
             ))}

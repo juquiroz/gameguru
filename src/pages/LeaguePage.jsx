@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { SPORTS } from '../data/nflData'
+import { leaguesApi } from '../supabase'
 import InviteModal from '../components/InviteModal'
 import LeagueGamesManager from '../components/LeagueGamesManager'
 
-export default function LeaguePage({ user, league }) {
+export default function LeaguePage({ user, league, onChangeLeague }) {
   const [showModal, setShowModal] = useState(false)
   const [copied,    setCopied]    = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   if (!league) {
     return (
@@ -105,6 +108,52 @@ export default function LeaguePage({ user, league }) {
           padding: '1.5rem',
         }}>
           <LeagueGamesManager league={league} />
+        </div>
+      )}
+
+      {isAdmin && (
+        <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+          {confirmDelete ? (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--red)', fontSize: '.85rem' }}>
+                ⚠ ¿Eliminar la liga <strong>{league.name}</strong>? Se borrarán todos los datos (picks, miembros, juegos).
+              </span>
+              <button
+                className="btn-primary"
+                onClick={async () => {
+                  setDeleting(true)
+                  const { error } = await leaguesApi.delete(league.id)
+                  if (error) { setMsg?.({ type: 'error', text: error.message }); setDeleting(false); return }
+                  onChangeLeague()
+                }}
+                disabled={deleting}
+                style={{ background: 'var(--red)', flexShrink: 0 }}
+              >
+                {deleting ? 'Eliminando...' : 'Sí, eliminar liga'}
+              </button>
+              <button className="btn-secondary" onClick={() => setConfirmDelete(false)}>
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: '.78rem',
+                letterSpacing: '.06em',
+                textTransform: 'uppercase',
+                border: '1px solid rgba(239,68,68,.3)',
+                color: 'var(--red)',
+                borderRadius: 'var(--r-sm)',
+                background: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              🗑 Eliminar esta liga
+            </button>
+          )}
         </div>
       )}
     </div>

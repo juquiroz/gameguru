@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { SPORTS } from '../data/nflData'
+import { leaguesApi } from '../supabase'
 import InviteModal from '../components/InviteModal'
 import styles from './Lobby.module.css'
 
-export default function Lobby({ user, myLeagues, loadingLeagues, onCreateLeague, onJoinLeague, onEnterLeague }) {
-  const [leagueName,    setLeagueName]    = useState('')
-  const [selectedSport, setSelectedSport] = useState('NFL')
-  const [joinCode,      setJoinCode]      = useState('')
-  const [creating,      setCreating]      = useState(false)
-  const [joining,       setJoining]       = useState(false)
-  const [createMsg,     setCreateMsg]     = useState(null)
-  const [joinMsg,       setJoinMsg]       = useState(null)
-  const [inviteLeague,  setInviteLeague]  = useState(null) // shows modal
+export default function Lobby({ user, myLeagues, loadingLeagues, onCreateLeague, onJoinLeague, onEnterLeague, onRefreshLeagues }) {
+  const [tab,            setTab]            = useState('ligas')
+  const [leagueName,     setLeagueName]     = useState('')
+  const [selectedSport,  setSelectedSport]  = useState('NFL')
+  const [joinCode,       setJoinCode]       = useState('')
+  const [creating,       setCreating]       = useState(false)
+  const [joining,        setJoining]        = useState(false)
+  const [createMsg,      setCreateMsg]      = useState(null)
+  const [joinMsg,        setJoinMsg]        = useState(null)
+  const [inviteLeague,   setInviteLeague]   = useState(null) // shows modal
 
   // Pre-fill join code from URL ?join=XXXXXX
   useState(() => {
@@ -46,6 +48,15 @@ export default function Lobby({ user, myLeagues, loadingLeagues, onCreateLeague,
     setTimeout(() => { setJoinMsg(null); onEnterLeague(data) }, 1200)
   }
 
+  const handleDeleteLeague = async (e, league) => {
+    e.stopPropagation()
+    if (!window.confirm(`¿Eliminar la liga "${league.name}"? Esta acción no se puede deshacer.`)) return
+    if (!window.confirm('¿Estás seguro? Se borrarán todos los picks y datos asociados.')) return
+    const { error } = await leaguesApi.delete(league.id)
+    if (error) { alert('Error: ' + error.message); return }
+    onRefreshLeagues()
+  }
+
   const username = user?.email?.split('@')[0] || 'Jugador'
 
   return (
@@ -58,124 +69,160 @@ export default function Lobby({ user, myLeagues, loadingLeagues, onCreateLeague,
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${tab === 'ligas' ? styles.tabActive : ''}`}
+          onClick={() => setTab('ligas')}
+        >🏆 Mis Ligas</button>
+        <button
+          className={`${styles.tab} ${tab === 'crear' ? styles.tabActive : ''}`}
+          onClick={() => setTab('crear')}
+        >➕ Crear</button>
+        <button
+          className={`${styles.tab} ${tab === 'unirse' ? styles.tabActive : ''}`}
+          onClick={() => setTab('unirse')}
+        >🔗 Unirse</button>
+      </div>
+
       <div className={styles.body}>
 
-        {/* My leagues */}
-        {loadingLeagues && (
+        {/* Mis Ligas */}
+        {tab === 'ligas' && (
           <div className={styles.card}>
-            <div className={styles.loadingText}>Cargando ligas...</div>
+            {loadingLeagues ? (
+              <div className={styles.loadingText}>Cargando ligas...</div>
+            ) : myLeagues.length === 0 ? (
+              <>
+                <div className={styles.cardTitle}>🏆 Mis Ligas</div>
+                <div className={styles.cardSub}>Aún no estás en ninguna liga.</div>
+              </>
+            ) : (
+              <>
+                <div className={styles.cardTitle}>🏆 Mis Ligas</div>
+                <div className={styles.cardSub}>Selecciona una liga para entrar.</div>
+                <div className={styles.leagueList}>
+                  {myLeagues.map(lg => (
+                    <div
+                      key={lg.id}
+                      className={styles.leagueItem}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onEnterLeague(lg)}
+                      onKeyDown={e => e.key === 'Enter' && onEnterLeague(lg)}
+                    >
+                      <div className={styles.leagueIcon}>
+                        {SPORTS.find(s => s.id === lg.sport)?.icon || '🏆'}
+                      </div>
+                      <div className={styles.leagueInfo}>
+                        <div className={styles.leagueName}>{lg.name}</div>
+                        <div className={styles.leagueMeta}>{lg.sport} · {lg.code}</div>
+                      </div>
+                      {(lg.role === 'admin' || lg.admin_id === user?.id) && (
+                        <>
+                          <span className={styles.adminBadge}>Admin</span>
+                          <button
+                            className={styles.deleteBtn}
+                            onClick={e => handleDeleteLeague(e, lg)}
+                            title="Eliminar liga"
+                          >
+                            ✕
+                          </button>
+                        </>
+                      )}
+                      <span className={styles.arrow}>›</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
 
-        {!loadingLeagues && myLeagues.length > 0 && (
+        {/* Crear liga */}
+        {tab === 'crear' && (
           <div className={styles.card}>
-            <div className={styles.cardTitle}>🏆 Mis Ligas</div>
-            <div className={styles.cardSub}>Selecciona una liga para entrar.</div>
-            <div className={styles.leagueList}>
-              {myLeagues.map(lg => (
-                <button
-                  key={lg.id}
-                  className={styles.leagueItem}
-                  onClick={() => onEnterLeague(lg)}
-                >
-                  <div className={styles.leagueIcon}>
-                    {SPORTS.find(s => s.id === lg.sport)?.icon || '🏆'}
-                  </div>
-                  <div className={styles.leagueInfo}>
-                    <div className={styles.leagueName}>{lg.name}</div>
-                    <div className={styles.leagueMeta}>{lg.sport} · {lg.code}</div>
-                  </div>
-                  {(lg.role === 'admin' || lg.admin_id === user?.id) && (
-                    <span className={styles.adminBadge}>Admin</span>
-                  )}
-                  <span className={styles.arrow}>›</span>
-                </button>
-              ))}
+            <div className={styles.cardTitle}>➕ Crear Liga</div>
+            <div className={styles.cardSub}>
+              Crea tu propia liga y comparte el enlace de invitación.
             </div>
-            <div className={styles.divider}><span>o crea una nueva</span></div>
-          </div>
-        )}
 
-        {/* Create league */}
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>➕ Crear Liga</div>
-          <div className={styles.cardSub}>
-            Crea tu propia liga y comparte el enlace de invitación.
-          </div>
-
-          <div className="field">
-            <label>Nombre de la liga</label>
-            <input
-              type="text"
-              placeholder="Ej: Los Carnales Fantasy"
-              maxLength={40}
-              value={leagueName}
-              onChange={e => setLeagueName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreate()}
-            />
-          </div>
-
-          <div className="field">
-            <label>Deporte</label>
-            <div className={styles.sportGrid}>
-              {SPORTS.map(sport => (
-                <button
-                  key={sport.id}
-                  className={`${styles.sportBtn} ${selectedSport === sport.id ? styles.sportActive : ''}`}
-                  onClick={() => setSelectedSport(sport.id)}
-                >
-                  <span className={styles.sportIcon}>{sport.icon}</span>
-                  <span className={styles.sportLabel}>{sport.label}</span>
-                </button>
-              ))}
+            <div className="field">
+              <label>Nombre de la liga</label>
+              <input
+                type="text"
+                placeholder="Ej: Los Carnales Fantasy"
+                maxLength={40}
+                value={leagueName}
+                onChange={e => setLeagueName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCreate()}
+              />
             </div>
-          </div>
 
-          <button
-            className="btn-primary"
-            onClick={handleCreate}
-            disabled={creating}
-          >
-            {creating ? 'Creando...' : 'Crear y obtener enlace de invitación'}
-          </button>
-
-          {createMsg && (
-            <div className={`msg ${createMsg.type}`} style={{ marginTop: '0.75rem' }}>
-              {createMsg.text}
+            <div className="field">
+              <label>Deporte</label>
+              <div className={styles.sportGrid}>
+                {SPORTS.map(sport => (
+                  <button
+                    key={sport.id}
+                    className={`${styles.sportBtn} ${selectedSport === sport.id ? styles.sportActive : ''}`}
+                    onClick={() => setSelectedSport(sport.id)}
+                  >
+                    <span className={styles.sportIcon}>{sport.icon}</span>
+                    <span className={styles.sportLabel}>{sport.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
 
-        {/* Join league */}
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>🔗 Unirse a una Liga</div>
-          <div className={styles.cardSub}>¿Tienes un código de invitación? Ingrésalo aquí.</div>
-
-          <div className={styles.joinRow}>
-            <input
-              type="text"
-              className={styles.codeInput}
-              placeholder="Código de 6 letras"
-              maxLength={6}
-              value={joinCode}
-              onChange={e => setJoinCode(e.target.value.toUpperCase())}
-              onKeyDown={e => e.key === 'Enter' && handleJoin()}
-            />
             <button
-              className={`btn-secondary ${styles.joinBtn}`}
-              onClick={handleJoin}
-              disabled={joining}
+              className="btn-primary"
+              onClick={handleCreate}
+              disabled={creating}
             >
-              {joining ? '...' : 'Unirme'}
+              {creating ? 'Creando...' : 'Crear y obtener enlace de invitación'}
             </button>
-          </div>
 
-          {joinMsg && (
-            <div className={`msg ${joinMsg.type}`} style={{ marginTop: '0.75rem' }}>
-              {joinMsg.text}
+            {createMsg && (
+              <div className={`msg ${createMsg.type}`} style={{ marginTop: '0.75rem' }}>
+                {createMsg.text}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Unirse a liga */}
+        {tab === 'unirse' && (
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>🔗 Unirse a una Liga</div>
+            <div className={styles.cardSub}>¿Tienes un código de invitación? Ingrésalo aquí.</div>
+
+            <div className={styles.joinRow}>
+              <input
+                type="text"
+                className={styles.codeInput}
+                placeholder="Código de 6 letras"
+                maxLength={6}
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleJoin()}
+              />
+              <button
+                className={`btn-secondary ${styles.joinBtn}`}
+                onClick={handleJoin}
+                disabled={joining}
+              >
+                {joining ? '...' : 'Unirme'}
+              </button>
             </div>
-          )}
-        </div>
+
+            {joinMsg && (
+              <div className={`msg ${joinMsg.type}`} style={{ marginTop: '0.75rem' }}>
+                {joinMsg.text}
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
 
