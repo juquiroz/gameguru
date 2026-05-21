@@ -135,17 +135,6 @@ function LeagueDashboard({ user, league }) {
   const weekNum = 1
   const week = NFL_WEEKS[weekNum]
 
-  const mockRows = [
-    { userId: 'me', username: user?.email?.split('@')[0] || 'Tú', correct: 7, total: 8 },
-    { userId: 'u2', username: 'carlos.m', correct: 6, total: 8 },
-    { userId: 'u3', username: 'juan.p', correct: 6, total: 8 },
-    { userId: 'u4', username: 'andrea.v', correct: 5, total: 8 },
-    { userId: 'u5', username: 'rob.c', correct: 4, total: 8 },
-  ]
-
-  const myRow = mockRows[0]
-  const pct = Math.round((myRow.correct / myRow.total) * 100)
-
   return (
     <div className={styles.wrap}>
       <div className={styles.heroTight}>
@@ -159,59 +148,52 @@ function LeagueDashboard({ user, league }) {
         </div>
       </div>
 
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Mi Posición</div>
-          <div className={styles.statVal} style={{ color: 'var(--accent)' }}>#1</div>
-          <div className={styles.statSub}>de {mockRows.length} jugadores</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Aciertos Sem {weekNum}</div>
-          <div className={styles.statVal} style={{ color: 'var(--green)' }}>{myRow.correct}</div>
-          <div className={styles.statSub}>de {myRow.total} partidos</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Efectividad</div>
-          <div className={styles.statVal}>{pct}%</div>
-          <div className={styles.statSub}>Semana {weekNum}</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statLabel}>Semana Activa</div>
-          <div className={styles.statVal} style={{ color: 'var(--accent)' }}>{weekNum}</div>
-          <div className={styles.statSub}>{week?.games?.length || 0} partidos</div>
-        </div>
+      {/* Código de invitación */}
+      <div className={styles.inviteBox}>
+        <div className={styles.inviteLabel}>Código de invitación</div>
+        <div className={styles.inviteCode}>{league.code}</div>
+        <button
+          className={styles.inviteCopy}
+          onClick={() => {
+            const link = `${window.location.origin}/gameguru/?join=${league.code}`
+            navigator.clipboard.writeText(link)
+            alert('Enlace copiado al portapapeles')
+          }}
+        >📋 Copiar enlace</button>
       </div>
 
+      {/* Week preview */}
       <div className={styles.alertCard}>
         <span className={styles.alertIcon}>🏈</span>
         <div className={styles.alertBody}>
           <div className={styles.alertTitle}>
-            <strong>Semana {weekNum}</strong> está activa
+            <strong>Semana {weekNum}</strong> — {week?.label || 'por comenzar'}
           </div>
           <div className={styles.alertSub}>
-            {week?.games?.length || 0} partidos · Deadline: {week?.deadline || '—'}
+            {week?.games?.length || 0} partidos en esta semana
           </div>
         </div>
       </div>
 
-      <div className={styles.sectionTitle}>📊 Top Jugadores · Semana {weekNum}</div>
-      {mockRows.map((r, i) => (
-        <div
-          key={r.userId}
-          className={`${styles.leaderRow} ${r.userId === 'me' ? styles.leaderMe : ''}`}
-        >
-          <span className={styles.leaderRank}>
-            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-          </span>
-          <span className={styles.leaderName}>{r.username}</span>
-          <span className={styles.leaderScore}>
-            {r.correct}/{r.total}
-            <span className={styles.leaderPct}>
-              {' '}({Math.round((r.correct / r.total) * 100)}%)
-            </span>
-          </span>
+      {/* Quick actions */}
+      <div className={styles.quickActions}>
+        <button className="btn-primary" style={{ flex: 1 }} onClick={() => window.location.hash = 'picks'}>
+          🏈 Hacer Picks
+        </button>
+        <button className="btn-secondary" style={{ flex: 1 }} onClick={() => window.location.hash = 'league'}>
+          ⚙️ Administrar Liga
+        </button>
+      </div>
+
+      {/* Empty state - no picks yet */}
+      <div className={styles.emptySection}>
+        <div className={styles.emptyIcon}>📭</div>
+        <div className={styles.emptyTitle}>Aún no hay actividad</div>
+        <div className={styles.emptyDesc}>
+          Cuando los miembros comiencen a enviar sus picks, aquí aparecerán las
+          posiciones y estadísticas de la liga.
         </div>
-      ))}
+      </div>
     </div>
   )
 }

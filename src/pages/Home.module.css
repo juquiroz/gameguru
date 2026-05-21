@@ -239,6 +239,73 @@
   font-family: 'Barlow Condensed', sans-serif;
 }
 
+.inviteBox {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 520px;
+}
+.inviteLabel {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.inviteCode {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: .12em;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.inviteCopy {
+  font-size: .78rem;
+  padding: .35rem .85rem;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: var(--r-sm);
+  transition: all .15s;
+}
+.inviteCopy:hover { border-color: var(--accent); color: var(--accent); }
+
+.quickActions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.emptySection {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+  padding: 2rem 1rem;
+  background: var(--bg2);
+  border: 1px dashed var(--border);
+  border-radius: var(--r);
+}
+.emptyIcon { font-size: 2.5rem; margin-bottom: .5rem; }
+.emptyTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: .04em;
+  margin-bottom: .35rem;
+}
+.emptyDesc {
+  font-size: .82rem;
+  color: var(--text2);
+  line-height: 1.5;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
 .sectionTitle {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;

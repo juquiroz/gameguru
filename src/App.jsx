@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth }   from './hooks/useAuth'
 import { useLeague } from './hooks/useLeague'
 import { useSuperAdmin } from './hooks/useSuperAdmin'
+import { LangProvider, useLanguage } from './i18n/context'
 
 import Auth        from './pages/Auth'
 import Home        from './pages/Home'
@@ -13,18 +14,19 @@ import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
 import CreateLeagueModal from './components/CreateLeagueModal'
 
-const PAGE_TITLES = {
-  dashboard:  'Dashboard',
-  picks:      'Mis Picks',
-  board:      'Tabla de Posiciones',
-  league:     'Mi Liga',
-  superadmin: 'Admin Global',
+export default function App() {
+  return (
+    <LangProvider>
+      <AppInner />
+    </LangProvider>
+  )
 }
 
-export default function App() {
+function AppInner() {
   const [activePage, setActivePage] = useState('dashboard')
   const [showCreate, setShowCreate] = useState(false)
   const [showJoin,   setShowJoin]   = useState(false)
+  const { t } = useLanguage()
 
   const { user, loading, signIn, signUp, signOut } = useAuth()
   const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
@@ -51,7 +53,8 @@ export default function App() {
   const handleNavigate = (page) => {
     setActivePage(page)
     window.location.hash = page
-    document.title = `${PAGE_TITLES[page] || 'GameGuru'} · GameGuru`
+    const pageTitle = t(PAGE_KEYS[page] || 'app.name')
+    document.title = `${pageTitle} · ${t('app.name')}`
   }
 
   const handleChangeLeague = () => {
@@ -82,7 +85,7 @@ export default function App() {
           GameGuru
         </div>
         <div style={{ color: 'var(--text3)', fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: '.1em' }}>
-          Cargando...
+          {t('app.loading')}
         </div>
       </div>
     )
@@ -91,6 +94,8 @@ export default function App() {
   if (!user) {
     return <Auth onAuth={{ signIn, signUp }} />
   }
+
+  const pageProps = { user, onNavigate: handleNavigate, onChangeLeague: handleChangeLeague }
 
   const renderPage = () => {
     if (activePage === 'superadmin' && isSuperAdmin) return <SuperAdmin />
