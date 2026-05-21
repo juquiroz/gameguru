@@ -94,6 +94,8 @@ export default function Picks({ user, league }) {
   const picksInUnlocked = unlockedGames.filter(g => picks[g.id])
   const totalUnlocked = unlockedGames.length
   const pickedUnlocked = picksInUnlocked.length
+  const totalGames = weekData?.games?.length || 0
+  const pickedCount = weekData?.games?.filter(g => picks[g.id]).length || 0
 
   const isLocked     = weekData?.finished || (deadlineMode === 'weekly' && submitted)
   const isAllLocked  = deadlineMode === 'game_by_game' && unlockedGames.length === 0
