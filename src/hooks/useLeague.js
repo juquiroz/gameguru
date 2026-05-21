@@ -42,22 +42,32 @@ export function useLeague(user) {
     await membersApi.join(league.id, user.id, 'admin')
 
     // Auto-import master games for this sport/season
-    const { data: masterGames } = await masterGamesApi.getAll(sport, '2026')
-    if (masterGames?.length) {
-      const rows = masterGames.map(g => ({
-        league_id: league.id,
-        master_game_id: g.id,
-        sport: g.sport,
-        season: g.season,
-        week: g.week,
-        game_id: g.game_id,
-        home_team: g.home_team,
-        away_team: g.away_team,
-        home_abbr: g.home_abbr,
-        away_abbr: g.away_abbr,
-        game_time: g.game_time,
-      }))
-      await leagueGamesApi.insertAll(rows)
+    const { data: masterGames, error: mgErr } = await masterGamesApi.getAll(sport, '2026')
+    if (mgErr) return { error: { message: `Error al leer juegos maestros: ${mgErr.message}` } }
+
+    if (!masterGames?.length) {
+      const newLeague = { ...league, role: 'admin' }
+      setMyLeagues(prev => [newLeague, ...prev])
+      return { data: newLeague, warning: 'No se encontraron juegos en el calendario maestro. Cargalos desde el panel Super Admin.' }
+    }
+
+    const rows = masterGames.map(g => ({
+      league_id: league.id,
+      master_game_id: g.id,
+      sport: g.sport,
+      season: g.season,
+      week: g.week,
+      game_id: g.game_id,
+      home_team: g.home_team,
+      away_team: g.away_team,
+      home_abbr: g.home_abbr,
+      away_abbr: g.away_abbr,
+      game_time: g.game_time,
+    }))
+
+    const { error: insertErr } = await leagueGamesApi.insertAll(rows)
+    if (insertErr) {
+      return { error: { message: `Error al importar juegos a la liga: ${insertErr.message}` } }
     }
 
     const newLeague = { ...league, role: 'admin' }

@@ -1,54 +1,157 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { leagueGamesApi, picksApi } from '../supabase'
 import LeaderboardTable from '../components/LeaderboardTable'
-import { NFL_WEEKS } from '../data/nflData'
 
-// Mock data — replace with real Supabase query per league
-const MOCK_ROWS = [
-  { userId: 'me', username: null,       correct: 7, total: 8 },
-  { userId: 'u2', username: 'carlos.m', correct: 6, total: 8 },
-  { userId: 'u3', username: 'juan.p',   correct: 6, total: 8 },
-  { userId: 'u4', username: 'andrea.v', correct: 5, total: 8 },
-  { userId: 'u5', username: 'rob.c',    correct: 4, total: 8 },
-]
-
-export default function Leaderboard({ user }) {
+export default function Leaderboard({ user, league }) {
   const [activeWeek, setActiveWeek] = useState(1)
-  const weekFinished = NFL_WEEKS[activeWeek]?.finished
+  const [weeks, setWeeks] = useState([])
+  const [rows, setRows] = useState([])
+  const [weekFinished, setWeekFinished] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [msg, setMsg] = useState(null)
 
-  const rows = MOCK_ROWS.map((r, i) =>
-    i === 0 ? { ...r, username: user?.email?.split('@')[0] || 'Tú', userId: user?.id || 'me' }
-            : r
-  )
+  const loadStandings = useCallback(async () => {
+    if (!league) return
+    setLoading(true)
+    setMsg(null)
+
+    // Get games for this league
+    const { data: games, error: gErr } = await leagueGamesApi.getForLeague(league.id)
+    if (gErr) { setMsg('Error al cargar juegos'); setLoading(false); return }
+
+    if (!games?.length) {
+      setWeeks([])
+      setRows([])
+      setWeekFinished(false)
+      setLoading(false)
+      return
+    }
+
+    // Build week list
+    const uniqueWeeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b)
+    setWeeks(uniqueWeeks)
+
+    const week = activeWeek
+    const weekGames = games.filter(g => g.week === week)
+    const finished = weekGames.every(g => g.finished)
+    setWeekFinished(finished)
+
+    if (!finished) {
+      setRows([])
+      setLoading(false)
+      return
+    }
+
+    // Get picks and calculate standings
+    const { data: picks, error: pErr } = await picksApi.getLeaderboard(league.id, week)
+    if (pErr) { setMsg('Error al cargar picks'); setRows([]); setLoading(false); return }
+
+    if (!picks?.length) {
+      setRows([])
+      setLoading(false)
+      return
+    }
+
+    // Build result map: game_id → winner abbreviation
+    const results = {}
+    weekGames.forEach(g => { if (g.result) results[g.game_id] = g.result })
+
+    // Group picks by user and count correct
+    const userMap = {}
+    picks.forEach(p => {
+      const uid = p.user_id
+      if (!userMap[uid]) {
+        userMap[uid] = {
+          userId: uid,
+          username: p.profiles?.username || uid.slice(0, 8),
+          correct: 0,
+          total: 0,
+        }
+      }
+      if (results[p.game_id]) {
+        userMap[uid].total++
+        if (p.pick === results[p.game_id]) userMap[uid].correct++
+      }
+    })
+
+    const sorted = Object.values(userMap).sort((a, b) => b.correct - a.correct || a.total - b.total)
+    setRows(sorted)
+    setLoading(false)
+  }, [league, activeWeek])
+
+  useEffect(() => { loadStandings() }, [loadStandings])
+
+  if (!league) {
+    return (
+      <div className="page">
+        <div className="page-title">Tabla de Posiciones</div>
+        <div className="page-sub">Selecciona una liga para ver las posiciones.</div>
+      </div>
+    )
+  }
 
   return (
     <div className="page">
       <div className="page-title">Tabla de Posiciones</div>
       <div className="page-sub">El que más aciertos logre gana la semana</div>
 
-      <div className="week-tabs">
-        {Object.entries(NFL_WEEKS).map(([wk, wd]) => (
-          <button
-            key={wk}
-            className={`week-tab ${activeWeek == wk ? 'active' : ''}`}
-            onClick={() => setActiveWeek(Number(wk))}
-          >
-            {wd.label}
-            {wd.finished && <span className="fin-tag">FINAL</span>}
-          </button>
-        ))}
-      </div>
-
-      {!weekFinished ? (
+      {loading ? (
+        <div className="empty-state"><div className="big">⏳</div>Cargando...</div>
+      ) : weeks.length === 0 ? (
         <div className="empty-state">
-          <div className="big">🔒</div>
-          La Semana {activeWeek} aún no ha finalizado.
-          <br />
-          <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
-            Los resultados estarán disponibles cuando terminen los partidos.
-          </span>
+          <div className="big">📭</div>
+          Esta liga aún no tiene partidos importados.
+          {league?.admin_id === user?.id && (
+            <><br /><span style={{ fontSize: '.82rem', color: 'var(--text3)' }}>
+              Ve a Mi Liga &gt; Gestión de Partidos para importarlos.
+            </span></>
+          )}
         </div>
       ) : (
-        <LeaderboardTable rows={rows} currentUserId={user?.id || 'me'} />
+        <>
+          <div className="week-tabs">
+            {weeks.map(w => (
+              <button
+                key={w}
+                className={`week-tab ${activeWeek === w ? 'active' : ''}`}
+                onClick={() => setActiveWeek(w)}
+              >
+                Semana {w}
+              </button>
+            ))}
+          </div>
+
+          {msg && (
+            <div className="msg error" style={{ marginBottom: '1rem' }}>{msg}</div>
+          )}
+
+          {!weekFinished ? (
+            <div className="empty-state">
+              <div className="big">🔒</div>
+              La Semana {activeWeek} aún no ha finalizado.
+              <br />
+              <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
+                Los resultados estarán disponibles cuando terminen los partidos.
+              </span>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="empty-state">
+              <div className="big">📭</div>
+              No hay picks registrados para la Semana {activeWeek}.
+              <br />
+              <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
+                Los miembros deben enviar sus picks para que aparezcan aquí.
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className="msg success" style={{ marginBottom: '1rem', fontSize: '.8rem' }}>
+                📊 Datos en tiempo real basados en los picks de los miembros y resultados de partidos.
+              </div>
+              <LeaderboardTable rows={rows} currentUserId={user?.id} />
+            </>
+          )}
+        </>
       )}
     </div>
   )

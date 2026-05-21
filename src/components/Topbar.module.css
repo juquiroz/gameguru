@@ -22,7 +22,12 @@
   background-clip: text;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: opacity .15s;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
+.brand:hover { opacity: .7; }
 
 .desktopNav {
   display: none;
@@ -102,6 +107,20 @@
   margin-right: 4px;
   font-size: 0.8rem;
 }
+
+.createBtn {
+  padding: 0.38rem 0.7rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid rgba(245,166,35,.3);
+  color: var(--accent);
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.createBtn:hover { border-color: var(--accent); background: rgba(245,166,35,.08); }
 
 .logoutBtn {
   padding: 0.38rem 0.85rem;

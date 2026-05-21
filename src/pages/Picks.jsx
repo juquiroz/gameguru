@@ -17,7 +17,10 @@ export default function Picks({ user, league }) {
     if (!league) return
     setLoadingGames(true)
     const { data, error } = await leagueGamesApi.getForLeague(league.id)
-    if (!error && data?.length) {
+    if (error) {
+      console.warn('Error al cargar league_games:', error)
+      setLeagueGames(null)
+    } else if (data?.length) {
       setLeagueGames(data)
     } else {
       setLeagueGames(null)
@@ -30,13 +33,22 @@ export default function Picks({ user, league }) {
   // Determine which game source to use
   const useDynamic = leagueGames && leagueGames.length > 0
 
-  // Normalize game so GameCard uses game_id for lookups/picks
-  const normGame = (g) => ({ ...g, id: g.game_id || g.id })
+  // Normalize game so GameCard works with both DB fields and NFL_WEEKS format
+  const normGame = (g) => ({
+    ...g,
+    id:    g.game_id    || g.id,
+    time:  g.game_time  || g.time,
+    aA:    g.away_abbr  || g.aA,
+    hA:    g.home_abbr  || g.hA,
+    away:  g.away_team  || g.away,
+    home:  g.home_team  || g.home,
+  })
 
   // Build week data from dynamic games or use NFL_WEEKS
   const getWeekData = (week) => {
     if (useDynamic) {
-      const games = leagueGames.filter(g => g.week === week).map(normGame)
+      const active = leagueGames.filter(g => g.active !== false)
+      const games = active.filter(g => g.week === week).map(normGame)
       if (games.length === 0) return null
       const allFinished = games.every(g => g.finished)
       const results = {}
@@ -55,7 +67,7 @@ export default function Picks({ user, league }) {
 
   // Available weeks
   const weeks = useDynamic
-    ? [...new Set(leagueGames.map(g => g.week))].sort((a, b) => a - b)
+    ? [...new Set(leagueGames.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
     : Object.keys(NFL_WEEKS).map(Number)
 
   const pickedCount  = Object.keys(picks).length
@@ -76,9 +88,11 @@ export default function Picks({ user, league }) {
       <div className="page-title">Mis Picks</div>
       <div className="page-sub">Selecciona el ganador de cada partido antes del kickoff</div>
 
-      {useDynamic && (
-        <div className="msg info" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
-          📋 Usando calendario personalizado de la liga
+      {!loadingGames && !useDynamic && (
+        <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
+          ⚠️ No se encontraron juegos en esta liga. {league?.admin_id === user?.id
+            ? 'Ve a Mi Liga &gt; Gestión de Partidos para importarlos.'
+            : 'El admin de la liga debe importar los juegos.'}
         </div>
       )}
 

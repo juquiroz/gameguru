@@ -129,7 +129,17 @@
   letter-spacing: 0.05em;
 }
 
-.removeBtn {
+.inactive {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.inactiveBadge {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.disableBtn {
   padding: 0.2rem 0.5rem;
   font-size: 0.7rem;
   border: 1px solid rgba(239, 68, 68, 0.3);
@@ -138,6 +148,19 @@
   background: none;
   cursor: pointer;
   transition: background 0.15s;
-  margin-left: auto;
+  flex-shrink: 0;
 }
-.removeBtn:hover { background: rgba(239, 68, 68, 0.1); }
+.disableBtn:hover { background: rgba(239, 68, 68, 0.1); }
+
+.enableBtn {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--green);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.enableBtn:hover { background: rgba(34, 197, 94, 0.1); }
