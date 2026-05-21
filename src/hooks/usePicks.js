@@ -30,9 +30,9 @@ export function usePicks(user, league, week) {
     setPicks(prev => ({ ...prev, [gameId]: teamAbbr }))
   }, [submitted])
 
-  const submitPicks = useCallback(async (totalGames) => {
+  const submitPicks = useCallback(async (totalGames, partial = false) => {
     if (!user || !league) return { error: { message: 'No hay sesión o liga activa.' } }
-    if (Object.keys(picks).length < totalGames)
+    if (!partial && Object.keys(picks).length < totalGames)
       return { error: { message: 'Selecciona todos los partidos antes de enviar.' } }
 
     setSaving(true)
