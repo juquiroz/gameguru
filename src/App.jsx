@@ -28,6 +28,14 @@ function AppInner() {
   const [showJoin,   setShowJoin]   = useState(false)
   const { t } = useLanguage()
 
+  const PAGE_KEYS = {
+    dashboard: 'topbar.dashboard',
+    picks: 'topbar.picks',
+    board: 'topbar.board',
+    league: 'topbar.league',
+    superadmin: 'superadmin.title',
+  }
+
   const { user, loading, signIn, signUp, signOut } = useAuth()
   const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
 
