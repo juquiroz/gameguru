@@ -131,7 +131,7 @@ function LeaguesOverview({ myLeagues, user, onEnterLeague, onRefreshLeagues, onC
   )
 }
 
-function LeagueDashboard({ user, league }) {
+function LeagueDashboard({ user, league, onNavigate }) {
   const weekNum = 1
   const week = NFL_WEEKS[weekNum]
 
@@ -177,10 +177,10 @@ function LeagueDashboard({ user, league }) {
 
       {/* Quick actions */}
       <div className={styles.quickActions}>
-        <button className="btn-primary" style={{ flex: 1 }} onClick={() => window.location.hash = 'picks'}>
+        <button className="btn-primary" style={{ flex: 1 }} onClick={() => onNavigate('picks')}>
           🏈 Hacer Picks
         </button>
-        <button className="btn-secondary" style={{ flex: 1 }} onClick={() => window.location.hash = 'league'}>
+        <button className="btn-secondary" style={{ flex: 1 }} onClick={() => onNavigate('league')}>
           ⚙️ Administrar Liga
         </button>
       </div>
@@ -198,7 +198,7 @@ function LeagueDashboard({ user, league }) {
   )
 }
 
-export default function Home({ user, myLeagues, currentLeague, loadingLeagues, onCreateNew, onJoinClick, onEnterLeague, onRefreshLeagues }) {
+export default function Home({ user, myLeagues, currentLeague, loadingLeagues, onCreateNew, onJoinClick, onEnterLeague, onRefreshLeagues, onNavigate }) {
   if (loadingLeagues) {
     return (
       <div className={styles.wrap}>
@@ -208,7 +208,7 @@ export default function Home({ user, myLeagues, currentLeague, loadingLeagues, o
   }
 
   if (currentLeague) {
-    return <LeagueDashboard user={user} league={currentLeague} />
+    return <LeagueDashboard user={user} league={currentLeague} onNavigate={onNavigate} />
   }
 
   if (myLeagues.length > 0) {

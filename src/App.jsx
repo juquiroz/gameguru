@@ -114,6 +114,7 @@ function AppInner() {
           myLeagues={myLeagues}
           currentLeague={currentLeague}
           loadingLeagues={loadingLeagues}
+          onNavigate={handleNavigate}
           onCreateNew={() => setShowCreate(true)}
           onJoinClick={() => setShowJoin(true)}
           onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard') }}
@@ -131,6 +132,7 @@ function AppInner() {
         myLeagues={myLeagues}
         currentLeague={currentLeague}
         loadingLeagues={loadingLeagues}
+        onNavigate={handleNavigate}
         onCreateNew={() => setShowCreate(true)}
         onJoinClick={() => setShowJoin(true)}
         onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard') }}
