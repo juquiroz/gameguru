@@ -26,9 +26,8 @@ export function usePicks(user, league, week) {
   }, [user, league, week])
 
   const selectPick = useCallback((gameId, teamAbbr) => {
-    if (submitted) return
     setPicks(prev => ({ ...prev, [gameId]: teamAbbr }))
-  }, [submitted])
+  }, [])
 
   const submitPicks = useCallback(async (totalGames, partial = false) => {
     if (!user || !league) return { error: { message: 'No hay sesión o liga activa.' } }

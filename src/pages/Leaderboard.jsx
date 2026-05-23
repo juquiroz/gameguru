@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { leagueGamesApi, picksApi } from '../supabase'
+import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
 import LeaderboardTable from '../components/LeaderboardTable'
 
 export default function Leaderboard({ user, league }) {
   const [activeWeek, setActiveWeek] = useState(1)
   const [weeks, setWeeks] = useState([])
   const [rows, setRows] = useState([])
+  const [members, setMembers] = useState([])
   const [weekFinished, setWeekFinished] = useState(false)
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
@@ -14,6 +15,14 @@ export default function Leaderboard({ user, league }) {
     if (!league) return
     setLoading(true)
     setMsg(null)
+
+    // Get league members (always)
+    const { data: memberData } = await leaguesApi.getMembers(league.id)
+    setMembers(memberData?.map(m => ({
+      userId: m.user_id,
+      username: m.profiles?.username || m.user_id.slice(0, 8),
+      role: m.role,
+    })) || [])
 
     // Get games for this league
     const { data: games, error: gErr } = await leagueGamesApi.getForLeague(league.id)
@@ -126,14 +135,49 @@ export default function Leaderboard({ user, league }) {
           )}
 
           {!weekFinished ? (
-            <div className="empty-state">
-              <div className="big">🔒</div>
-              La Semana {activeWeek} aún no ha finalizado.
-              <br />
-              <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
-                Los resultados estarán disponibles cuando terminen los partidos.
-              </span>
-            </div>
+            <>
+              <div className="empty-state" style={{ marginBottom: '1rem' }}>
+                <div className="big">🔒</div>
+                La Semana {activeWeek} aún no ha finalizado.
+                <br />
+                <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
+                  Los resultados estarán disponibles cuando terminen los partidos.
+                </span>
+              </div>
+              {members.length > 0 && (
+                <div style={{ background: 'var(--bg2)', borderRadius: 'var(--r-xl)', padding: '1.25rem' }}>
+                  <div className="sec-title" style={{ marginBottom: '.75rem' }}>👥 Miembros ({members.length})</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {members.map(m => (
+                      <div key={m.userId} style={{
+                        display: 'flex', alignItems: 'center', gap: '.65rem',
+                        padding: '.6rem .8rem', background: 'var(--bg3)',
+                        borderRadius: 'var(--r-sm)',
+                      }}>
+                        <span style={{
+                          width: '30px', height: '30px', borderRadius: '50%',
+                          background: 'var(--surface2)', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center',
+                          fontSize: '.78rem', fontWeight: 600, color: 'var(--text2)',
+                          flexShrink: 0,
+                        }}>
+                          {m.username.charAt(0).toUpperCase()}
+                        </span>
+                        <span style={{ flex: 1, fontSize: '.85rem', fontWeight: 500 }}>{m.username}</span>
+                        {m.role === 'admin' && (
+                          <span style={{
+                            fontSize: '.65rem', letterSpacing: '.1em', textTransform: 'uppercase',
+                            background: 'rgba(245,166,35,.15)', color: 'var(--accent)',
+                            border: '1px solid rgba(245,166,35,.3)', borderRadius: '4px',
+                            padding: '2px 7px',
+                          }}>Admin</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : rows.length === 0 ? (
             <div className="empty-state">
               <div className="big">📭</div>

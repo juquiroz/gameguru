@@ -50,8 +50,8 @@ export default function Picks({ user, league }) {
   const gameDeadline = (g) => {
     const when = g.game_time || g.time
     if (!when) return null
-    const utc = new Date(when.replace('Z', '') + 'Z')
-    return new Date(utc.getTime() - 60 * 60 * 1000)
+    const d = new Date(when)
+    return isNaN(d) ? null : new Date(d.getTime() - 60 * 60 * 1000)
   }
 
   const isGameLocked = (g) => {
@@ -66,7 +66,13 @@ export default function Picks({ user, league }) {
   const getWeekData = (week) => {
     if (useDynamic) {
       const active = leagueGames.filter(g => g.active !== false)
-      const games = active.filter(g => g.week === week).map(normGame)
+      const games = active.filter(g => g.week === week).map(normGame).sort((a, b) => {
+        const ta = a.game_time || a.time || ''
+        const tb = b.game_time || b.time || ''
+        if (ta < tb) return -1
+        if (ta > tb) return 1
+        return 0
+      })
       if (games.length === 0) return null
       const allFinished = games.every(g => g.finished)
       const results = {}

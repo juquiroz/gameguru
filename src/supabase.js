@@ -183,4 +183,16 @@ export const leagueGamesApi = {
 
   setFinished: (id, finished) =>
     supabase.from('league_games').update({ finished }).eq('id', id).select().single(),
+
+  setScores: (id, homeScore, awayScore, homeAbbr, awayAbbr) => {
+    let result = null
+    if (homeScore > awayScore) result = homeAbbr
+    else if (awayScore > homeScore) result = awayAbbr
+    return supabase
+      .from('league_games')
+      .update({ home_score: homeScore, away_score: awayScore, result, finished: true })
+      .eq('id', id)
+      .select()
+      .single()
+  },
 }
