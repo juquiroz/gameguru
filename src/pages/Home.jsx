@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SPORTS, NFL_TEAMS, NFL_WEEKS } from '../data/nflData'
-import { leaguesApi } from '../supabase'
+import { leaguesApi, leagueGamesApi } from '../supabase'
 import TeamLogo from '../components/TeamLogo'
 import styles from './Home.module.css'
 
@@ -104,6 +104,7 @@ function LeaguesOverview({ myLeagues, user, onEnterLeague, onRefreshLeagues, onC
                     {lg.sport} · {lg.code}
                   </div>
                 </div>
+                {lg.simulation && <span className={styles.adminBadge} style={{ background: 'rgba(245,166,35,.15)', color: 'var(--accent)' }}>🧪 Sim</span>}
                 {isAdmin && <span className={styles.adminBadge}>Admin</span>}
                 {isAdmin && (
                   <button
@@ -134,13 +135,42 @@ function LeaguesOverview({ myLeagues, user, onEnterLeague, onRefreshLeagues, onC
 function LeagueDashboard({ user, league, onNavigate }) {
   const weekNum = 1
   const week = NFL_WEEKS[weekNum]
+  const [leagueGames, setLeagueGames] = useState(null)
+  const [loadingGames, setLoadingGames] = useState(false)
+  const isAdmin = league.admin_id === user?.id || league.role === 'admin'
+
+  useEffect(() => {
+    if (!league) return
+    setLoadingGames(true)
+    leagueGamesApi.getForLeague(league.id).then(({ data, error }) => {
+      if (!error && data?.length) setLeagueGames(data)
+      else setLeagueGames(null)
+      setLoadingGames(false)
+    })
+  }, [league])
+
+  const hasCustomGames = leagueGames && leagueGames.length > 0
+  const totalGames = leagueGames?.length || week?.games?.length || 0
+  const finishedGames = leagueGames?.filter(g => g.finished)?.length || 0
+  const pendingResults = leagueGames?.filter(g => !g.finished)?.length || 0
 
   return (
     <div className={styles.wrap}>
       <div className={styles.heroTight}>
         <div className={styles.leagueHeader}>
           <div>
-            <div className={styles.leagueTitle}>{league.name}</div>
+            <div className={styles.leagueTitle}>
+              {league.name}
+              {league.simulation && (
+                <span style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontSize: '.65rem', letterSpacing: '.1em', textTransform: 'uppercase',
+                  background: 'rgba(245,166,35,.15)', color: 'var(--accent)',
+                  border: '1px solid rgba(245,166,35,.3)', borderRadius: '4px',
+                  padding: '2px 7px', marginLeft: '.5rem', verticalAlign: 'middle',
+                }}>🧪 Simulación</span>
+              )}
+            </div>
             <div className={styles.leagueMeta}>
               {SPORTS.find(s => s.id === league.sport)?.icon} {league.sport} · Temporada 2026
             </div>
@@ -162,15 +192,15 @@ function LeagueDashboard({ user, league, onNavigate }) {
         >📋 Copiar enlace</button>
       </div>
 
-      {/* Week preview */}
+      {/* Games summary */}
       <div className={styles.alertCard}>
         <span className={styles.alertIcon}>🏈</span>
         <div className={styles.alertBody}>
           <div className={styles.alertTitle}>
-            <strong>Semana {weekNum}</strong> — {week?.label || 'por comenzar'}
+            <strong>Semana {weekNum}</strong> — {hasCustomGames ? 'Juegos de simulación' : (week?.label || 'por comenzar')}
           </div>
           <div className={styles.alertSub}>
-            {week?.games?.length || 0} partidos en esta semana
+            {loadingGames ? 'Cargando...' : `${totalGames} partidos${finishedGames > 0 ? ` · ${finishedGames} finalizados` : ''}${pendingResults > 0 ? ` · ${pendingResults} pendientes` : ''}`}
           </div>
         </div>
       </div>
@@ -184,6 +214,14 @@ function LeagueDashboard({ user, league, onNavigate }) {
           ⚙️ Administrar Liga
         </button>
       </div>
+
+      {isAdmin && hasCustomGames && pendingResults > 0 && (
+        <div className={styles.quickActions}>
+          <button className="btn-secondary" style={{ flex: 1 }} onClick={() => onNavigate('league')}>
+            🏆 Ingresar resultados ({pendingResults} pendientes)
+          </button>
+        </div>
+      )}
 
       {/* Empty state - no picks yet */}
       <div className={styles.emptySection}>

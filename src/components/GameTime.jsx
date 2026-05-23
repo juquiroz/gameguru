@@ -4,7 +4,7 @@ export default function GameTime({ when, className }) {
   if (!when) return null
 
   if (DATE_REGEX.test(when)) {
-    const normalized = when.trim().replace(' ', 'T').replace(/Z$/, '-05:00')
+    const normalized = when.trim().replace(' ', 'T')
     const date = new Date(normalized)
     if (!isNaN(date)) {
       const formatted = new Intl.DateTimeFormat(undefined, {

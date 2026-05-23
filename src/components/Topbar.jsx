@@ -2,7 +2,7 @@ import { useLanguage } from '../i18n/context'
 import LanguageSwitch from './LanguageSwitch'
 import styles from './Topbar.module.css'
 
-export default function Topbar({ user, league, onChangeLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew }) {
+export default function Topbar({ user, league, onChangeLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation }) {
   const { t } = useLanguage()
 
   const navItems = [
@@ -50,6 +50,11 @@ export default function Topbar({ user, league, onChangeLeague, onLogout, activeP
           </>
         )}
         <button className={styles.createBtn} onClick={onCreateNew}>{t('topbar.create')}</button>
+        {isSuperAdmin && (
+          <button className={styles.createBtn} onClick={onCreateSimulation} style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
+            🧪 Simular
+          </button>
+        )}
         <LanguageSwitch />
         <span className={styles.userName}>{user?.email?.split('@')[0]}</span>
         <button className={styles.logoutBtn} onClick={onLogout}>{t('topbar.logout')}</button>

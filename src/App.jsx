@@ -13,6 +13,7 @@ import SuperAdmin  from './pages/SuperAdmin'
 import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
 import CreateLeagueModal from './components/CreateLeagueModal'
+import CreateSimulationModal from './components/CreateSimulationModal'
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ function AppInner() {
   const [activePage, setActivePage] = useState('dashboard')
   const [showCreate, setShowCreate] = useState(false)
   const [showJoin,   setShowJoin]   = useState(false)
+  const [showSimulation, setShowSimulation] = useState(false)
   const { t } = useLanguage()
 
   const PAGE_KEYS = {
@@ -45,6 +47,7 @@ function AppInner() {
     loadingLeagues,
     fetchMyLeagues,
     createLeague,
+    createSimulationLeague,
     joinByCode,
     enterLeague,
     leaveCurrentLeague,
@@ -152,6 +155,7 @@ function AppInner() {
         onLogout={signOut}
         isSuperAdmin={isSuperAdmin}
         onCreateNew={() => setShowCreate(true)}
+        onCreateSimulation={() => setShowSimulation(true)}
       />
 
       <main style={{ flex: 1, paddingBottom: '64px' }}>
@@ -175,6 +179,14 @@ function AppInner() {
         onJoin={joinByCode}
         onEnter={(lg) => { enterLeague(lg); handleNavigate('dashboard'); setShowJoin(false) }}
       />}
+
+      {showSimulation && (
+        <CreateSimulationModal
+          onClose={() => setShowSimulation(false)}
+          onCreateSimulation={createSimulationLeague}
+          onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard'); setShowSimulation(false) }}
+        />
+      )}
     </div>
   )
 }

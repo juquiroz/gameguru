@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
-import { genInviteCode } from '../data/nflData'
+import { genInviteCode, NFL_TEAMS } from '../data/nflData'
+
+const localTZ = () => {
+  const off = -new Date().getTimezoneOffset()
+  const sign = off >= 0 ? '+' : '-'
+  const h = Math.floor(Math.abs(off) / 60)
+  const m = Math.abs(off) % 60
+  return `${sign}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
 
 export function useLeague(user) {
   const [myLeagues,      setMyLeagues]      = useState([])
@@ -76,6 +84,46 @@ export function useLeague(user) {
     return { data: newLeague }
   }, [user])
 
+  const createSimulationLeague = useCallback(async (name, games) => {
+    if (!user) return { error: { message: 'No hay sesión activa.' } }
+    const code = genInviteCode()
+
+    const { data: league, error } = await leaguesApi.create({
+      name,
+      sport: 'NFL',
+      code,
+      admin_id: user.id,
+      deadline_mode: 'game_by_game',
+      simulation: true,
+    })
+    if (error) return { error }
+
+    await membersApi.join(league.id, user.id, 'admin')
+
+    const rows = games.map((g, i) => ({
+      league_id: league.id,
+      master_game_id: null,
+      sport: 'NFL',
+      season: 'Sim',
+      week: g.week || 1,
+      game_id: `sim-${i + 1}`,
+      home_team: NFL_TEAMS[g.home]?.name || g.home,
+      away_team: NFL_TEAMS[g.away]?.name || g.away,
+      home_abbr: g.home,
+      away_abbr: g.away,
+      game_time: `${g.date}T${g.time}:00${localTZ()}`,
+    }))
+
+    const { error: insertErr } = await leagueGamesApi.insertAll(rows)
+    if (insertErr) {
+      return { error: { message: `Error al crear juegos: ${insertErr.message}` } }
+    }
+
+    const newLeague = { ...league, role: 'admin' }
+    setMyLeagues(prev => [newLeague, ...prev])
+    return { data: newLeague }
+  }, [user])
+
   const joinByCode = useCallback(async (code) => {
     if (!user) return { error: { message: 'No hay sesión activa.' } }
 
@@ -108,6 +156,7 @@ export function useLeague(user) {
     loadingLeagues,
     fetchMyLeagues,
     createLeague,
+    createSimulationLeague,
     joinByCode,
     enterLeague,
     leaveCurrentLeague,
