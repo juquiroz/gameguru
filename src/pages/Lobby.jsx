@@ -52,8 +52,14 @@ export default function Lobby({ user, myLeagues, loadingLeagues, onCreateLeague,
     e.stopPropagation()
     if (!window.confirm(`¿Eliminar la liga "${league.name}"? Esta acción no se puede deshacer.`)) return
     if (!window.confirm('¿Estás seguro? Se borrarán todos los picks y datos asociados.')) return
-    const { error } = await leaguesApi.delete(league.id)
-    if (error) { alert('Error: ' + error.message); return }
+    try {
+      const { error } = await leaguesApi.delete(league.id)
+      if (error) { alert('Error: ' + error.message); return }
+    } catch (ex) {
+      console.error('handleDeleteLeague excepción:', ex)
+      alert('Error inesperado: ' + (ex?.message || 'desconocido'))
+      return
+    }
     onRefreshLeagues()
   }
 

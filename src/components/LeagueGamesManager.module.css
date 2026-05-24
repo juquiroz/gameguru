@@ -298,3 +298,68 @@
   .saveScoreBtn { padding: 0.2rem 0.45rem; font-size: 0.75rem; }
   .cancelScoreBtn { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
 }
+
+/* ─── Add custom game form ─────────────────────────────────────── */
+.addForm {
+  background: var(--bg3);
+  border-radius: var(--r);
+  padding: 1rem;
+}
+
+@media (max-width: 480px) {
+  .addForm { padding: .75rem; }
+}
+
+.teamRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.teamSelect {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  min-width: 0;
+}
+
+.teamVs {
+  color: var(--text3); font-size: .85rem;
+  text-align: center; white-space: nowrap;
+}
+
+.dateRow {
+  display: flex; gap: 8px; align-items: center;
+}
+
+@media (max-width: 480px) {
+  .dateRow { flex-wrap: wrap; }
+  .dateRow .inputDate { flex: 1 1 100%; }
+  .dateRow .inputTime { flex: 1; min-width: 0; }
+  .dateRow .addBtn { flex: 1 1 100%; }
+}
+
+.inputDate {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  flex: 1;
+}
+
+.inputTime {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  flex: 1;
+}
+
+.addBtn {
+  padding: .5rem 1rem; background: var(--accent); color: #000;
+  border: none; border-radius: var(--r-sm); cursor: pointer;
+  font-weight: 600; white-space: nowrap;
+}

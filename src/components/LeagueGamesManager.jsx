@@ -391,49 +391,29 @@ export default function LeagueGamesManager({ league }) {
         <div className={styles.sectionHeader}>
           <span>➕ Agregar juego manual a Semana {activeWeek}</span>
         </div>
-        <div style={{
-          background: 'var(--bg3)', borderRadius: 'var(--r)',
-          padding: '1rem',
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-            <select value={customAway} onChange={e => setCustomAway(e.target.value)} style={{
-              padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }}>
+        <div className={styles.addForm}>
+          <div className={styles.teamRow}>
+            <select className={styles.teamSelect} value={customAway} onChange={e => setCustomAway(e.target.value)}>
               <option value="">Visitante</option>
               {availCustomAway.map(t => (
                 <option key={t.abbr} value={t.abbr}>{t.abbr} — {t.name}</option>
               ))}
             </select>
-            <span style={{ color: 'var(--text3)', fontSize: '.85rem' }}>@</span>
-            <select value={customHome} onChange={e => setCustomHome(e.target.value)} style={{
-              padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }}>
+            <span className={styles.teamVs}>@</span>
+            <select className={styles.teamSelect} value={customHome} onChange={e => setCustomHome(e.target.value)}>
               <option value="">Local</option>
               {availCustomHome.map(t => (
                 <option key={t.abbr} value={t.abbr}>{t.abbr} — {t.name}</option>
               ))}
             </select>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} style={{
-              flex: 1, padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }} />
-            <input type="time" value={customTime} onChange={e => setCustomTime(e.target.value)} style={{
-              flex: 1, padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }} />
-            <button
-              onClick={handleAddCustomGame}
-              disabled={saving}
-              style={{
-                padding: '.5rem 1rem', background: 'var(--accent)', color: '#000',
-                border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer',
-                fontWeight: 600, whiteSpace: 'nowrap',
-              }}
-            >+ Agregar</button>
+          <div className={styles.dateRow}>
+            <input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)}
+              className={styles.inputDate} />
+            <input type="time" value={customTime} onChange={e => setCustomTime(e.target.value)}
+              className={styles.inputTime} />
+            <button onClick={handleAddCustomGame} disabled={saving}
+              className={styles.addBtn}>+ Agregar</button>
           </div>
         </div>
       </div>
