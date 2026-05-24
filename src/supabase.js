@@ -48,13 +48,29 @@ export const leaguesApi = {
       .eq('league_id', leagueId),
 
   delete: async (leagueId) => {
-    await Promise.allSettled([
-      supabase.from('league_games').delete().eq('league_id', leagueId),
-      supabase.from('league_members').delete().eq('league_id', leagueId),
-    ])
-    const { error } = await supabase.from('leagues').delete().eq('id', leagueId)
-    if (error) return { error: { message: error.message } }
-    return { data: null }
+    console.log('leagues.delete – inicio, leagueId:', leagueId)
+    try {
+      const results = await Promise.allSettled([
+        supabase.from('league_games').delete().eq('league_id', leagueId),
+        supabase.from('league_members').delete().eq('league_id', leagueId),
+      ])
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') console.error('leagues.delete paso', i, 'rechazado:', r.reason)
+        else if (r.value?.error) console.error('leagues.delete paso', i, 'error:', r.value.error)
+        else console.log('leagues.delete paso', i, 'ok')
+      })
+      const res = await supabase.from('leagues').delete().eq('id', leagueId)
+      console.log('leagues.delete – respuesta de leagues:', res)
+      if (res.error) {
+        console.error('leagues.delete – error al borrar la liga:', res.error)
+        return { error: { message: res.error.message } }
+      }
+      console.log('leagues.delete – éxito')
+      return { data: null }
+    } catch (ex) {
+      console.error('leagues.delete – excepción:', ex)
+      return { error: { message: ex?.message || 'Error inesperado al eliminar la liga' } }
+    }
   },
 }
 

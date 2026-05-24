@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NFL_TEAMS } from '../data/nflData'
 import TeamLogo from './TeamLogo'
+import styles from './CreateSimulationModal.module.css'
 
 const TEAM_LIST = Object.entries(NFL_TEAMS).map(([abbr, data]) => ({ abbr, ...data }))
 
@@ -16,18 +17,16 @@ export default function CreateSimulationModal({ onClose, onCreateSimulation, onE
   const [home, setHome] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
-  const [week, setWeek] = useState(1)
 
   const addGame = () => {
     if (!away || !home) return setMsg({ type: 'error', text: 'Selecciona ambos equipos.' })
     if (away === home) return setMsg({ type: 'error', text: 'Los equipos deben ser distintos.' })
     if (!date || !time) return setMsg({ type: 'error', text: 'Completa fecha y hora.' })
-    if (!week || week < 1) return setMsg({ type: 'error', text: 'Semana inválida.' })
     const dup = games.some(g => g.away === away && g.home === home)
     if (dup) return setMsg({ type: 'error', text: 'Ese partido ya fue agregado.' })
     setMsg(null)
-    setGames(prev => [...prev, { away, home, date, time, week }])
-    setAway(''); setHome(''); setDate(''); setTime(''); setWeek(1)
+    setGames(prev => [...prev, { away, home, date, time, week: 1 }])
+    setAway(''); setHome(''); setDate(''); setTime('')
   }
 
   const removeGame = (idx) => {
@@ -56,20 +55,8 @@ export default function CreateSimulationModal({ onClose, onCreateSimulation, onE
 
   if (inviteLeague) {
     return (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(0,0,0,.6)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '1rem',
-      }}>
-        <div style={{
-          background: 'var(--bg2)',
-          border: '1px solid var(--border2)',
-          borderRadius: 'var(--r-xl)',
-          padding: '1.75rem 1.5rem',
-          width: '100%', maxWidth: '440px',
-          position: 'relative',
-        }}>
+      <div className={styles.overlay}>
+        <div className={styles.successModal}>
           <div style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '.5rem' }}>✅ Liga de Simulación creada</div>
           <p style={{ color: 'var(--text2)', lineHeight: 1.5, marginBottom: '1rem' }}>
             Comparte el código <strong style={{ color: 'var(--accent)', letterSpacing: '.12em' }}>{inviteLeague.code}</strong>{' '}
@@ -78,12 +65,8 @@ export default function CreateSimulationModal({ onClose, onCreateSimulation, onE
           <input
             readOnly
             value={`${window.location.origin}/gameguru/?join=${inviteLeague.code}`}
-            style={{
-              width: '100%', padding: '.6rem .8rem',
-              background: 'var(--bg3)', border: '1px solid var(--border)',
-              borderRadius: 'var(--r-sm)', color: 'var(--text2)',
-              fontSize: '.78rem', marginBottom: '1rem',
-            }}
+            className={styles.input}
+            style={{ width: '100%', marginBottom: '1rem', fontSize: '.78rem' }}
             onClick={e => e.target.select()}
           />
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -97,32 +80,11 @@ export default function CreateSimulationModal({ onClose, onCreateSimulation, onE
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(0,0,0,.6)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '1rem',
-    }}>
-      <div style={{
-        background: 'var(--bg2)',
-        border: '1px solid var(--border2)',
-        borderRadius: 'var(--r-xl)',
-        padding: '1.75rem 1.5rem',
-        width: '100%', maxWidth: '520px',
-        position: 'relative',
-        maxHeight: '90vh', overflow: 'auto',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '1.35rem', letterSpacing: '.06em' }}>
-            🧪 Crear Liga de Simulación
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none', border: 'none', color: 'var(--text3)',
-              fontSize: '1.2rem', cursor: 'pointer', padding: '4px',
-            }}
-          >✕</button>
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
+        <div className={styles.header}>
+          <div className={styles.headerTitle}>🧪 Crear Liga de Simulación</div>
+          <button className={styles.headerClose} onClick={onClose}>✕</button>
         </div>
 
         <div className="field">
@@ -139,25 +101,21 @@ export default function CreateSimulationModal({ onClose, onCreateSimulation, onE
 
         {/* Games list */}
         {games.length > 0 && (
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '.35rem', fontSize: '.82rem', color: 'var(--text2)' }}>
+          <div className={styles.gamesList}>
+            <label className={styles.gamesListLabel}>
               Partidos agregados ({games.length})
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {games.map((g, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                  background: 'var(--bg3)', padding: '.5rem .7rem',
-                  borderRadius: 'var(--r-sm)',
-                }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                <div key={i} className={styles.gameItem}>
+                  <span className={styles.gameItemTeams}>
                     <TeamLogo abbr={g.away} size={18} />
                     <span style={{ fontWeight: 600, fontSize: '.82rem' }}>{g.away}</span>
                     <span style={{ color: 'var(--text3)', fontSize: '.75rem' }}>@</span>
                     <TeamLogo abbr={g.home} size={18} />
                     <span style={{ fontWeight: 600, fontSize: '.82rem' }}>{g.home}</span>
                   </span>
-                  <span style={{ fontSize: '.75rem', color: 'var(--text3)' }}>
+                  <span className={styles.gameItemMeta}>
                     Sem {g.week} · {g.date} {g.time}
                   </span>
                   <button
@@ -174,66 +132,36 @@ export default function CreateSimulationModal({ onClose, onCreateSimulation, onE
         )}
 
         {/* Add game form */}
-        <div style={{
-          background: 'var(--bg3)', borderRadius: 'var(--r)',
-          padding: '1rem', marginBottom: '1rem',
-        }}>
-          <label style={{ display: 'block', marginBottom: '.5rem', fontSize: '.82rem', color: 'var(--text2)' }}>
-            Agregar partido
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-            <select value={away} onChange={e => setAway(e.target.value)} style={{
-              padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }}>
+        <div className={styles.addGameForm}>
+          <label className={styles.addGameLabel}>Agregar partido</label>
+
+          <div className={styles.teamRow}>
+            <select className={styles.teamSelect} value={away} onChange={e => setAway(e.target.value)}>
               <option value="">Visitante</option>
               {availableAway.map(t => (
                 <option key={t.abbr} value={t.abbr}>{t.abbr} — {t.name}</option>
               ))}
             </select>
-            <span style={{ color: 'var(--text3)', fontSize: '.85rem' }}>@</span>
-            <select value={home} onChange={e => setHome(e.target.value)} style={{
-              padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }}>
+            <span className={styles.teamVs}>@</span>
+            <select className={styles.teamSelect} value={home} onChange={e => setHome(e.target.value)}>
               <option value="">Local</option>
               {availableHome.map(t => (
                 <option key={t.abbr} value={t.abbr}>{t.abbr} — {t.name}</option>
               ))}
             </select>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{
-              flex: 1, padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }} />
-            <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{
-              flex: 1, padding: '.5rem', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg2)', color: 'var(--text)', fontSize: '.82rem',
-            }} />
-            <input type="number" min="1" max="99" value={week} onChange={e => setWeek(Number(e.target.value))}
-              placeholder="Sem"
-              title="Semana"
-              style={{
-                width: '3rem', padding: '.5rem', borderRadius: 'var(--r-sm)',
-                border: '1px solid var(--border)', background: 'var(--bg2)',
-                color: 'var(--text)', fontSize: '.82rem', textAlign: 'center',
-              }}
-            />
-            <button
-              onClick={addGame}
-              style={{
-                padding: '.5rem 1rem', background: 'var(--accent)', color: '#000',
-                border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer',
-                fontWeight: 600, whiteSpace: 'nowrap',
-              }}
-            >+ Agregar</button>
+
+          <div className={styles.dateRow}>
+            <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              className={styles.inputDate} />
+            <input type="time" value={time} onChange={e => setTime(e.target.value)}
+              className={styles.inputTime} />
+            <button onClick={addGame} className={styles.addBtn}>+ Agregar</button>
           </div>
         </div>
 
         <button
-          className="btn-primary"
-          style={{ width: '100%' }}
+          className={`btn-primary ${styles.createBtn}`}
           onClick={handleCreate}
           disabled={creating}
         >

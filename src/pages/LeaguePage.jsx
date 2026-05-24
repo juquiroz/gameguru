@@ -122,8 +122,17 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
                 className="btn-primary"
                 onClick={async () => {
                   setDeleting(true)
-                  const { error } = await leaguesApi.delete(league.id)
-                  if (error) { setMsg?.({ type: 'error', text: error.message }); setDeleting(false); return }
+                  try {
+                    console.log('deleteLeague onClick – empezando')
+                    const { error } = await leaguesApi.delete(league.id)
+                    console.log('deleteLeague onClick – resultado:', error)
+                    if (error) { alert('Error: ' + error.message); setDeleting(false); return }
+                  } catch (ex) {
+                    console.error('deleteLeague onClick – excepción:', ex)
+                    alert('Error inesperado: ' + (ex?.message || 'desconocido'))
+                    setDeleting(false)
+                    return
+                  }
                   onChangeLeague()
                 }}
                 disabled={deleting}
