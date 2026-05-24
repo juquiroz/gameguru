@@ -91,6 +91,14 @@
 .gameRow:hover { background: var(--surface); }
 .gameRow.selected { background: rgba(245, 166, 35, 0.08); }
 
+.teamsRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
 .chk {
   font-size: 0.85rem;
   color: var(--accent);
@@ -111,18 +119,30 @@
   font-size: 0.85rem;
   letter-spacing: 0.04em;
   width: 2rem;
+  flex-shrink: 0;
 }
 
 .vs {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 0.6rem;
   color: var(--text3);
+  flex-shrink: 0;
+}
+
+.score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text);
+  min-width: 1.2rem;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .time {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.65rem;
-  color: var(--text3);
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.7;
   white-space: nowrap;
 }
 
@@ -130,19 +150,18 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  width: 100%;
-  margin-top: 2px;
-  padding-left: 1rem;
 }
 
 @media (min-width: 480px) {
   .gameRow { flex-wrap: nowrap; gap: 6px; padding: 0.5rem 0.6rem; }
+  .teamsRow { flex: none; }
   .chk { font-size: 1rem; width: 1.2rem; }
   .emoji { font-size: 1.1rem; width: 1.4rem; }
   .abbr { font-size: 1rem; width: 2.5rem; }
   .vs { font-size: 0.7rem; }
-  .time { font-size: 0.72rem; }
-  .rowMeta { width: auto; margin-top: 0; padding-left: 0; margin-left: auto; }
+  .score { font-size: 1rem; min-width: 1.5rem; }
+  .time { font-size: 0.72rem; opacity: 0.6; }
+  .rowMeta { margin-left: auto; }
 }
 
 .emptyRow {

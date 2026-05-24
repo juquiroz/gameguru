@@ -319,16 +319,18 @@ export default function LeagueGamesManager({ league }) {
                   className={`${styles.gameRow} ${g.active === false ? styles.inactive : ''} ${hasResult ? styles.hasResult : ''}`}
                 >
                   {g.active === false && <span className={styles.inactiveBadge}>🚫</span>}
-                  <TeamLogo abbr={g.away_abbr} className={styles.emoji} size={24} />
-                  <span className={`${styles.abbr} ${hasResult && g.result === g.away_abbr ? styles.winner : ''}`}>{g.away_abbr}</span>
-                  {hasResult ? (
-                    <span className={styles.score}>{g.away_score}</span>
-                  ) : (
-                    <span className={styles.vs}>@</span>
-                  )}
-                  <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
-                  <span className={`${styles.abbr} ${hasResult && g.result === g.home_abbr ? styles.winner : ''}`}>{g.home_abbr}</span>
-                  {hasResult && <span className={styles.score}>{g.home_score}</span>}
+                  <div className={styles.teamsRow}>
+                    <TeamLogo abbr={g.away_abbr} className={styles.emoji} size={24} />
+                    <span className={`${styles.abbr} ${hasResult && g.result === g.away_abbr ? styles.winner : ''}`}>{g.away_abbr}</span>
+                    {hasResult ? (
+                      <span className={styles.score}>{g.away_score}</span>
+                    ) : (
+                      <span className={styles.vs}>@</span>
+                    )}
+                    <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
+                    <span className={`${styles.abbr} ${hasResult && g.result === g.home_abbr ? styles.winner : ''}`}>{g.home_abbr}</span>
+                    {hasResult && <span className={styles.score}>{g.home_score}</span>}
+                  </div>
 
                   <div className={styles.rowMeta}>
                     <span className={styles.time}><GameTime when={g.game_time} /></span>
