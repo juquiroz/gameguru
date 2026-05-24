@@ -23,10 +23,10 @@ export default function LeagueGamesManager({ league }) {
   const [customDate, setCustomDate] = useState('')
   const [customTime, setCustomTime] = useState('')
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (keepMsg) => {
     if (!league) return
     setLoading(true)
-    setMsg(null)
+    if (!keepMsg) setMsg(null)
     const [masterRes, leagueRes] = await Promise.all([
       masterGamesApi.getAll(league.sport, '2026'),
       leagueGamesApi.getForLeague(league.id),
@@ -41,7 +41,15 @@ export default function LeagueGamesManager({ league }) {
   const leagueGameIds = new Set(leagueGames.map(g => g.game_id))
 
   const availableMaster = masterGames.filter(g => !leagueGameIds.has(g.game_id) && g.week === activeWeek)
-  const leagueWeekGames = leagueGames.filter(g => g.week === activeWeek)
+  const leagueWeekGames = leagueGames
+    .filter(g => g.week === activeWeek)
+    .sort((a, b) => {
+      const ta = a.game_time || ''
+      const tb = b.game_time || ''
+      if (ta < tb) return -1
+      if (ta > tb) return 1
+      return 0
+    })
 
   const toggleSelect = (gameId) => {
     setSelectedIds(prev => {
@@ -91,19 +99,50 @@ export default function LeagueGamesManager({ league }) {
   }
 
   const handleSetScores = async (game) => {
-    if (homeScore === '' || awayScore === '') return
+    if (homeScore === '' || awayScore === '') {
+      setMsg({ type: 'error', text: 'Los scores están vacíos.' })
+      return
+    }
     setSaving(true)
-    const { error } = await leagueGamesApi.setScores(
-      game.id, Number(homeScore), Number(awayScore),
-      game.home_abbr, game.away_abbr
-    )
-    setSaving(false)
-    if (error) { setMsg({ type: 'error', text: `Error al guardar resultado: ${error.message}` }); return }
-    setResultForm(null)
-    setHomeScore('')
-    setAwayScore('')
-    setMsg({ type: 'success', text: `✅ Resultado guardado: ${game.away_abbr} ${awayScore} - ${homeScore} ${game.home_abbr}` })
-    await loadData()
+    try {
+      const hs = Number(homeScore)
+      const as = Number(awayScore)
+      if (!game.id) {
+        setSaving(false)
+        setMsg({ type: 'error', text: 'Error: game.id es undefined' })
+        return
+      }
+      const { error: lgErr } = await leagueGamesApi.setScores(
+        game.id, hs, as,
+        game.home_abbr, game.away_abbr
+      )
+      if (lgErr) {
+        console.error('Error leagueGamesApi.setScores:', lgErr)
+        setSaving(false)
+        setMsg({ type: 'error', text: `Error al guardar resultado: ${lgErr.message}` })
+        return
+      }
+      // For real leagues, also persist to master_games (canonical source)
+      if (!league.simulation) {
+        const { error: mgErr } = await masterGamesApi.setScoresByGameId(
+          game.game_id, league.sport, '2026', hs, as,
+          game.home_abbr, game.away_abbr
+        )
+        if (mgErr) {
+          console.error('Error masterGamesApi.setScoresByGameId:', mgErr)
+        }
+      }
+      await loadData(true)
+      setSaving(false)
+      setResultForm(null)
+      setHomeScore('')
+      setAwayScore('')
+      setMsg({ type: 'success', text: `Resultado guardado: ${game.away_abbr} ${awayScore} - ${homeScore} ${game.home_abbr}` })
+    } catch (e) {
+      console.error('Error inesperado en handleSetScores:', e)
+      setSaving(false)
+      setMsg({ type: 'error', text: `Error inesperado: ${e.message}` })
+    }
   }
 
   const handleAddCustomGame = async () => {
@@ -176,10 +215,7 @@ export default function LeagueGamesManager({ league }) {
 
       {/* Week tabs */}
       <div className="week-tabs" style={{ marginBottom: '1rem' }}>
-        {Array.from(
-          { length: league.simulation ? (leagueGames.length > 0 ? Math.max(...leagueGames.map(g => g.week)) : 1) : TOTAL_WEEKS },
-          (_, i) => i + 1
-        ).map(w => (
+        {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map(w => (
           <button
             key={w}
             className={`week-tab ${activeWeek === w ? 'active' : ''}`}
@@ -293,52 +329,55 @@ export default function LeagueGamesManager({ league }) {
                   <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
                   <span className={`${styles.abbr} ${hasResult && g.result === g.home_abbr ? styles.winner : ''}`}>{g.home_abbr}</span>
                   {hasResult && <span className={styles.score}>{g.home_score}</span>}
-                  <span className={styles.time}><GameTime when={g.game_time} /></span>
 
-                  {resultForm === g.id ? (
-                    <div className={styles.scoreForm}>
-                      <input
-                        type="number" min="0" max="99"
-                        value={awayScore}
-                        onChange={e => setAwayScore(e.target.value)}
-                        className={styles.scoreInput}
-                        placeholder="0"
-                        autoFocus
-                      />
-                      <span className={styles.vs}>-</span>
-                      <input
-                        type="number" min="0" max="99"
-                        value={homeScore}
-                        onChange={e => setHomeScore(e.target.value)}
-                        className={styles.scoreInput}
-                        placeholder="0"
-                      />
+                  <div className={styles.rowMeta}>
+                    <span className={styles.time}><GameTime when={g.game_time} /></span>
+
+                    {resultForm === g.id ? (
+                      <div className={styles.scoreForm}>
+                        <input
+                          type="number" min="0" max="99"
+                          value={awayScore}
+                          onChange={e => setAwayScore(e.target.value)}
+                          className={styles.scoreInput}
+                          placeholder="0"
+                          autoFocus
+                        />
+                        <span className={styles.vs}>-</span>
+                        <input
+                          type="number" min="0" max="99"
+                          value={homeScore}
+                          onChange={e => setHomeScore(e.target.value)}
+                          className={styles.scoreInput}
+                          placeholder="0"
+                        />
+                        <button
+                          className={styles.saveScoreBtn}
+                          onClick={() => handleSetScores(g)}
+                          disabled={saving}
+                        >{saving ? '...' : '✓'}</button>
+                        <button
+                          className={styles.cancelScoreBtn}
+                          onClick={() => { setResultForm(null); setHomeScore(''); setAwayScore('') }}
+                        >✕</button>
+                      </div>
+                    ) : (
                       <button
-                        className={styles.saveScoreBtn}
-                        onClick={() => handleSetScores(g)}
-                        disabled={saving}
-                      >{saving ? '...' : '✓'}</button>
-                      <button
-                        className={styles.cancelScoreBtn}
-                        onClick={() => { setResultForm(null); setHomeScore(''); setAwayScore('') }}
-                      >✕</button>
-                    </div>
-                  ) : (
+                        className={styles.resultBtn}
+                        onClick={() => handleOpenResult(g)}
+                        title={hasResult ? 'Editar resultado' : 'Ingresar resultado'}
+                      >
+                        {hasResult ? '📝' : '🏆'}
+                      </button>
+                    )}
                     <button
-                      className={styles.resultBtn}
-                      onClick={() => handleOpenResult(g)}
-                      title={hasResult ? 'Editar resultado' : 'Ingresar resultado'}
+                      className={g.active === false ? styles.enableBtn : styles.disableBtn}
+                      onClick={() => handleToggleActive(g.game_id, g.active !== false)}
+                      title={g.active === false ? 'Habilitar' : 'Inhabilitar'}
                     >
-                      {hasResult ? '📝' : '🏆'}
+                      {g.active === false ? '✓' : '✕'}
                     </button>
-                  )}
-                  <button
-                    className={g.active === false ? styles.enableBtn : styles.disableBtn}
-                    onClick={() => handleToggleActive(g.game_id, g.active !== false)}
-                    title={g.active === false ? 'Habilitar' : 'Inhabilitar'}
-                  >
-                    {g.active === false ? '✓' : '✕'}
-                  </button>
+                  </div>
                 </div>
               )
             })}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
+import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import LeaderboardTable from '../components/LeaderboardTable'
 
 export default function Leaderboard({ user, league }) {
@@ -10,6 +10,39 @@ export default function Leaderboard({ user, league }) {
   const [weekFinished, setWeekFinished] = useState(false)
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
+  const isGeneral = activeWeek === 'all'
+
+  const loadProfiles = useCallback(async (userIds) => {
+    if (!userIds.length) return {}
+    const { data } = await profilesApi.getMany(userIds)
+    const map = {}
+    if (data) data.forEach(p => { map[p.id] = p.username })
+    return map
+  }, [])
+
+  const calcStandings = (picks, games, profileMap) => {
+    const results = {}
+    games.forEach(g => { if (g.result) results[g.game_id] = g.result })
+
+    const userMap = {}
+    picks.forEach(p => {
+      const uid = p.user_id
+      if (!userMap[uid]) {
+        userMap[uid] = {
+          userId: uid,
+          username: profileMap[uid] || uid.slice(0, 8),
+          correct: 0,
+          total: 0,
+        }
+      }
+      if (results[p.game_id]) {
+        userMap[uid].total++
+        if (p.pick === results[p.game_id]) userMap[uid].correct++
+      }
+    })
+
+    return Object.values(userMap).sort((a, b) => b.correct - a.correct || a.total - b.total)
+  }
 
   const loadStandings = useCallback(async () => {
     if (!league) return
@@ -18,11 +51,17 @@ export default function Leaderboard({ user, league }) {
 
     // Get league members (always)
     const { data: memberData } = await leaguesApi.getMembers(league.id)
-    setMembers(memberData?.map(m => ({
-      userId: m.user_id,
-      username: m.profiles?.username || m.user_id.slice(0, 8),
-      role: m.role,
-    })) || [])
+    if (memberData) {
+      const userIds = [...new Set(memberData.map(m => m.user_id))]
+      const profileMap = await loadProfiles(userIds)
+      setMembers(memberData.map(m => ({
+        userId: m.user_id,
+        username: profileMap[m.user_id] || m.user_id.slice(0, 8),
+        role: m.role,
+      })))
+    } else {
+      setMembers([])
+    }
 
     // Get games for this league
     const { data: games, error: gErr } = await leagueGamesApi.getForLeague(league.id)
@@ -36,57 +75,65 @@ export default function Leaderboard({ user, league }) {
       return
     }
 
+    console.log('[Leaderboard] games:', games.map(g => ({ id: g.game_id, week: g.week, finished: g.finished, result: g.result })))
+
     // Build week list
     const uniqueWeeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b)
     setWeeks(uniqueWeeks)
 
-    const week = activeWeek
+    if (isGeneral) {
+      // General view: accumulate across all finished weeks
+      const finishedWeeks = uniqueWeeks.filter(w =>
+        games.filter(g => g.week === w).every(g => g.finished)
+      )
+      if (!finishedWeeks.length) {
+        setWeekFinished(false)
+        setRows([])
+        setLoading(false)
+        return
+      }
+
+      const { data: allPicks, error: pErr } = await picksApi.getAllForLeague(league.id)
+      if (pErr) { setMsg('Error al cargar picks'); setRows([]); setLoading(false); return }
+
+      if (!allPicks?.length) {
+        setRows([])
+        setLoading(false)
+        return
+      }
+
+      const finishedGames = games.filter(g => g.finished && g.result)
+      const pickUserIds = [...new Set(allPicks.map(p => p.user_id))]
+      const profileMap = await loadProfiles(pickUserIds)
+      const sorted = calcStandings(allPicks, finishedGames, profileMap)
+      setRows(sorted)
+      setWeekFinished(true)
+      setLoading(false)
+      return
+    }
+
+    // Per-week view: calculate with whatever games have results
+    const week = Number(activeWeek)
     const weekGames = games.filter(g => g.week === week)
     const finished = weekGames.every(g => g.finished)
     setWeekFinished(finished)
 
-    if (!finished) {
-      setRows([])
-      setLoading(false)
-      return
-    }
-
-    // Get picks and calculate standings
     const { data: picks, error: pErr } = await picksApi.getLeaderboard(league.id, week)
     if (pErr) { setMsg('Error al cargar picks'); setRows([]); setLoading(false); return }
 
-    if (!picks?.length) {
+    const scoredGames = weekGames.filter(g => g.finished && g.result)
+    if (!picks?.length || !scoredGames.length) {
       setRows([])
       setLoading(false)
       return
     }
 
-    // Build result map: game_id → winner abbreviation
-    const results = {}
-    weekGames.forEach(g => { if (g.result) results[g.game_id] = g.result })
-
-    // Group picks by user and count correct
-    const userMap = {}
-    picks.forEach(p => {
-      const uid = p.user_id
-      if (!userMap[uid]) {
-        userMap[uid] = {
-          userId: uid,
-          username: p.profiles?.username || uid.slice(0, 8),
-          correct: 0,
-          total: 0,
-        }
-      }
-      if (results[p.game_id]) {
-        userMap[uid].total++
-        if (p.pick === results[p.game_id]) userMap[uid].correct++
-      }
-    })
-
-    const sorted = Object.values(userMap).sort((a, b) => b.correct - a.correct || a.total - b.total)
+    const pickUserIds = [...new Set(picks.map(p => p.user_id))]
+    const profileMap = await loadProfiles(pickUserIds)
+    const sorted = calcStandings(picks, scoredGames, profileMap)
     setRows(sorted)
     setLoading(false)
-  }, [league, activeWeek])
+  }, [league, activeWeek, loadProfiles])
 
   useEffect(() => { loadStandings() }, [loadStandings])
 
@@ -119,6 +166,12 @@ export default function Leaderboard({ user, league }) {
       ) : (
         <>
           <div className="week-tabs">
+            <button
+              className={`week-tab ${isGeneral ? 'active' : ''}`}
+              onClick={() => setActiveWeek('all')}
+            >
+              📊 General
+            </button>
             {weeks.map(w => (
               <button
                 key={w}
@@ -134,14 +187,26 @@ export default function Leaderboard({ user, league }) {
             <div className="msg error" style={{ marginBottom: '1rem' }}>{msg}</div>
           )}
 
-          {!weekFinished ? (
+          {rows.length > 0 ? (
+            <>
+              <div className="msg success" style={{ marginBottom: '1rem', fontSize: '.8rem' }}>
+                📊 {isGeneral
+                  ? 'Acumulado general de todas las semanas.'
+                  : weekFinished
+                    ? 'Semana completa — datos finales basados en los resultados de todos los partidos.'
+                    : 'Resultados parciales — se muestran los aciertos de los partidos ya finalizados.'
+                }
+              </div>
+              <LeaderboardTable rows={rows} currentUserId={user?.id} />
+            </>
+          ) : !weekFinished && !isGeneral ? (
             <>
               <div className="empty-state" style={{ marginBottom: '1rem' }}>
                 <div className="big">🔒</div>
-                La Semana {activeWeek} aún no ha finalizado.
+                {`La Semana ${activeWeek} aún no tiene resultados.`}
                 <br />
                 <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
-                  Los resultados estarán disponibles cuando terminen los partidos.
+                  Los resultados aparecerán cuando al menos un partido tenga resultado ingresado.
                 </span>
               </div>
               {members.length > 0 && (
@@ -178,22 +243,21 @@ export default function Leaderboard({ user, league }) {
                 </div>
               )}
             </>
-          ) : rows.length === 0 ? (
+          ) : (
             <div className="empty-state">
               <div className="big">📭</div>
-              No hay picks registrados para la Semana {activeWeek}.
+              {isGeneral
+                ? 'No hay semanas con resultados aún.'
+                : `No hay picks registrados para la Semana ${activeWeek}.`
+              }
               <br />
               <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
-                Los miembros deben enviar sus picks para que aparezcan aquí.
+                {isGeneral
+                  ? 'Los resultados aparecerán cuando al menos una semana tenga partidos finalizados.'
+                  : 'Los miembros deben enviar sus picks para que aparezcan aquí.'
+                }
               </span>
             </div>
-          ) : (
-            <>
-              <div className="msg success" style={{ marginBottom: '1rem', fontSize: '.8rem' }}>
-                📊 Datos en tiempo real basados en los picks de los miembros y resultados de partidos.
-              </div>
-              <LeaderboardTable rows={rows} currentUserId={user?.id} />
-            </>
           )}
         </>
       )}

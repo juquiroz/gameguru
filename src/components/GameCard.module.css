@@ -55,6 +55,14 @@
 .name { font-size: 0.65rem; color: var(--text2); line-height: 1.2; display: block; }
 
 .vs { font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; color: var(--text3); text-align: center; }
+.score {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text1);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
 
 .indicator {
   min-height: 22px;
