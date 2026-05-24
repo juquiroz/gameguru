@@ -4,6 +4,7 @@ import styles from './GameCard.module.css'
 
 export default function GameCard({ game, pick, onPick, results, locked }) {
   const result = results?.[game.id]
+  const hasScore = game.home_score != null || game.away_score != null
 
   const teamClass = (abbr) => {
     if (!result) return pick === abbr ? styles.selected : ''
@@ -24,7 +25,7 @@ export default function GameCard({ game, pick, onPick, results, locked }) {
   }
 
   return (
-    <div className={`${styles.card} ${locked ? styles.locked : ''}`}>
+    <div className={`${styles.card} ${locked ? styles.locked : ''} ${hasScore ? styles.hasScore : ''}`}>
       <div className={styles.time}><GameTime when={game.time} /></div>
 
       <div className={styles.teamsRow}>
@@ -38,7 +39,11 @@ export default function GameCard({ game, pick, onPick, results, locked }) {
           <span className={styles.name}>{game.away.split(' ').slice(-1)[0]}</span>
         </button>
 
-        <span className={styles.vs}>@</span>
+        {hasScore ? (
+          <span className={styles.score}>{game.away_score} - {game.home_score}</span>
+        ) : (
+          <span className={styles.vs}>@</span>
+        )}
 
         <button
           className={`${styles.teamBtn} ${teamClass(game.hA)}`}

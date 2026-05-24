@@ -1,9 +1,9 @@
 .sectionCard {
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
+  border-radius: var(--r);
+  padding: 0.85rem;
+  margin-bottom: 1rem;
 }
 
 .sectionHeader {
@@ -11,12 +11,17 @@
   justify-content: space-between;
   align-items: center;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .sectionCard { border-radius: var(--r-xl); padding: 1.25rem; margin-bottom: 1.25rem; }
+  .sectionHeader { font-size: 0.9rem; margin-bottom: 1rem; }
 }
 
 .sectionActions {
@@ -73,9 +78,10 @@
 
 .gameRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  padding: 0.5rem 0.6rem;
+  gap: 4px;
+  padding: 0.45rem 0.5rem;
   background: var(--bg3);
   border-radius: var(--r-sm);
   cursor: pointer;
@@ -86,38 +92,57 @@
 .gameRow.selected { background: rgba(245, 166, 35, 0.08); }
 
 .chk {
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: var(--accent);
-  width: 1.2rem;
+  width: 1rem;
   flex-shrink: 0;
 }
 
 .emoji {
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1;
-  width: 1.4rem;
+  width: 1.2rem;
   text-align: center;
   flex-shrink: 0;
 }
 
 .abbr {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem;
+  font-size: 0.85rem;
   letter-spacing: 0.04em;
-  width: 2.5rem;
+  width: 2rem;
 }
 
 .vs {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   color: var(--text3);
 }
 
 .time {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   color: var(--text3);
-  margin-left: auto;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-top: 2px;
+  padding-left: 1rem;
+}
+
+@media (min-width: 480px) {
+  .gameRow { flex-wrap: nowrap; gap: 6px; padding: 0.5rem 0.6rem; }
+  .chk { font-size: 1rem; width: 1.2rem; }
+  .emoji { font-size: 1.1rem; width: 1.4rem; }
+  .abbr { font-size: 1rem; width: 2.5rem; }
+  .vs { font-size: 0.7rem; }
+  .time { font-size: 0.72rem; }
+  .rowMeta { width: auto; margin-top: 0; padding-left: 0; margin-left: auto; }
 }
 
 .emptyRow {
@@ -140,8 +165,8 @@
 }
 
 .disableBtn {
-  padding: 0.2rem 0.5rem;
-  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.6rem;
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: var(--red);
   border-radius: 4px;
@@ -153,8 +178,8 @@
 .disableBtn:hover { background: rgba(239, 68, 68, 0.1); }
 
 .enableBtn {
-  padding: 0.2rem 0.5rem;
-  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.6rem;
   border: 1px solid rgba(34, 197, 94, 0.3);
   color: var(--green);
   border-radius: 4px;
@@ -164,6 +189,11 @@
   flex-shrink: 0;
 }
 .enableBtn:hover { background: rgba(34, 197, 94, 0.1); }
+
+@media (min-width: 480px) {
+  .disableBtn,
+  .enableBtn { padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+}
 
 .hasResult {
   background: rgba(34, 197, 94, 0.06);
@@ -175,15 +205,19 @@
 
 .score {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1rem;
+  font-size: 0.85rem;
   color: var(--text);
-  min-width: 1.5rem;
+  min-width: 1.2rem;
   text-align: center;
 }
 
+@media (min-width: 480px) {
+  .score { font-size: 1rem; min-width: 1.5rem; }
+}
+
 .resultBtn {
-  padding: 0.2rem 0.45rem;
-  font-size: 0.85rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.75rem;
   border: 1px solid var(--border2);
   border-radius: 4px;
   background: none;
@@ -193,17 +227,21 @@
 }
 .resultBtn:hover { background: var(--surface); }
 
+@media (min-width: 480px) {
+  .resultBtn { padding: 0.2rem 0.45rem; font-size: 0.85rem; }
+}
+
 .scoreForm {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
 .scoreInput {
-  width: 2.2rem;
-  padding: 0.2rem 0.3rem;
-  font-size: 0.8rem;
+  width: 1.8rem;
+  padding: 0.15rem 0.2rem;
+  font-size: 0.75rem;
   text-align: center;
   background: var(--bg2);
   border: 1px solid var(--border);
@@ -213,8 +251,8 @@
 }
 
 .saveScoreBtn {
-  padding: 0.2rem 0.45rem;
-  font-size: 0.75rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.7rem;
   background: var(--accent);
   color: #000;
   border: none;
@@ -225,12 +263,19 @@
 }
 
 .cancelScoreBtn {
-  padding: 0.2rem 0.4rem;
-  font-size: 0.7rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.65rem;
   background: none;
   border: 1px solid var(--border);
   color: var(--text3);
   border-radius: 3px;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+@media (min-width: 480px) {
+  .scoreForm { gap: 3px; }
+  .scoreInput { width: 2.2rem; padding: 0.2rem 0.3rem; font-size: 0.8rem; }
+  .saveScoreBtn { padding: 0.2rem 0.45rem; font-size: 0.75rem; }
+  .cancelScoreBtn { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
 }

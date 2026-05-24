@@ -44,7 +44,7 @@ export const leaguesApi = {
   getMembers: (leagueId) =>
     supabase
       .from('league_members')
-      .select('user_id, role, profiles(username)')
+      .select('user_id, role')
       .eq('league_id', leagueId),
 
   delete: async (leagueId) => {
@@ -86,9 +86,15 @@ export const picksApi = {
   getLeaderboard: (leagueId, week) =>
     supabase
       .from('picks')
-      .select('user_id, pick, game_id, profiles(username)')
+      .select('user_id, pick, game_id')
       .eq('league_id', leagueId)
       .eq('week', week),
+
+  getAllForLeague: (leagueId) =>
+    supabase
+      .from('picks')
+      .select('user_id, pick, game_id, week')
+      .eq('league_id', leagueId),
 }
 
 // ─── Profiles helpers ───────────────────────────────────────────────────────
@@ -98,6 +104,12 @@ export const profilesApi = {
 
   upsert: (data) =>
     supabase.from('profiles').upsert(data),
+
+  getMany: (userIds) =>
+    supabase
+      .from('profiles')
+      .select('id, username')
+      .in('id', userIds),
 }
 
 // ─── Master Games helpers (global calendar managed by superadmin) ─────────────
@@ -138,6 +150,29 @@ export const masterGamesApi = {
       .delete()
       .eq('sport', sport)
       .eq('season', season),
+
+  getMasterResults: (sport, season) =>
+    supabase
+      .from('master_games')
+      .select('game_id, home_score, away_score, result, finished')
+      .eq('sport', sport)
+      .eq('season', season),
+
+  setScoresByGameId: async (gameId, sport, season, homeScore, awayScore, homeAbbr, awayAbbr) => {
+    let result = null
+    if (homeScore > awayScore) result = homeAbbr
+    else if (awayScore > homeScore) result = awayAbbr
+    const { data, error } = await supabase
+      .from('master_games')
+      .update({ home_score: homeScore, away_score: awayScore, result, finished: true })
+      .eq('game_id', gameId)
+      .eq('sport', sport)
+      .eq('season', season)
+      .select()
+    if (error) return { error }
+    if (!data || data.length === 0) return { error: { message: 'No se encontró el juego en el calendario maestro.' } }
+    return { data: { success: true } }
+  },
 }
 
 // ─── League Games helpers (games selected by each league) ─────────────────────
@@ -184,15 +219,17 @@ export const leagueGamesApi = {
   setFinished: (id, finished) =>
     supabase.from('league_games').update({ finished }).eq('id', id).select().single(),
 
-  setScores: (id, homeScore, awayScore, homeAbbr, awayAbbr) => {
+  setScores: async (id, homeScore, awayScore, homeAbbr, awayAbbr) => {
     let result = null
     if (homeScore > awayScore) result = homeAbbr
     else if (awayScore > homeScore) result = awayAbbr
-    return supabase
+    const { data, error } = await supabase
       .from('league_games')
       .update({ home_score: homeScore, away_score: awayScore, result, finished: true })
       .eq('id', id)
       .select()
-      .single()
+    if (error) return { error }
+    if (!data || data.length === 0) return { error: { message: 'No se encontró el juego en la base de datos (posible problema de permisos).' } }
+    return { data: { success: true } }
   },
 }

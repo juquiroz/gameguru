@@ -80,7 +80,7 @@ export default function Picks({ user, league }) {
       return {
         label: `Semana ${week}`,
         games,
-        results: allFinished ? results : null,
+        results: Object.keys(results).length > 0 ? results : null,
         finished: allFinished,
       }
     }

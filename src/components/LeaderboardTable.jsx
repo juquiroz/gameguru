@@ -18,15 +18,12 @@ export default function LeaderboardTable({ rows, currentUserId }) {
       <div className="lb-head">
         <div>#</div>
         <div>Jugador</div>
-        <div style={{ textAlign: 'right' }}>Aciertos</div>
-        <div style={{ textAlign: 'right' }}>%</div>
       </div>
 
       {rows.map((row, i) => {
         const { icon, cls } = rankMedal(i)
         const isMe = row.userId === currentUserId
         const initials = (row.username || row.email || '??').slice(0, 2).toUpperCase()
-        const pct = row.total ? Math.round((row.correct / row.total) * 100) : 0
 
         return (
           <div key={row.userId} className={`lb-row ${isMe ? 'is-me' : ''}`}>
@@ -34,12 +31,13 @@ export default function LeaderboardTable({ rows, currentUserId }) {
             <div className="lb-user">
               <div className="lb-avatar">{initials}</div>
               <div>
-                <div className="lb-uname">{row.username || row.email?.split('@')[0] || 'Jugador'}</div>
+                <div className="lb-uname">
+                  <span className="lb-name">{row.username || row.email?.split('@')[0] || 'Jugador'}</span>
+                  <span className="lb-score-inline">{row.correct}/{row.total} aciertos</span>
+                </div>
                 {isMe && <span className="lb-badge">Tú</span>}
               </div>
             </div>
-            <div className="lb-score">{row.correct}/{row.total}</div>
-            <div className="lb-pct">{pct}%</div>
           </div>
         )
       })}
