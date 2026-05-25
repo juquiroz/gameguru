@@ -4,7 +4,6 @@ import { SPORTS } from '../data/nflData'
 export default function CreateLeagueModal({ onClose, onCreateLeague, onEnterLeague }) {
   const [name, setName] = useState('')
   const [sport, setSport] = useState('NFL')
-  const [deadlineMode, setDeadlineMode] = useState('weekly')
   const [creating, setCreating] = useState(false)
   const [msg, setMsg] = useState(null)
   const [inviteLeague, setInviteLeague] = useState(null)
@@ -13,7 +12,7 @@ export default function CreateLeagueModal({ onClose, onCreateLeague, onEnterLeag
     if (!name.trim()) return setMsg({ type: 'error', text: 'Escribe un nombre para la liga.' })
     setCreating(true)
     setMsg(null)
-    const { data, error, warning } = await onCreateLeague(name.trim(), sport, deadlineMode)
+    const { data, error, warning } = await onCreateLeague(name.trim(), sport)
     setCreating(false)
     if (error) { setMsg({ type: 'error', text: error.message }); return }
     setName('')
@@ -120,47 +119,6 @@ export default function CreateLeagueModal({ onClose, onCreateLeague, onEnterLeag
               </div>
             </div>
 
-            {sport === 'NFL' && (
-              <div className="field">
-                <label>Modo de cierre</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    style={{
-                      flex: 1, padding: '.65rem .5rem', textAlign: 'center', cursor: 'pointer',
-                      background: deadlineMode === 'weekly' ? 'rgba(245,166,35,.1)' : 'var(--bg3)',
-                      border: `2px solid ${deadlineMode === 'weekly' ? 'var(--accent)' : 'var(--border)'}`,
-                      borderRadius: 'var(--r-sm)', transition: 'all .15s',
-                    }}
-                    onClick={() => setDeadlineMode('weekly')}
-                  >
-                    <div style={{ fontSize: '1.2rem', marginBottom: '3px' }}>📅</div>
-                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '.8rem', letterSpacing: '.04em', color: deadlineMode === 'weekly' ? 'var(--accent)' : 'var(--text2)' }}>
-                      Semanal
-                    </div>
-                    <div style={{ fontSize: '.65rem', color: 'var(--text3)', marginTop: '3px', lineHeight: 1.3 }}>
-                      Todos los picks se bloquean 1h antes del partido del jueves
-                    </div>
-                  </button>
-                  <button
-                    style={{
-                      flex: 1, padding: '.65rem .5rem', textAlign: 'center', cursor: 'pointer',
-                      background: deadlineMode === 'game_by_game' ? 'rgba(245,166,35,.1)' : 'var(--bg3)',
-                      border: `2px solid ${deadlineMode === 'game_by_game' ? 'var(--accent)' : 'var(--border)'}`,
-                      borderRadius: 'var(--r-sm)', transition: 'all .15s',
-                    }}
-                    onClick={() => setDeadlineMode('game_by_game')}
-                  >
-                    <div style={{ fontSize: '1.2rem', marginBottom: '3px' }}>⏱️</div>
-                    <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: '.8rem', letterSpacing: '.04em', color: deadlineMode === 'game_by_game' ? 'var(--accent)' : 'var(--text2)' }}>
-                      Juego por juego
-                    </div>
-                    <div style={{ fontSize: '.65rem', color: 'var(--text3)', marginTop: '3px', lineHeight: 1.3 }}>
-                      Cada juego se bloquea 1h antes de su inicio
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
 
             <button
               className="btn-primary"

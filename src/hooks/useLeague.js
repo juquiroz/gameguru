@@ -34,7 +34,7 @@ export function useLeague(user) {
     setLoadingLeagues(false)
   }, [user])
 
-  const createLeague = useCallback(async (name, sport, deadlineMode = 'weekly') => {
+  const createLeague = useCallback(async (name, sport) => {
     if (!user) return { error: { message: 'No hay sesión activa.' } }
     const code = genInviteCode()
 
@@ -43,7 +43,7 @@ export function useLeague(user) {
       sport,
       code,
       admin_id: user.id,
-      deadline_mode: deadlineMode,
+      deadline_mode: 'weekly',
     })
     if (error) return { error }
 
@@ -93,7 +93,7 @@ export function useLeague(user) {
       sport: 'NFL',
       code,
       admin_id: user.id,
-      deadline_mode: 'game_by_game',
+      deadline_mode: 'weekly',
       simulation: true,
     })
     if (error) return { error }

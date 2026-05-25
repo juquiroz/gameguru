@@ -1,10 +1,11 @@
 import styles from './BottomNav.module.css'
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Inicio',  icon: '🏠' },
-  { id: 'picks',     label: 'Picks',   icon: '🏈' },
-  { id: 'board',     label: 'Tabla',   icon: '🏆' },
-  { id: 'league',    label: 'Liga',    icon: '⚙️' },
+  { id: 'dashboard',   label: 'Inicio',       icon: '🏠' },
+  { id: 'picks',       label: 'Picks',        icon: '🏈' },
+  { id: 'publicpicks', label: 'P. Públicos',  icon: '👁️' },
+  { id: 'board',       label: 'Tabla',        icon: '🏆' },
+  { id: 'league',      label: 'Liga',         icon: '⚙️' },
 ]
 
 export default function BottomNav({ activePage, onNavigate, isSuperAdmin }) {
