@@ -253,50 +253,65 @@
 .scoreForm {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   flex-shrink: 0;
+}
+
+.scoreForm .vs {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text2);
 }
 
 .scoreInput {
-  width: 1.8rem;
-  padding: 0.15rem 0.2rem;
-  font-size: 0.75rem;
+  width: 3.2rem;
+  padding: 0.45rem 0.4rem;
+  font-size: 1.05rem;
   text-align: center;
   background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 3px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
   color: var(--text);
   font-family: 'Bebas Neue', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.scoreInput:focus {
+  border-color: var(--accent);
 }
 
 .saveScoreBtn {
-  padding: 0.15rem 0.35rem;
-  font-size: 0.7rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.9rem;
   background: var(--accent);
   color: #000;
   border: none;
-  border-radius: 3px;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
   flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.saveScoreBtn:hover {
+  opacity: 0.85;
 }
 
 .cancelScoreBtn {
-  padding: 0.15rem 0.35rem;
-  font-size: 0.65rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.8rem;
   background: none;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   color: var(--text3);
-  border-radius: 3px;
+  border-radius: 6px;
   cursor: pointer;
   flex-shrink: 0;
+  transition: border-color 0.15s;
 }
 
-@media (min-width: 480px) {
-  .scoreForm { gap: 3px; }
-  .scoreInput { width: 2.2rem; padding: 0.2rem 0.3rem; font-size: 0.8rem; }
-  .saveScoreBtn { padding: 0.2rem 0.45rem; font-size: 0.75rem; }
-  .cancelScoreBtn { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
+.cancelScoreBtn:hover {
+  border-color: var(--text2);
 }
 
 /* ─── Add custom game form ─────────────────────────────────────── */

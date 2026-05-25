@@ -61,14 +61,14 @@ export default function PublicPicks({ user, league }) {
       return ta < tb ? -1 : ta > tb ? 1 : 0
     })
 
+  const weeksWithGames = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
+  const weekList = league?.simulation ? weeksWithGames : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
+
   const lockedGames = weekGames.filter(g => isGameLocked(g, weekGames))
   const weeksWithLocked = weekList.filter(w => {
     const wGames = games.filter(g => g.active !== false && g.week === w)
     return wGames.length > 0 && wGames.some(g => isGameLocked(g, wGames))
   })
-
-  const weeksWithGames = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
-  const weekList = league?.simulation ? weeksWithGames : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
 
   const gamesById = {}
   weekGames.forEach(g => { gamesById[g.id] = g })
