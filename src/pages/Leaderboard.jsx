@@ -2,12 +2,32 @@ import { useState, useEffect, useCallback } from 'react'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import LeaderboardTable from '../components/LeaderboardTable'
 
-export default function Leaderboard({ user, league }) {
+const getWeekDeadline = (games) => {
+  if (!games?.length) return null
+  const times = games
+    .map(g => g.game_time || g.time)
+    .filter(Boolean)
+    .map(t => new Date(t))
+    .filter(d => !isNaN(d))
+    .sort((a, b) => a - b)
+  if (times.length === 0) return null
+  return new Date(times[0].getTime() - 60 * 60 * 1000)
+}
+
+const isWeekLocked = (games) => {
+  if (!games?.length) return false
+  if (games.every(g => g.finished)) return true
+  const deadline = getWeekDeadline(games)
+  return deadline ? new Date() >= deadline : false
+}
+
+export default function Leaderboard({ user, league, onNavigate }) {
   const [activeWeek, setActiveWeek] = useState(1)
   const [weeks, setWeeks] = useState([])
   const [rows, setRows] = useState([])
   const [members, setMembers] = useState([])
   const [weekFinished, setWeekFinished] = useState(false)
+  const [lockedWeeks, setLockedWeeks] = useState([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
   const isGeneral = activeWeek === 'all'
@@ -80,6 +100,13 @@ export default function Leaderboard({ user, league }) {
     // Build week list
     const uniqueWeeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b)
     setWeeks(uniqueWeeks)
+
+    // Compute which weeks have locked games
+    const locked = uniqueWeeks.filter(w => {
+      const weekGames = games.filter(g => g.week === w)
+      return isWeekLocked(weekGames)
+    })
+    setLockedWeeks(locked)
 
     if (isGeneral) {
       // General view: accumulate across all finished weeks
@@ -258,6 +285,16 @@ export default function Leaderboard({ user, league }) {
                 }
               </span>
             </div>
+          )}
+
+          {(isGeneral ? lockedWeeks.length > 0 : lockedWeeks.includes(activeWeek)) && (
+            <button
+              className="btn-secondary"
+              style={{ width: '100%', marginTop: '1rem' }}
+              onClick={() => onNavigate('publicpicks')}
+            >
+              👁️ Ver Picks Públicos
+            </button>
           )}
         </>
       )}
