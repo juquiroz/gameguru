@@ -47,10 +47,6 @@ export default function Picks({ user, league }) {
     home:  g.home_team  || g.home,
   })
 
-  const isGameLocked = (g) => {
-    return g.finished || submitted || weekData?.finished
-  }
-
   // Build week data from dynamic games or use NFL_WEEKS
   const getWeekData = (week) => {
     if (useDynamic) {
@@ -77,6 +73,26 @@ export default function Picks({ user, league }) {
   }
 
   const weekData = getWeekData(activeWeek)
+
+  // Compute week deadline: 1h before the first game of the week
+  const getWeekDeadline = (games) => {
+    if (!games?.length) return null
+    const times = games
+      .map(g => g.game_time || g.time)
+      .filter(Boolean)
+      .map(t => new Date(t))
+      .filter(d => !isNaN(d))
+      .sort((a, b) => a - b)
+    if (times.length === 0) return null
+    return new Date(times[0].getTime() - 60 * 60 * 1000)
+  }
+
+  const weekDeadline = getWeekDeadline(weekData?.games)
+  const isWeekLocked = weekData?.finished || (weekDeadline ? new Date() >= weekDeadline : false)
+
+  const isGameLocked = (g) => {
+    return g.finished || isWeekLocked
+  }
 
   // Available weeks
   const weeks = useDynamic
@@ -149,7 +165,7 @@ export default function Picks({ user, league }) {
         </div>
       ) : (
         <>
-          {!submitted && !weekData.finished && (
+          {!isWeekLocked && (
             <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
               📅 Todos los picks se bloquean 1h antes del primer partido
             </div>
@@ -182,8 +198,8 @@ export default function Picks({ user, league }) {
             ))}
           </div>
 
-          {/* Submit bar */}
-          {!weekData.finished && (
+          {/* Submit bar — visible until the week's deadline passes */}
+          {!isWeekLocked && (
             <div className={styles.submitBar}>
               <div>
                 <div className={styles.pickCount}>
@@ -196,13 +212,16 @@ export default function Picks({ user, league }) {
               <button
                 className={styles.submitBtn}
                 onClick={handleSubmit}
-                disabled={pickedCount < totalGames || submitted || saving}
+                disabled={pickedCount < totalGames || saving}
               >
-                {saving ? 'Guardando...' : submitted ? '✓ Enviado' : 'Guardar Picks'}
+                {saving ? 'Guardando...' : 'Guardar Picks'}
               </button>
             </div>
           )}
 
+          {isWeekLocked && !weekData.finished && (
+            <div className="lock-notice">🔒 Hora límite alcanzada — los picks están bloqueados</div>
+          )}
           {weekData.finished && (
             <div className="lock-notice">🔒 Esta semana ya finalizó — los picks están bloqueados</div>
           )}
