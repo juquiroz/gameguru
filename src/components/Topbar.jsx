@@ -6,10 +6,11 @@ export default function Topbar({ user, league, onChangeLeague, onLogout, activeP
   const { t } = useLanguage()
 
   const navItems = [
-    { id: 'dashboard', label: t('topbar.dashboard') },
-    { id: 'picks',     label: t('topbar.picks') },
-    { id: 'board',     label: t('topbar.board') },
-    { id: 'league',    label: t('topbar.league') },
+    { id: 'dashboard',   label: t('topbar.dashboard') },
+    { id: 'picks',       label: t('topbar.picks') },
+    { id: 'publicpicks', label: 'P. Públicos' },
+    { id: 'board',       label: t('topbar.board') },
+    { id: 'league',      label: t('topbar.league') },
   ]
 
   return (

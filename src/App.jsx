@@ -8,6 +8,7 @@ import Auth        from './pages/Auth'
 import Home        from './pages/Home'
 import Picks       from './pages/Picks'
 import Leaderboard from './pages/Leaderboard'
+import PublicPicks from './pages/PublicPicks'
 import LeaguePage  from './pages/LeaguePage'
 import SuperAdmin  from './pages/SuperAdmin'
 import Topbar      from './components/Topbar'
@@ -34,6 +35,7 @@ function AppInner() {
     dashboard: 'topbar.dashboard',
     picks: 'topbar.picks',
     board: 'topbar.board',
+    publicpicks: 'Picks Públicos',
     league: 'topbar.league',
     superadmin: 'superadmin.title',
   }
@@ -128,6 +130,7 @@ function AppInner() {
     const p = { user, league: currentLeague, onNavigate: handleNavigate, onChangeLeague: handleChangeLeague }
     if (activePage === 'picks') return <Picks {...p} />
     if (activePage === 'board') return <Leaderboard {...p} />
+    if (activePage === 'publicpicks') return <PublicPicks {...p} />
     if (activePage === 'league') return <LeaguePage {...p} />
     return (
       <Home

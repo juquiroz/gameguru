@@ -6,13 +6,14 @@ import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
 export default function Picks({ user, league }) {
-  const [activeWeek, setActiveWeek] = useState(2)
+  const [activeWeek, setActiveWeek] = useState(() => {
+    const w = Object.keys(NFL_WEEKS).map(Number)
+    return w.length > 0 ? Math.max(...w) : 2
+  })
   const [leagueGames, setLeagueGames] = useState(null)
   const [loadingGames, setLoadingGames] = useState(false)
 
   const { picks, submitted, saving, selectPick, submitPicks } = usePicks(user, league, activeWeek)
-
-  const deadlineMode = league?.deadline_mode || 'weekly'
 
   // Load league games from Supabase
   const loadLeagueGames = useCallback(async () => {
@@ -46,20 +47,8 @@ export default function Picks({ user, league }) {
     home:  g.home_team  || g.home,
   })
 
-  // Compute per-game deadline (1h before game_time)
-  const gameDeadline = (g) => {
-    const when = g.game_time || g.time
-    if (!when) return null
-    const d = new Date(when)
-    return isNaN(d) ? null : new Date(d.getTime() - 60 * 60 * 1000)
-  }
-
   const isGameLocked = (g) => {
-    if (g.finished) return true
-    if (deadlineMode === 'weekly') return submitted || weekData?.finished
-    // game_by_game: each game locks 1h before its own kickoff
-    const dl = gameDeadline(g)
-    return dl ? new Date() >= dl : false
+    return g.finished || submitted || weekData?.finished
   }
 
   // Build week data from dynamic games or use NFL_WEEKS
@@ -94,25 +83,25 @@ export default function Picks({ user, league }) {
     ? [...new Set(leagueGames.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
     : Object.keys(NFL_WEEKS).map(Number)
 
-  // In game_by_game mode, count only unlocked games
-  const lockedGames = weekData?.games?.filter(g => isGameLocked(g)) || []
-  const unlockedGames = weekData?.games?.filter(g => !isGameLocked(g)) || []
-  const picksInUnlocked = unlockedGames.filter(g => picks[g.id])
-  const totalUnlocked = unlockedGames.length
-  const pickedUnlocked = picksInUnlocked.length
+  // When dynamic games load, sync to latest available week
+  useEffect(() => {
+    if (useDynamic && weeks.length > 0) {
+      setActiveWeek(prev => {
+        if (!weeks.includes(prev)) return Math.max(...weeks)
+        return prev
+      })
+    }
+  }, [loadingGames])
+
   const totalGames = weekData?.games?.length || 0
   const pickedCount = weekData?.games?.filter(g => picks[g.id]).length || 0
-
-  const isLocked     = weekData?.finished || (deadlineMode === 'weekly' && submitted)
-  const isAllLocked  = deadlineMode === 'game_by_game' && unlockedGames.length === 0
 
   const correctCount = weekData?.results
     ? Object.entries(picks).filter(([gid, pick]) => weekData.results[gid] === pick).length
     : 0
 
   const handleSubmit = async () => {
-    const required = deadlineMode === 'weekly' ? totalUnlocked : totalUnlocked
-    const { error } = await submitPicks(required, deadlineMode === 'game_by_game')
+    const { error } = await submitPicks(totalGames)
     if (error) alert(error.message)
   }
 
@@ -160,15 +149,9 @@ export default function Picks({ user, league }) {
         </div>
       ) : (
         <>
-          {/* Mode badge */}
-          {deadlineMode === 'game_by_game' && !isAllLocked && (
-            <div className="msg info" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
-              ⏱️ Modo juego por juego — cada partido se bloquea 1h antes de su inicio
-            </div>
-          )}
-          {deadlineMode === 'weekly' && !submitted && !weekData.finished && (
+          {!submitted && !weekData.finished && (
             <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
-              📅 Modo semanal — todos los picks se bloquean 1h antes del primer partido
+              📅 Todos los picks se bloquean 1h antes del primer partido
             </div>
           )}
 
@@ -200,15 +183,11 @@ export default function Picks({ user, league }) {
           </div>
 
           {/* Submit bar */}
-          {!weekData.finished && !isAllLocked && (
+          {!weekData.finished && (
             <div className={styles.submitBar}>
               <div>
                 <div className={styles.pickCount}>
-                  {deadlineMode === 'game_by_game' ? (
-                    <><strong>{pickedUnlocked}</strong> / {totalUnlocked} partidos disponibles seleccionados</>
-                  ) : (
-                    <><strong>{pickedCount}</strong> / {totalGames} partidos seleccionados</>
-                  )}
+                  <strong>{pickedCount}</strong> / {totalGames} partidos seleccionados
                 </div>
                 {submitted && (
                   <div className={styles.submitOk}>✓ Picks guardados correctamente</div>
@@ -217,11 +196,7 @@ export default function Picks({ user, league }) {
               <button
                 className={styles.submitBtn}
                 onClick={handleSubmit}
-                disabled={
-                  deadlineMode === 'weekly'
-                    ? (pickedCount < totalGames || submitted || saving)
-                    : (pickedUnlocked < totalUnlocked || saving)
-                }
+                disabled={pickedCount < totalGames || submitted || saving}
               >
                 {saving ? 'Guardando...' : submitted ? '✓ Enviado' : 'Guardar Picks'}
               </button>
@@ -230,9 +205,6 @@ export default function Picks({ user, league }) {
 
           {weekData.finished && (
             <div className="lock-notice">🔒 Esta semana ya finalizó — los picks están bloqueados</div>
-          )}
-          {deadlineMode === 'game_by_game' && isAllLocked && !weekData.finished && (
-            <div className="lock-notice">🔒 Todos los partidos de esta semana han comenzado</div>
           )}
         </>
       )}
