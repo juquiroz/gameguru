@@ -5,7 +5,7 @@ import { leagueGamesApi } from '../supabase'
 import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
-export default function Picks({ user, league }) {
+export default function Picks({ user, league, onNavigate }) {
   const [activeWeek, setActiveWeek] = useState(() => {
     const w = Object.keys(NFL_WEEKS).map(Number)
     return w.length > 0 ? Math.max(...w) : 2
@@ -224,6 +224,16 @@ export default function Picks({ user, league }) {
           )}
           {weekData.finished && (
             <div className="lock-notice">🔒 Esta semana ya finalizó — los picks están bloqueados</div>
+          )}
+
+          {isWeekLocked && (
+            <button
+              className="btn-secondary"
+              style={{ width: '100%', marginTop: '1rem' }}
+              onClick={() => onNavigate('publicpicks')}
+            >
+              👁️ Ver Picks Públicos de esta semana
+            </button>
           )}
         </>
       )}
