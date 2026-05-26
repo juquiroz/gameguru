@@ -13,6 +13,8 @@ export default function LeaderboardTable({ rows, currentUserId }) {
     return { icon: `#${i + 1}`, cls: '' }
   }
 
+  const maxCorrect = rows.reduce((max, r) => Math.max(max, r.correct), 0)
+
   return (
     <div className="lb-table">
       <div className="lb-head">
@@ -23,10 +25,11 @@ export default function LeaderboardTable({ rows, currentUserId }) {
       {rows.map((row, i) => {
         const { icon, cls } = rankMedal(i)
         const isMe = row.userId === currentUserId
+        const isWinner = row.correct === maxCorrect && maxCorrect > 0
         const initials = (row.username || row.email || '??').slice(0, 2).toUpperCase()
 
         return (
-          <div key={row.userId} className={`lb-row ${isMe ? 'is-me' : ''}`}>
+          <div key={row.userId} className={`lb-row ${isMe ? 'is-me' : ''} ${isWinner ? 'is-winner' : ''}`}>
             <div className={`lb-rank ${cls}`}>{icon}</div>
             <div className="lb-user">
               <div className="lb-avatar">{initials}</div>
@@ -35,7 +38,10 @@ export default function LeaderboardTable({ rows, currentUserId }) {
                   <span className="lb-name">{row.username || row.email?.split('@')[0] || 'Jugador'}</span>
                   <span className="lb-score-inline">{row.correct}/{row.total} aciertos</span>
                 </div>
-                {isMe && <span className="lb-badge">Tú</span>}
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  {isWinner && <span className="lb-badge lb-badge-winner">🏆 GANADOR</span>}
+                  {isMe && <span className="lb-badge">Tú</span>}
+                </div>
               </div>
             </div>
           </div>

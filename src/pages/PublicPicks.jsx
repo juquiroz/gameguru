@@ -95,6 +95,8 @@ export default function PublicPicks({ user, league }) {
     return row.filter(c => c.correct).length
   }
 
+  const sortedMembers = [...members].sort((a, b) => correctCount(b.user_id) - correctCount(a.user_id))
+
   return (
     <div className="page">
       <div className="page-title">👁️ Picks Públicos</div>
@@ -161,7 +163,7 @@ export default function PublicPicks({ user, league }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {members.map(m => {
+                  {sortedMembers.map(m => {
                     const username = profileMap[m.user_id] || m.user_id.slice(0, 8)
                     const row = buildRow(m.user_id)
                     return (
