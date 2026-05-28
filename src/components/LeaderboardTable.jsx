@@ -1,4 +1,4 @@
-export default function LeaderboardTable({ rows, currentUserId }) {
+export default function LeaderboardTable({ rows, currentUserId, showWinner }) {
   if (!rows?.length) return (
     <div className="empty-state">
       <div className="big">📊</div>
@@ -25,7 +25,7 @@ export default function LeaderboardTable({ rows, currentUserId }) {
       {rows.map((row, i) => {
         const { icon, cls } = rankMedal(i)
         const isMe = row.userId === currentUserId
-        const isWinner = row.correct === maxCorrect && maxCorrect > 0
+        const isWinner = showWinner && row.correct === maxCorrect && maxCorrect > 0
         const initials = (row.username || row.email || '??').slice(0, 2).toUpperCase()
 
         return (
