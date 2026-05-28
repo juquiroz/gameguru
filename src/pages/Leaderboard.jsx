@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
+import { NFL_WEEKS } from '../data/nflData'
 import LeaderboardTable from '../components/LeaderboardTable'
 
 const getWeekDeadline = (games) => {
@@ -22,7 +23,10 @@ const isWeekLocked = (games) => {
 }
 
 export default function Leaderboard({ user, league, onNavigate }) {
-  const [activeWeek, setActiveWeek] = useState(1)
+  const [activeWeek, setActiveWeek] = useState(() => {
+    const w = Object.keys(NFL_WEEKS).map(Number)
+    return w.length > 0 ? Math.max(...w) : 1
+  })
   const [weeks, setWeeks] = useState([])
   const [rows, setRows] = useState([])
   const [members, setMembers] = useState([])
@@ -31,6 +35,13 @@ export default function Leaderboard({ user, league, onNavigate }) {
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
   const isGeneral = activeWeek === 'all'
+
+  // Sync activeWeek when weeks load
+  useEffect(() => {
+    if (weeks.length > 0 && !weeks.includes(activeWeek)) {
+      setActiveWeek(Math.max(...weeks))
+    }
+  }, [weeks])
 
   const loadProfiles = useCallback(async (userIds) => {
     if (!userIds.length) return {}
@@ -113,6 +124,8 @@ export default function Leaderboard({ user, league, onNavigate }) {
       const finishedWeeks = uniqueWeeks.filter(w =>
         games.filter(g => g.week === w).every(g => g.finished)
       )
+      const allWeeksFinished = uniqueWeeks.length > 0 && finishedWeeks.length === uniqueWeeks.length
+
       if (!finishedWeeks.length) {
         setWeekFinished(false)
         setRows([])
@@ -134,7 +147,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
       const profileMap = await loadProfiles(pickUserIds)
       const sorted = calcStandings(allPicks, finishedGames, profileMap)
       setRows(sorted)
-      setWeekFinished(true)
+      setWeekFinished(allWeeksFinished)
       setLoading(false)
       return
     }
@@ -224,7 +237,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
                     : 'Resultados parciales — se muestran los aciertos de los partidos ya finalizados.'
                 }
               </div>
-              <LeaderboardTable rows={rows} currentUserId={user?.id} />
+              <LeaderboardTable rows={rows} currentUserId={user?.id} showWinner={weekFinished} />
             </>
           ) : !weekFinished && !isGeneral ? (
             <>

@@ -23,7 +23,7 @@ function isGameLocked(game, weekGames) {
 }
 
 export default function PublicPicks({ user, league }) {
-  const [activeWeek, setActiveWeek] = useState(1)
+  const [activeWeek, setActiveWeek] = useState(TOTAL_WEEKS)
   const [games, setGames] = useState([])
   const [picks, setPicks] = useState([])
   const [members, setMembers] = useState([])
@@ -52,6 +52,16 @@ export default function PublicPicks({ user, league }) {
   }, [league])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Sync activeWeek when dynamic games load
+  useEffect(() => {
+    if (games.length > 0 && league?.simulation) {
+      const weeks = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
+      if (weeks.length > 0 && !weeks.includes(activeWeek)) {
+        setActiveWeek(Math.max(...weeks))
+      }
+    }
+  }, [games, league?.simulation])
 
   const weekGames = games
     .filter(g => g.active !== false && g.week === activeWeek)
@@ -142,7 +152,7 @@ export default function PublicPicks({ user, league }) {
               }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <th style={thStyle}>Miembro</th>
+                    <th style={{ ...thStyle, position: 'sticky', left: 0, zIndex: 3, background: 'var(--bg)' }}>Miembro</th>
                     {lockedGames.map(g => (
                       <th key={g.id} style={{ ...thStyle, textAlign: 'center', minWidth: '80px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'center' }}>
@@ -168,7 +178,7 @@ export default function PublicPicks({ user, league }) {
                     const row = buildRow(m.user_id)
                     return (
                       <tr key={m.user_id} style={{ borderBottom: '1px solid var(--bg3)' }}>
-                        <td style={{ ...tdStyle, fontWeight: 600 }}>{username}</td>
+                        <td style={{ ...tdStyle, fontWeight: 600, position: 'sticky', left: 0, background: 'var(--bg)', zIndex: 1 }}>{username}</td>
                         {row.map((cell, i) => (
                           <td key={i} style={{
                             ...tdStyle, textAlign: 'center',
