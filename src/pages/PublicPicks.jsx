@@ -107,6 +107,111 @@ export default function PublicPicks({ user, league }) {
 
   const sortedMembers = [...members].sort((a, b) => correctCount(b.user_id) - correctCount(a.user_id))
 
+  const exportWeekHTML = (week) => {
+    const weekGames = games.filter(g => g.active !== false && g.week === week && g.finished && g.result)
+    if (!weekGames.length) return
+    const weekPicks = picks.filter(p => p.week === week)
+
+    const teamLogo = (abbr) => {
+      const emojis = { KC: '🏈', BAL: '🦅', DAL: '⭐', PHI: '🦅', SF: '🔴', SEA: '🌊', BUF: '🐃', NYJ: '✈️', MIA: '🐬', NE: '⚓', GB: '🧀', CHI: '🐻', LAR: '🐏', DET: '🦁', CIN: '🐯', PIT: '🔨', MIN: '⚔️', NYG: '🏈', TB: '🏴‍☠️', ATL: '🦅', CAR: '🐈', NO: '⚜️', ARI: '🏜️', LAC: '⚡', LV: '☠️', DEN: '🐴', HOU: '🤠', IND: '🐎', JAX: '🐆', TEN: '⚡', CLE: '🐶', WAS: '🦅' }
+      return emojis[abbr] || '🏈'
+    }
+
+    const trStyle = 'border-bottom:1px solid rgba(255,255,255,.07)'
+    const thStyle2 = `padding:.6rem .5rem;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#8B9ABB;font-weight:600;white-space:nowrap;${trStyle}`
+    const tdStyle2 = `padding:.5rem .4rem;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:.82rem;white-space:nowrap;${trStyle}`
+
+    let memberRows = ''
+    for (const member of members) {
+      const username = profileMap[member.user_id] || member.user_id.slice(0, 8)
+      let correctTotal = 0
+      let gameCells = ''
+      for (const game of weekGames) {
+        const pick = weekPicks.find(p => p.user_id === member.user_id && p.game_id === game.game_id)
+        const pickAbbr = pick?.pick || ''
+        const isCorrect = game.result && pickAbbr === game.result
+        if (isCorrect) correctTotal++
+        const bg = isCorrect ? 'rgba(34,197,94,.1)' : (pickAbbr ? 'rgba(239,68,68,.07)' : 'var(--bg3)')
+        const color = isCorrect ? '#22C55E' : (pickAbbr ? '#EF4444' : '#4A5A7A')
+        const txt = pickAbbr || '–'
+        gameCells += `<td style="${tdStyle2};color:${color}"><span style="display:inline-flex;align-items:center;gap:3px;background:${bg};padding:2px 8px;border-radius:4px">${teamLogo(pickAbbr)} ${txt}</span></td>`
+      }
+      const isAdmin = member.role === 'admin'
+      memberRows += `<tr style="${trStyle}">
+        <td style="${tdStyle2};text-align:left;font-weight:600">${username}${isAdmin ? ' <span style="font-size:.65rem;color:#F5A623;opacity:.7">👑</span>' : ''}</td>
+        ${gameCells}
+        <td style="${tdStyle2};font-weight:700;color:#F5A623;font-size:.95rem">${correctTotal}/${weekGames.length}</td>
+      </tr>`
+    }
+
+    let gameHeaders = ''
+    for (const game of weekGames) {
+      const score = game.away_score != null ? `${game.away_score}–${game.home_score}` : ''
+      gameHeaders += `<th style="${thStyle2};min-width:88px">
+        <div style="display:flex;align-items:center;gap:4px;justify-content:center;margin-bottom:2px">
+          ${teamLogo(game.away_abbr)} <span style="font-size:.78rem">${game.away_abbr}</span>
+          <span style="color:#4A5A7A;font-size:.7rem">@</span>
+          ${teamLogo(game.home_abbr)} <span style="font-size:.78rem">${game.home_abbr}</span>
+        </div>
+        ${score ? `<div style="font-size:.7rem;color:#8B9ABB">${score}</div>` : ''}
+        <div style="font-size:.62rem;margin-top:2px;color:${game.result === game.home_abbr || game.result === game.away_abbr ? '#22C55E' : '#4A5A7A'}">✓ ${game.result || ''}</div>
+      </th>`
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auditoría Semana ${week} · ${league?.name || ''}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#070B14;color:#F0F4FF;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:2rem 1.5rem}
+h1{font-size:1.6rem;margin-bottom:.2rem;letter-spacing:.02em}
+.sub{color:#8B9ABB;font-size:.88rem;margin-bottom:1.5rem}
+.meta{color:#4A5A7A;font-size:.78rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap}
+.meta span{background:#0D1525;padding:.35rem .75rem;border-radius:6px;border:1px solid rgba(255,255,255,.07)}
+table{width:100%;border-collapse:collapse;background:#0D1525;border-radius:12px;overflow:hidden}
+th{background:#131E32}
+td:first-child{position:sticky;left:0;background:#0D1525}
+@media print{body{padding:0.5in}table{break-inside:avoid}}
+</style>
+</head>
+<body>
+  <h1>📋 Auditoría · Semana ${week}</h1>
+  <div class="sub">${league?.name || ''} · ${new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+  <div class="meta">
+    <span>👥 ${members.length} miembros</span>
+    <span>🏈 ${weekGames.length} partidos</span>
+    <span>🔒 Semana finalizada</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="${thStyle2};text-align:left;min-width:140px">Miembro</th>
+        ${gameHeaders}
+        <th style="${thStyle2}">Aciertos</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${memberRows}
+    </tbody>
+  </table>
+  <div style="margin-top:1.5rem;font-size:.72rem;color:#4A5A7A;text-align:center;letter-spacing:.04em">
+    GameGuru · Generado automáticamente · ${new Date().toISOString().split('T')[0]}
+  </div>
+</body>
+</html>`
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `auditoria-semana${week}-${(league?.name || 'liga').replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="page">
       <div className="page-title">👁️ Picks Públicos</div>
@@ -145,7 +250,17 @@ export default function PublicPicks({ user, league }) {
               </span>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
+            <>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '.5rem' }}>
+                <button
+                  className="btn-ghost"
+                  onClick={() => exportWeekHTML(activeWeek)}
+                  style={{ borderColor: 'rgba(34,197,94,.3)', color: 'var(--green)', fontSize: '.72rem' }}
+                >
+                  📥 Exportar Semana {activeWeek}
+                </button>
+              </div>
+              <div style={{ overflowX: 'auto' }}>
               <table style={{
                 width: '100%', borderCollapse: 'collapse',
                 fontSize: '.78rem', fontFamily: "'Barlow Condensed', sans-serif",
@@ -207,6 +322,7 @@ export default function PublicPicks({ user, league }) {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </>
       )}
