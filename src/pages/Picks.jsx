@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import GameCard from '../components/GameCard'
 import { NFL_WEEKS } from '../data/nflData'
-import { leagueGamesApi } from '../supabase'
+import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
@@ -121,6 +121,113 @@ export default function Picks({ user, league, onNavigate }) {
     if (error) alert(error.message)
   }
 
+  const exportLeagueAudit = async () => {
+    const games = weekData?.games || []
+    const results = weekData?.results || {}
+    if (!games.length || !league) return
+
+    const [membersRes, picksRes] = await Promise.all([
+      leaguesApi.getMembers(league.id),
+      picksApi.getLeaderboard(league.id, activeWeek),
+    ])
+
+    const memberList = membersRes.data || []
+    const weekPicks = picksRes.data || []
+
+    const userIds = [...new Set(memberList.map(m => m.user_id))]
+    const { data: profiles } = await profilesApi.getMany(userIds)
+    const profileMap = {}
+    if (profiles) profiles.forEach(p => { profileMap[p.id] = p.username || p.id.slice(0, 8) })
+
+    const teamEmoji = (abbr) => {
+      const map = { KC: '🏈', BAL: '🦅', DAL: '⭐', PHI: '🦅', SF: '🔴', SEA: '🌊', BUF: '🐃', NYJ: '✈️', MIA: '🐬', NE: '⚓', GB: '🧀', CHI: '🐻', LAR: '🐏', DET: '🦁', CIN: '🐯', PIT: '🔨', MIN: '⚔️', NYG: '🏈', TB: '🏴‍☠️', ATL: '🦅', CAR: '🐈', NO: '⚜️', ARI: '🏜️', LAC: '⚡', LV: '☠️', DEN: '🐴', HOU: '🤠', IND: '🐎', JAX: '🐆', TEN: '⚡', CLE: '🐶', WAS: '🦅' }
+      return map[abbr] || '🏈'
+    }
+
+    const trStyle = 'border-bottom:1px solid rgba(255,255,255,.07)'
+    const thS = `padding:.55rem .4rem;text-align:center;font-size:.65rem;letter-spacing:.06em;text-transform:uppercase;color:#8B9ABB;font-weight:600;white-space:nowrap;${trStyle}`
+    const tdS = `padding:.5rem .35rem;text-align:center;font-size:.78rem;white-space:nowrap;${trStyle}`
+
+    let headerCells = ''
+    for (const g of games) {
+      const score = g.away_score != null ? `${g.away_score}–${g.home_score}` : ''
+      headerCells += `<th style="${thS};min-width:80px">
+        <div style="display:flex;align-items:center;gap:2px;justify-content:center">${teamEmoji(g.aA)} <span>${g.aA}</span>
+        <span style="color:#4A5A7A">@</span> ${teamEmoji(g.hA)} <span>${g.hA}</span></div>
+        ${score ? `<div style="font-size:.62rem;color:#8B9ABB">${score}</div>` : ''}
+        <div style="font-size:.6rem;color:${results[g.id] ? '#22C55E' : '#4A5A7A'}">✓ ${results[g.id] || ''}</div>
+      </th>`
+    }
+
+    let memberRows = ''
+    for (const member of memberList) {
+      const username = profileMap[member.user_id] || member.user_id.slice(0, 8)
+      let correct = 0
+      let cells = ''
+      for (const g of games) {
+        const pick = weekPicks.find(p => p.user_id === member.user_id && p.game_id === (g.game_id || g.id))
+        const pickAbbr = pick?.pick || ''
+        const result = results[g.id]
+        const isCorrect = result && pickAbbr === result
+        if (isCorrect) correct++
+        const bg = isCorrect ? 'rgba(34,197,94,.1)' : (pickAbbr && result ? 'rgba(239,68,68,.07)' : 'rgba(19,30,50,.4)')
+        const color = isCorrect ? '#22C55E' : (pickAbbr && result ? '#EF4444' : '#4A5A7A')
+        cells += `<td style="${tdS};color:${color}"><span style="display:inline-flex;align-items:center;gap:2px;background:${bg};padding:1px 6px;border-radius:3px">${pickAbbr ? `${teamEmoji(pickAbbr)} ${pickAbbr}` : '—'}</span></td>`
+      }
+      const isAdmin = member.role === 'admin'
+      memberRows += `<tr style="${trStyle}"><td style="${tdS};text-align:left;font-weight:600;position:sticky;left:0;background:#0D1525">${username}${isAdmin ? ' 👑' : ''}</td>${cells}<td style="${tdS};font-weight:700;color:#F5A623">${correct}/${games.length}</td></tr>`
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Auditoría Semana ${activeWeek} · ${league?.name || ''}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#070B14;color:#F0F4FF;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:2rem 1.5rem}
+h1{font-size:1.5rem;margin-bottom:.15rem}
+.sub{color:#8B9ABB;font-size:.85rem;margin-bottom:1.5rem}
+.meta{color:#4A5A7A;font-size:.78rem;margin-bottom:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap}
+.meta span{background:#0D1525;padding:.35rem .75rem;border-radius:6px;border:1px solid rgba(255,255,255,.07)}
+table{width:100%;border-collapse:collapse;background:#0D1525;border-radius:12px;overflow:hidden}
+th{background:#131E32}
+td:first-child{position:sticky;left:0;background:#0D1525}
+@media print{body{padding:0.5in}table{break-inside:avoid}}
+</style>
+</head>
+<body>
+  <h1>📋 Auditoría · Semana ${activeWeek}</h1>
+  <div class="sub">${league?.name || ''} · ${new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+  <div class="meta">
+    <span>👥 ${memberList.length} miembros</span>
+    <span>🏈 ${games.length} partidos</span>
+    <span>🔒 Semana bloqueada</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th style="${thS};text-align:left;min-width:130px">Miembro</th>
+      ${headerCells}
+      <th style="${thS}">Aciertos</th>
+    </tr></thead>
+    <tbody>${memberRows}</tbody>
+  </table>
+  <div style="margin-top:1.5rem;font-size:.72rem;color:#4A5A7A;text-align:center">
+    GameGuru · Generado automáticamente · ${new Date().toISOString().split('T')[0]}
+  </div>
+</body>
+</html>`
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `auditoria-semana${activeWeek}-${(league?.name || 'liga').replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="page">
       <div className="page-title">Mis Picks</div>
@@ -227,13 +334,22 @@ export default function Picks({ user, league, onNavigate }) {
           )}
 
           {isWeekLocked && (
-            <button
-              className="btn-secondary"
-              style={{ width: '100%', marginTop: '1rem' }}
-              onClick={() => onNavigate('publicpicks')}
-            >
-              👁️ Ver Picks Públicos de esta semana
-            </button>
+            <div style={{ display: 'flex', gap: '.5rem', marginTop: '1rem' }}>
+              <button
+                className="btn-secondary"
+                style={{ flex: 1 }}
+                onClick={exportLeagueAudit}
+              >
+                📥 Exportar auditoría
+              </button>
+              <button
+                className="btn-secondary"
+                style={{ flex: 1 }}
+                onClick={() => onNavigate('publicpicks')}
+              >
+                👁️ Ver Picks Públicos
+              </button>
+            </div>
           )}
         </>
       )}
