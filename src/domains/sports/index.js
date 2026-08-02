@@ -1,0 +1,5 @@
+export { sportsService } from './services/sportsService'
+export { sportsRepository } from './repositories/sportsRepository'
+export { espnProvider } from './providers/espn'
+export { mapProviderGame } from './adapters'
+export { normalizeScoreboard, normalizeNews } from './models'

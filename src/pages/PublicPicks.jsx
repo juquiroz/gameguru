@@ -1,26 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { leagueGamesApi, picksApi, profilesApi } from '../supabase'
 import { leaguesApi } from '../supabase'
+import { isGameLocked } from '../utils/dates'
 import TeamLogo from '../components/TeamLogo'
 
 const TOTAL_WEEKS = 18
-
-function getWeekDeadline(weekGames) {
-  const times = weekGames
-    .map(g => g.game_time || g.time)
-    .filter(Boolean)
-    .map(t => new Date(t))
-    .filter(d => !isNaN(d))
-    .sort((a, b) => a - b)
-  if (times.length === 0) return null
-  return new Date(times[0].getTime() - 60 * 60 * 1000)
-}
-
-function isGameLocked(game, weekGames) {
-  if (game.finished) return true
-  const deadline = getWeekDeadline(weekGames)
-  return deadline ? new Date() >= deadline : false
-}
 
 export default function PublicPicks({ user, league }) {
   const [activeWeek, setActiveWeek] = useState(TOTAL_WEEKS)

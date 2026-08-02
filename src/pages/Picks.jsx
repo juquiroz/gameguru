@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import GameCard from '../components/GameCard'
 import { NFL_WEEKS } from '../data/nflData'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
+import { isWeekLocked, isGameLocked } from '../utils/dates'
 import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
@@ -74,25 +75,7 @@ export default function Picks({ user, league, onNavigate }) {
 
   const weekData = getWeekData(activeWeek)
 
-  // Compute week deadline: 1h before the first game of the week
-  const getWeekDeadline = (games) => {
-    if (!games?.length) return null
-    const times = games
-      .map(g => g.game_time || g.time)
-      .filter(Boolean)
-      .map(t => new Date(t))
-      .filter(d => !isNaN(d))
-      .sort((a, b) => a - b)
-    if (times.length === 0) return null
-    return new Date(times[0].getTime() - 60 * 60 * 1000)
-  }
-
-  const weekDeadline = getWeekDeadline(weekData?.games)
-  const isWeekLocked = weekData?.finished || (weekDeadline ? new Date() >= weekDeadline : false)
-
-  const isGameLocked = (g) => {
-    return g.finished || isWeekLocked
-  }
+  const weekLocked = isWeekLocked(weekData?.games)
 
   // Available weeks
   const weeks = useDynamic
@@ -159,12 +142,9 @@ export default function Picks({ user, league, onNavigate }) {
       </th>`
     }
 
-    let memberRows = ''
-    for (const member of memberList) {
-      const username = profileMap[member.user_id] || member.user_id.slice(0, 8)
+    const scores = memberList.map(member => {
       let correct = 0
-      let cells = ''
-      for (const g of games) {
+      const cells = games.map(g => {
         const pick = weekPicks.find(p => p.user_id === member.user_id && p.game_id === (g.game_id || g.id))
         const pickAbbr = pick?.pick || ''
         const result = results[g.id]
@@ -172,10 +152,22 @@ export default function Picks({ user, league, onNavigate }) {
         if (isCorrect) correct++
         const bg = isCorrect ? 'rgba(34,197,94,.1)' : (pickAbbr && result ? 'rgba(239,68,68,.07)' : 'rgba(19,30,50,.4)')
         const color = isCorrect ? '#22C55E' : (pickAbbr && result ? '#EF4444' : '#4A5A7A')
-        cells += `<td style="${tdS};color:${color}"><span style="display:inline-flex;align-items:center;gap:2px;background:${bg};padding:1px 6px;border-radius:3px">${pickAbbr ? `${teamEmoji(pickAbbr)} ${pickAbbr}` : '—'}</span></td>`
-      }
-      const isAdmin = member.role === 'admin'
-      memberRows += `<tr style="${trStyle}"><td style="${tdS};text-align:left;font-weight:600;position:sticky;left:0;background:#0D1525">${username}${isAdmin ? ' 👑' : ''}</td>${cells}<td style="${tdS};font-weight:700;color:#F5A623">${correct}/${games.length}</td></tr>`
+        return `<td style="${tdS};color:${color}"><span style="display:inline-flex;align-items:center;gap:2px;background:${bg};padding:1px 6px;border-radius:3px">${pickAbbr ? `${teamEmoji(pickAbbr)} ${pickAbbr}` : '—'}</span></td>`
+      })
+      return { member, cells: cells.join(''), correct }
+    })
+
+    const weekFinished = games.every(g => g.finished || results[g.id])
+    const maxCorrect = weekFinished ? Math.max(...scores.map(s => s.correct)) : -1
+
+    let memberRows = ''
+    for (const s of scores) {
+      const username = profileMap[s.member.user_id] || s.member.user_id.slice(0, 8)
+      const isWinner = weekFinished && s.correct === maxCorrect && maxCorrect > 0
+      const isAdmin = s.member.role === 'admin'
+      const rowStyle = isWinner ? `border-bottom:1px solid rgba(255,215,0,.3);background:linear-gradient(90deg,rgba(255,215,0,.06),transparent)` : trStyle
+      const nameStyle = isWinner ? `color:#FFD700;font-weight:700` : `font-weight:600`
+      memberRows += `<tr style="${rowStyle}"><td style="${tdS};text-align:left;${nameStyle};position:sticky;left:0;background:${isWinner ? '#0D1525' : '#0D1525'}">${username}${isAdmin ? ' 👑' : ''}${isWinner ? ' 🏆' : ''}</td>${s.cells}<td style="${tdS};font-weight:700;color:#F5A623;font-size:.88rem">${s.correct}/${games.length}</td></tr>`
     }
 
     const html = `<!DOCTYPE html>
@@ -203,7 +195,7 @@ td:first-child{position:sticky;left:0;background:#0D1525}
   <div class="meta">
     <span>👥 ${memberList.length} miembros</span>
     <span>🏈 ${games.length} partidos</span>
-    <span>🔒 Semana bloqueada</span>
+    <span>${weekFinished ? '🔒 Semana finalizada' : '🔓 Semana en curso'}</span>
   </div>
   <table>
     <thead><tr>
@@ -272,7 +264,7 @@ td:first-child{position:sticky;left:0;background:#0D1525}
         </div>
       ) : (
         <>
-          {!isWeekLocked && (
+          {!weekLocked && (
             <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
               📅 Todos los picks se bloquean 1h antes del primer partido
             </div>
@@ -300,13 +292,13 @@ td:first-child{position:sticky;left:0;background:#0D1525}
                 pick={picks[game.id]}
                 onPick={selectPick}
                 results={weekData.results}
-                locked={isGameLocked(game)}
+                locked={isGameLocked(game, weekData?.games)}
               />
             ))}
           </div>
 
           {/* Submit bar — visible until the week's deadline passes */}
-          {!isWeekLocked && (
+          {!weekLocked && (
             <div className={styles.submitBar}>
               <div>
                 <div className={styles.pickCount}>
@@ -326,14 +318,14 @@ td:first-child{position:sticky;left:0;background:#0D1525}
             </div>
           )}
 
-          {isWeekLocked && !weekData.finished && (
+          {weekLocked && !weekData.finished && (
             <div className="lock-notice">🔒 Hora límite alcanzada — los picks están bloqueados</div>
           )}
           {weekData.finished && (
             <div className="lock-notice">🔒 Esta semana ya finalizó — los picks están bloqueados</div>
           )}
 
-          {isWeekLocked && (
+          {weekLocked && (
             <div style={{ display: 'flex', gap: '.5rem', marginTop: '1rem' }}>
               <button
                 className="btn-secondary"
