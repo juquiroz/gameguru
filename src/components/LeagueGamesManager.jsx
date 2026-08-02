@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { masterGamesApi, leagueGamesApi } from '../supabase'
 import { NFL_TEAMS } from '../data/nflData'
+import { localTZOffset } from '../utils/dates'
 import TeamLogo from './TeamLogo'
 import GameTime from './GameTime'
 import styles from './LeagueGamesManager.module.css'
@@ -150,13 +151,7 @@ export default function LeagueGamesManager({ league }) {
     if (customAway === customHome) return setMsg({ type: 'error', text: 'Los equipos deben ser distintos.' })
     if (!customDate || !customTime) return setMsg({ type: 'error', text: 'Completa fecha y hora.' })
     setSaving(true)
-    const tz = (() => {
-      const off = -new Date().getTimezoneOffset()
-      const sign = off >= 0 ? '+' : '-'
-      const h = Math.floor(Math.abs(off) / 60)
-      const m = Math.abs(off) % 60
-      return `${sign}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-    })()
+    const tz = localTZOffset()
     const game = {
       league_id: league.id,
       master_game_id: null,

@@ -1,26 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import { NFL_WEEKS } from '../data/nflData'
+import { isWeekLocked } from '../utils/dates'
+import { calcStandings } from '../utils/standings'
 import LeaderboardTable from '../components/LeaderboardTable'
-
-const getWeekDeadline = (games) => {
-  if (!games?.length) return null
-  const times = games
-    .map(g => g.game_time || g.time)
-    .filter(Boolean)
-    .map(t => new Date(t))
-    .filter(d => !isNaN(d))
-    .sort((a, b) => a - b)
-  if (times.length === 0) return null
-  return new Date(times[0].getTime() - 60 * 60 * 1000)
-}
-
-const isWeekLocked = (games) => {
-  if (!games?.length) return false
-  if (games.every(g => g.finished)) return true
-  const deadline = getWeekDeadline(games)
-  return deadline ? new Date() >= deadline : false
-}
 
 export default function Leaderboard({ user, league, onNavigate }) {
   const [activeWeek, setActiveWeek] = useState(() => {
@@ -50,30 +33,6 @@ export default function Leaderboard({ user, league, onNavigate }) {
     if (data) data.forEach(p => { map[p.id] = p.username })
     return map
   }, [])
-
-  const calcStandings = (picks, games, profileMap) => {
-    const results = {}
-    games.forEach(g => { if (g.result) results[g.game_id] = g.result })
-
-    const userMap = {}
-    picks.forEach(p => {
-      const uid = p.user_id
-      if (!userMap[uid]) {
-        userMap[uid] = {
-          userId: uid,
-          username: profileMap[uid] || uid.slice(0, 8),
-          correct: 0,
-          total: 0,
-        }
-      }
-      if (results[p.game_id]) {
-        userMap[uid].total++
-        if (p.pick === results[p.game_id]) userMap[uid].correct++
-      }
-    })
-
-    return Object.values(userMap).sort((a, b) => b.correct - a.correct || a.total - b.total)
-  }
 
   const loadStandings = useCallback(async () => {
     if (!league) return

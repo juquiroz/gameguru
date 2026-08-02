@@ -47,6 +47,38 @@ src/
 ├── main.jsx                       # Entry point (StrictMode)
 ├── supabase.js                    # Cliente Supabase + helpers por tabla
 ├── styles/global.css              # Design tokens + clases compartidas
+├── utils/
+│   ├── dates.js                   # getWeekDeadline, isWeekLocked, isGameLocked, getCurrentWeek, localTZOffset
+│   └── standings.js               # calcStandings
+├── domains/
+│   ├── dashboard/
+│   │   ├── hooks/
+│   │   │   ├── useLeagueData.js   # league_games + loading + refresh (usado por LeagueDashboard)
+│   │   │   └── useDashboardData.js# DashboardState: composer de todos los datos Supabase del dashboard
+│   │   ├── dashboard.module.css   # CSS module propio de los módulos del dashboard
+│   │   ├── components/
+│   │   │   ├── HomeDashboard.jsx  # ÚNICO dashboard: renderiza módulos según DashboardState (los 3 estados)
+│   │   │   ├── NewUserHome.jsx    # (legacy) hero usuario nuevo — ya no lo usa Home, se reutiliza vía HeroCard/HowItWorks
+│   │   │   ├── LeaguesOverview.jsx# (legacy) lista de mis ligas — ya no lo usa Home; delete pasó a LeaguesSummary
+│   │   │   ├── LeagueDashboard.jsx# (legacy) dashboard de liga activa de BUILD-002, reemplazado por HomeDashboard
+│   │   │   ├── HeroCard.jsx       # bienvenida: título + desc + Crear/Unirse
+│   │   │   ├── HowItWorks.jsx     # 3 tarjetas: crear liga / invitar / ganar
+│   │   │   ├── DashboardHeader.jsx# saludo, nº de ligas, badge de semana (override para estado bienvenida)
+│   │   │   ├── PendingActionCard.jsx# CTA "Te faltan {n} picks" / completos / bloqueado
+│   │   │   ├── CountdownCard.jsx  # cuenta regresiva al deadline (refresca cada 30s)
+│   │   │   ├── GamesCarousel.jsx  # carrusel horizontal de partidos (hoy o semana)
+│   │   │   ├── LeaguesSummary.jsx # "Mis ligas" compacto con conteo de miembros + delete (admin, no-actual)
+│   │   │   ├── QuickStats.jsx     # 4 stats: posición, aciertos, pendientes, racha
+│   │   │   ├── MiniLeaderboard.jsx# Top 3 con medallas + ver clasificación completa
+│   │   │   └── UpcomingGamesList.jsx# próximos partidos no finalizados
+│   │   └── index.js               # barrel exports
+│   └── sports/
+│       ├── models/index.js        # modelo canónico: normalizeScoreboard, normalizeNews
+│       ├── providers/espn.js      # espnProvider (stub, sin integración real aún)
+│       ├── adapters/index.js      # mapProviderGame: mapeo provider → modelo (stub)
+│       ├── repositories/sportsRepository.js  # interfaz: getScoreboard/getNews/getTeamStandings
+│       ├── services/sportsService.js         # fachada del dominio sports
+│       └── index.js               # barrel exports
 ├── data/
 │   ├── nflData.js                 # NFL_TEAMS, TEAM_LOGOS, SPORTS, NFL_WEEKS (mock), genInviteCode(), translateAuthError()
 │   └── nflSchedule2026.json       # Calendario real 2026 (desde API)
@@ -62,8 +94,8 @@ src/
 ├── pages/
 │   ├── Auth.jsx                   # Login/Register con tabs, username opcional en registro
 │   ├── Auth.module.css
-│   ├── Home.jsx                   # 3 modos: new user, lista ligas, dashboard de liga activa
-│   ├── Home.module.css
+│   ├── Home.jsx                   # Thin: solo loading + <HomeDashboard {...props} />
+│   ├── Home.module.css            # CSS module compartido por los componentes del dashboard
 │   ├── Picks.jsx                  # Juego de picks por semana con tabs, bloqueo por deadline
 │   ├── Picks.module.css
 │   ├── Leaderboard.jsx            # Tabla de posiciones por semana o general
@@ -101,7 +133,7 @@ src/
 
 | Hash | Página | Condición |
 |------|--------|-----------|
-| `#dashboard` | Dashboard de liga (si currentLeague) o Home | Default |
+| `#dashboard` | HomeDashboard (se adapta: bienvenida, mis ligas o dashboard de liga) | Default |
 | `#picks` | Picks | Requiere `currentLeague` |
 | `#board` | Leaderboard | Requiere `currentLeague` |
 | `#publicpicks` | PublicPicks | Requiere `currentLeague` |
@@ -225,7 +257,7 @@ t('home.createLeague')           // → "Crear liga"
 t('home.leagueMeta', { sport, code }) // → "NFL · ABC123"
 ```
 
-Claves organizadas por módulo: `auth.*`, `topbar.*`, `bottomNav.*`, `home.*`, `picks.*`, `leaderboard.*`, `league.*`, `lobby.*`, `superadmin.*`, `invite.*`, `gameCard.*`, `weekTabs.*`, `common.*`.
+Claves organizadas por módulo: `auth.*`, `topbar.*`, `bottomNav.*`, `home.*`, `dashboard.*`, `picks.*`, `leaderboard.*`, `league.*`, `lobby.*`, `superadmin.*`, `invite.*`, `gameCard.*`, `weekTabs.*`, `common.*`.
 
 Resolución: busca en lang actual → fallback a ES → fallback a la key textual.
 
@@ -242,6 +274,45 @@ Resolución: busca en lang actual → fallback a ES → fallback a la key textua
 - **Props comunes**: `user`, `league`, `onNavigate`, `onChangeLeague`
 - **NFL teams**: `NFL_TEAMS` (abbr → {name, division}), `TEAM_LOGOS` (abbr → emoji fallback)
 - **TeamLogo**: intenta cargar de ESPN CDN, fallback a emoji de `TEAM_LOGOS`
+
+---
+
+## Arquitectura orientada a dominios (Feature First)
+
+Base preparada en **BUILD-001**. El objetivo es que React no dependa directamente de proveedores deportivos y que cada dominio evolucione de forma desacoplada.
+
+### `src/utils/` — lógica transversal compartida
+- `dates.js`: `getWeekDeadline(games)`, `isWeekLocked(games)`, `isGameLocked(game, weekGames)`, `getCurrentWeek(games)`, `localTZOffset()`. Usados por `Picks`, `Leaderboard`, `PublicPicks`, `useLeague`, `LeagueGamesManager` y `useDashboardData` (antes duplicados).
+- `standings.js`: `calcStandings(picks, games, profileMap)` (antes inline en `Leaderboard`).
+
+### `src/domains/dashboard/` — Home / dashboard
+- **`HomeDashboard` (BUILD-002.1)** es el **único** dashboard. Home es solo loading + `<HomeDashboard />`. Nunca cambia de pantalla: solo cambian las tarjetas según el estado.
+- `useDashboardData` es el **DashboardState** centralizado: flags `showWelcome`, `showLeagueSummary`, `showPendingAction`, `showLeaderboard`, `showCountdown` + `hasLeagues`/`hasCurrentLeague`.
+- Tres estados derivados del DashboardState:
+  1. **Sin ligas** → Header (badge "Temporada 2026") + `HeroCard` + `GamesCarousel` (juegos de la semana del **calendario maestro** `master_games`) + `HowItWorks` + `UpcomingGamesList` + CTA "Comienza ahora".
+  2. **Con ligas, ninguna activa** → Header + `LeaguesSummary` (primera posición) + `PendingActionCard` + `GamesCarousel` + `QuickStats` + `MiniLeaderboard` + `UpcomingGamesList`. Usa la **primera liga como contexto** (contextLeague).
+  3. **Liga activa** → el dashboard completo de BUILD-002 (agrega `CountdownCard`, Mis ligas con badge "Actual", e invite-box + CTAs de admin al pie).
+- `LeagueDashboard.jsx`, `NewUserHome.jsx` y `LeaguesOverview.jsx` quedaron como componentes legacy exportados (no los usa Home); su contenido se reutiliza vía `HeroCard`, `HowItWorks`, `LeaguesSummary`.
+- `LeaguesSummary` incluye delete (solo admin, liga no-actual) para no perder la funcionalidad que tenía `LeaguesOverview`.
+- `useLeagueData(league)` arranca con `loadingGames: true`; fetch de `league_games` (o `master_games` si no hay contexto de liga).
+
+### `src/domains/sports/` — datos deportivos externos (en preparación)
+Cadena **Provider → Adapter → Repository → Service** (todas las implementaciones son stubs; aún no se integran APIs externas):
+1. `providers/` — proveedor concreto (ej. `espn.js`).
+2. `adapters/` — mapea la respuesta del proveedor al **modelo canónico** de `models/`.
+3. `repositories/` — interfaz de datos (`getScoreboard`, `getNews`, `getTeamStandings`).
+4. `services/` — fachada que consume el UI (a través de hooks).
+
+El contrato permite cambiar de proveedor (ESPN → API-Sports, etc.) **sin tocar el frontend**.
+
+### Estrategia de migración (PLAN-001)
+- **Fase 0** ✅ (BUILD-001): utils compartidos + esqueleto de dominios + Home modularizado.
+- **Fase 1** ✅ (BUILD-002 + BUILD-002.1): nuevo dashboard 100% con datos de Supabase (sin API externa) y unificado con el Home.
+- **Fase 2**: integrar provider ESPN a través de la capa `sports`.
+- **Fase 3**: gateway Edge Function + cache cuando se requiera ocultar keys / escalar.
+- **Fase 4**: multi-deporte (NFL/MLB/NBA) + pulido.
+
+---
 
 ---
 
@@ -359,6 +430,9 @@ Genera calendario NFL programático (división, inter-conference, intra-conferen
 
 - `src/pages/Lobby.jsx` — reemplazado por CreateLeagueModal + JoinLeagueModal
 - `src/pages/Dashboard.jsx` — reemplazado por LeagueDashboard en Home.jsx
+- `src/domains/dashboard/components/NewUserHome.jsx` — reemplazado por `HeroCard` + `HowItWorks` dentro de `HomeDashboard`
+- `src/domains/dashboard/components/LeaguesOverview.jsx` — reemplazado por `LeaguesSummary` dentro de `HomeDashboard`
+- `src/domains/dashboard/components/LeagueDashboard.jsx` — reemplazado por `HomeDashboard` (BUILD-002.1)
 - `src/data/nflData.js` `NFL_WEEKS` mock — solo weeks 1-2, se usa como fallback cuando no hay datos dinámicos
 
 ---
@@ -370,3 +444,5 @@ Genera calendario NFL programático (división, inter-conference, intra-conferen
 3. **NFL_WEEKS**: solo tiene semanas 1 y 2 con datos mock; para más semanas se necesita carga desde Supabase
 4. **Simulación**: todas las simulaciones se crean con `week: 1` (no hay distribución por semanas reales)
 5. **Deadline**: se computa como 1h antes del primer partido de la semana (usa `game_time` de cada juego)
+6. **Dashboard**: el calendario maestro usa `DateUtc` ISO (`2026-09-10 00:20:00Z`), por lo que `CountdownCard`, "Juegos del día" y `UpcomingGamesList` funcionan con fechas reales. El caso legacy (`Dom 1:00 PM` de `generateNFLSchedule`) no se carga en producción. El carrusel cae a "Partidos de la Semana {week}" cuando no hay juegos hoy.
+7. **Dashboard**: el conteo de la racha se calcula desde la semana actual hacia atrás; si una semana finalizada no tuvo aciertos, la racha se corta.

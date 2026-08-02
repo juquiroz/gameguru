@@ -1,14 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
 import { genInviteCode, NFL_TEAMS } from '../data/nflData'
-
-const localTZ = () => {
-  const off = -new Date().getTimezoneOffset()
-  const sign = off >= 0 ? '+' : '-'
-  const h = Math.floor(Math.abs(off) / 60)
-  const m = Math.abs(off) % 60
-  return `${sign}${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-}
+import { localTZOffset } from '../utils/dates'
 
 export function useLeague(user) {
   const [myLeagues,      setMyLeagues]      = useState([])
@@ -111,7 +104,7 @@ export function useLeague(user) {
       away_team: NFL_TEAMS[g.away]?.name || g.away,
       home_abbr: g.home,
       away_abbr: g.away,
-      game_time: `${g.date}T${g.time}:00${localTZ()}`,
+      game_time: `${g.date}T${g.time}:00${localTZOffset()}`,
     }))
 
     const { error: insertErr } = await leagueGamesApi.insertAll(rows)
