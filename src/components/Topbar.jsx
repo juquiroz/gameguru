@@ -20,27 +20,25 @@ export default function Topbar({ user, league, onChangeLeague, onLogout, activeP
         title={t('topbar.home')}
       >{t('topbar.brand')}</button>
 
-      {league && (
-        <nav className={styles.desktopNav}>
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              className={`${styles.navBtn} ${activePage === item.id ? styles.active : ''}`}
-              onClick={() => onNavigate(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-          {isSuperAdmin && (
-            <button
-              className={`${styles.navBtn} ${styles.adminNav} ${activePage === 'superadmin' ? styles.active : ''}`}
-              onClick={() => onNavigate('superadmin')}
-            >
-              ⚙️ {t('topbar.admin')}
-            </button>
-          )}
-        </nav>
-      )}
+      <nav className={styles.desktopNav}>
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            className={`${styles.navBtn} ${activePage === item.id ? styles.active : ''}`}
+            onClick={() => onNavigate(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+        {isSuperAdmin && (
+          <button
+            className={`${styles.navBtn} ${styles.adminNav} ${activePage === 'superadmin' ? styles.active : ''}`}
+            onClick={() => onNavigate('superadmin')}
+          >
+            ⚙️ {t('topbar.admin')}
+          </button>
+        )}
+      </nav>
 
       <div className={styles.right}>
         {league && (

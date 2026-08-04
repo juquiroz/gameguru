@@ -112,27 +112,8 @@ function AppInner() {
 
   const renderPage = () => {
     if (activePage === 'superadmin' && isSuperAdmin) return <SuperAdmin />
-    if (activePage === 'dashboard' || !currentLeague) {
-      return (
-        <Home
-          user={user}
-          myLeagues={myLeagues}
-          currentLeague={currentLeague}
-          loadingLeagues={loadingLeagues}
-          onNavigate={handleNavigate}
-          onCreateNew={() => setShowCreate(true)}
-          onJoinClick={() => setShowJoin(true)}
-          onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard') }}
-          onRefreshLeagues={fetchMyLeagues}
-        />
-      )
-    }
-    const p = { user, league: currentLeague, onNavigate: handleNavigate, onChangeLeague: handleChangeLeague }
-    if (activePage === 'picks') return <Picks {...p} />
-    if (activePage === 'board') return <Leaderboard {...p} />
-    if (activePage === 'publicpicks') return <PublicPicks {...p} />
-    if (activePage === 'league') return <LeaguePage {...p} />
-    return (
+
+    const home = (
       <Home
         user={user}
         myLeagues={myLeagues}
@@ -145,6 +126,27 @@ function AppInner() {
         onRefreshLeagues={fetchMyLeagues}
       />
     )
+
+    if (activePage === 'dashboard') return home
+
+    if (!currentLeague) {
+      return (
+        <div className="page">
+          <div className="page-title">{t(PAGE_KEYS[activePage] || 'app.name')}</div>
+          <div className="empty-state">
+            <div className="big">🏟️</div>
+            {t('topbar.needLeague')}
+          </div>
+        </div>
+      )
+    }
+
+    const p = { user, league: currentLeague, onNavigate: handleNavigate, onChangeLeague: handleChangeLeague }
+    if (activePage === 'picks') return <Picks {...p} />
+    if (activePage === 'board') return <Leaderboard {...p} />
+    if (activePage === 'publicpicks') return <PublicPicks {...p} />
+    if (activePage === 'league') return <LeaguePage {...p} />
+    return home
   }
 
   return (
@@ -165,9 +167,7 @@ function AppInner() {
         {renderPage()}
       </main>
 
-      {currentLeague && (
-        <BottomNav activePage={activePage} onNavigate={handleNavigate} isSuperAdmin={isSuperAdmin} />
-      )}
+      <BottomNav activePage={activePage} onNavigate={handleNavigate} isSuperAdmin={isSuperAdmin} />
 
       {showCreate && (
         <CreateLeagueModal

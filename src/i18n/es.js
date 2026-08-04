@@ -29,6 +29,7 @@ export default {
     create: '➕ Crear',
     logout: 'Salir',
     home: 'Ir al inicio',
+    needLeague: 'No tenés una liga activa. Entrá a una liga desde el dashboard para ver esta sección.',
   },
 
   bottomNav: {
