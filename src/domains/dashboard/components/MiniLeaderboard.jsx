@@ -3,13 +3,15 @@ import styles from '../dashboard.module.css'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-export default function MiniLeaderboard({ standings, currentUserId, onNavigate }) {
+export default function MiniLeaderboard({ standings, currentUserId, onNavigate, week }) {
   const { t } = useLanguage()
   const top = standings.slice(0, 3)
 
   return (
     <div className={styles.section}>
-      <div className={styles.sectionTitle}>{t('dashboard.top3')}</div>
+      <div className={styles.sectionTitle}>
+        {week != null ? t('dashboard.top3Week', { week }) : t('dashboard.top3')}
+      </div>
       <div className={styles.miniBoard}>
         {top.length === 0 ? (
           <div className={styles.boardEmpty}>{t('dashboard.boardEmpty')}</div>

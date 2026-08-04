@@ -11,6 +11,7 @@ import LeaguesSummary from './LeaguesSummary'
 import QuickStats from './QuickStats'
 import MiniLeaderboard from './MiniLeaderboard'
 import UpcomingGamesList from './UpcomingGamesList'
+import CopyReminder from './CopyReminder'
 import homeStyles from '../../../pages/Home.module.css'
 import styles from '../dashboard.module.css'
 
@@ -23,6 +24,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
     contextLeague,
     hasCurrentLeague,
     currentWeek,
+    lastLockedWeek,
     deadline,
     locked,
     standings,
@@ -37,6 +39,8 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
     hasWeekGames,
     loadingGames,
     leagueGames,
+    participation,
+    isContextAdmin,
     showPendingAction,
     showLeaderboard,
     showCountdown,
@@ -117,6 +121,16 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         user={user}
       />
 
+      {isContextAdmin && participation && (
+        <div className={styles.participationBar}>
+          {t('dashboard.adminParticipation', {
+            n: participation.submitted,
+            total: participation.total,
+            missing: Math.max(0, participation.total - participation.submitted),
+          })}
+        </div>
+      )}
+
       {!hasCurrentLeague && (
         <LeaguesSummary
           myLeagues={myLeagues}
@@ -150,7 +164,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
       <QuickStats position={position} correctCount={correctCount} pendingCount={pendingCount} streak={streak} />
 
       {showLeaderboard && (
-        <MiniLeaderboard standings={standings} currentUserId={user?.id} onNavigate={onNavigate} />
+        <MiniLeaderboard standings={standings} currentUserId={user?.id} onNavigate={onNavigate} week={lastLockedWeek} />
       )}
 
       <UpcomingGamesList games={upcomingGames} />
@@ -173,6 +187,9 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
               <button className="btn-secondary" style={{ flex: 1 }} onClick={() => onNavigate('league')}>
                 {t('dashboard.enterResults', { n: pendingResults })}
               </button>
+            )}
+            {!locked && currentWeek != null && (
+              <CopyReminder league={currentLeague} week={currentWeek} deadline={deadline} />
             )}
           </div>
         </>

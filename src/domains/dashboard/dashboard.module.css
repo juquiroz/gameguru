@@ -433,6 +433,20 @@
   margin-top: 2px;
 }
 
+.participationBar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(245,166,35,.08);
+  border: 1px solid rgba(245,166,35,.25);
+  border-radius: var(--r-lg);
+  padding: .7rem 1rem;
+  margin-bottom: 1rem;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
 @media (min-width: 480px) {
   .gameCard { flex-basis: 250px; }
   .statsGrid { grid-template-columns: repeat(4, 1fr); }

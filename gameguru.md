@@ -70,7 +70,8 @@ src/
 │   │   │   ├── LeaguesSummary.jsx # "Mis ligas" compacto con conteo de miembros + delete (admin, no-actual)
 │   │   │   ├── QuickStats.jsx     # 4 stats: posición, aciertos, pendientes, racha
 │   │   │   ├── MiniLeaderboard.jsx# Top 3 con medallas + ver clasificación completa
-│   │   │   └── UpcomingGamesList.jsx# próximos partidos no finalizados
+│   │   │   ├── UpcomingGamesList.jsx# próximos partidos no finalizados
+│   │   │   └── CopyReminder.jsx   # (PRIVACY-001) admin: copia recordatorio de cierre, sin identidades
 │   │   └── index.js               # barrel exports
 │   └── sports/
 │       ├── models/index.js        # modelo canónico: normalizeScoreboard, normalizeNews
@@ -288,6 +289,7 @@ Base preparada en **BUILD-001**. El objetivo es que React no dependa directament
 ### `src/domains/dashboard/` — Home / dashboard
 - **`HomeDashboard` (BUILD-002.1)** es el **único** dashboard. Home es solo loading + `<HomeDashboard />`. Nunca cambia de pantalla: solo cambian las tarjetas según el estado.
 - `useDashboardData` es el **DashboardState** centralizado: flags `showWelcome`, `showLeagueSummary`, `showPendingAction`, `showLeaderboard`, `showCountdown` + `hasLeagues`/`hasCurrentLeague`.
+- **PRIVACY-001**: los standings/posiciones salen de `lastLockedWeek` (última semana bloqueada/finalizada), nunca de la semana abierta. `participation` (contador anónimo "n de total", solo admin, semana abierta) y `CopyReminder` (admin) son las herramientas de incentivo permitidas.
 - Tres estados derivados del DashboardState:
   1. **Sin ligas** → Header (badge "Temporada 2026") + `HeroCard` + `GamesCarousel` (juegos de la semana del **calendario maestro** `master_games`) + `HowItWorks` + `UpcomingGamesList` + CTA "Comienza ahora".
   2. **Con ligas, ninguna activa** → Header + `LeaguesSummary` (primera posición) + `PendingActionCard` + `GamesCarousel` + `QuickStats` + `MiniLeaderboard` + `UpcomingGamesList`. Usa la **primera liga como contexto** (contextLeague).
@@ -446,3 +448,18 @@ Genera calendario NFL programático (división, inter-conference, intra-conferen
 5. **Deadline**: se computa como 1h antes del primer partido de la semana (usa `game_time` de cada juego)
 6. **Dashboard**: el calendario maestro usa `DateUtc` ISO (`2026-09-10 00:20:00Z`), por lo que `CountdownCard`, "Juegos del día" y `UpcomingGamesList` funcionan con fechas reales. El caso legacy (`Dom 1:00 PM` de `generateNFLSchedule`) no se carga en producción. El carrusel cae a "Partidos de la Semana {week}" cuando no hay juegos hoy.
 7. **Dashboard**: el conteo de la racha se calcula desde la semana actual hacia atrás; si una semana finalizada no tuvo aciertos, la racha se corta.
+
+---
+
+## Privacidad — PRIVACY-001 (picks privados hasta el cierre)
+
+**Principio**: los picks individuales son información privada hasta que la semana sea bloqueada. El dashboard nunca revela quién completó sus picks antes del cierre; solo muestra métricas agregadas/anónimas. Los admins tienen herramientas para incentivar (copiar recordatorio) pero sin acceso a información que sea ventaja competitiva.
+
+**Cómo se aplica en el código:**
+- **Standings/posiciones (dashboard)**: `useDashboardData` calcula los standings solo a partir de la **última semana bloqueada** (`lastLockedWeek` = deadline vencido o finalizada). Nunca de la semana abierta → nunca hay agregación de picks pre-cierre. `position`/`correctCount` del usuario derivan de esos standings (semana cerrada).
+- **PublicPicks**: solo muestra picks de juegos bloqueados (`lockedGames`); semanas abiertas muestran estado vacío.
+- **Export auditoría** (`Picks.jsx`): el botón solo aparece con `weekLocked`.
+- **Contador de participación (admin)**: muestra `n de total` miembros que ya enviaron (distinct `user_id` de la semana abierta vía `getLeaderboard`), **sin nombres**. Solo admin, solo mientras la semana está abierta.
+- **Copiar recordatorio (admin)**: botón en el dashboard que copia un mensaje con liga/semana/hora de cierre, sin identidades ni progreso.
+
+**Qué NO se hace**: ningún listado de miembros con estado "hizo/no hizo picks" antes del cierre; ningún porcentaje por jugador individual de la semana abierta.
