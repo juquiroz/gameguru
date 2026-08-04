@@ -4,6 +4,7 @@ import { NFL_TEAMS } from '../data/nflData'
 import { localTZOffset } from '../utils/dates'
 import TeamLogo from './TeamLogo'
 import GameTime from './GameTime'
+import ScoreEditor from './ScoreEditor'
 import styles from './LeagueGamesManager.module.css'
 
 const TOTAL_WEEKS = 18
@@ -17,8 +18,6 @@ export default function LeagueGamesManager({ league }) {
   const [msg, setMsg] = useState(null)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [resultForm, setResultForm] = useState(null)
-  const [homeScore, setHomeScore] = useState('')
-  const [awayScore, setAwayScore] = useState('')
   const [customAway, setCustomAway] = useState('')
   const [customHome, setCustomHome] = useState('')
   const [customDate, setCustomDate] = useState('')
@@ -93,21 +92,15 @@ export default function LeagueGamesManager({ league }) {
     importToLeague(selected)
   }
 
-  const handleOpenResult = (game) => {
-    setResultForm(game.id)
-    setHomeScore(game.home_score ?? '')
-    setAwayScore(game.away_score ?? '')
-  }
-
-  const handleSetScores = async (game) => {
-    if (homeScore === '' || awayScore === '') {
+  const handleSetScores = async (game, awayValue, homeValue) => {
+    if (homeValue === '' || awayValue === '') {
       setMsg({ type: 'error', text: 'Los scores están vacíos.' })
       return
     }
     setSaving(true)
     try {
-      const hs = Number(homeScore)
-      const as = Number(awayScore)
+      const hs = Number(homeValue)
+      const as = Number(awayValue)
       if (!game.id) {
         setSaving(false)
         setMsg({ type: 'error', text: 'Error: game.id es undefined' })
@@ -136,9 +129,7 @@ export default function LeagueGamesManager({ league }) {
       await loadData(true)
       setSaving(false)
       setResultForm(null)
-      setHomeScore('')
-      setAwayScore('')
-      setMsg({ type: 'success', text: `Resultado guardado: ${game.away_abbr} ${awayScore} - ${homeScore} ${game.home_abbr}` })
+      setMsg({ type: 'success', text: `Resultado guardado: ${game.away_abbr} ${awayValue} - ${homeValue} ${game.home_abbr}` })
     } catch (e) {
       console.error('Error inesperado en handleSetScores:', e)
       setSaving(false)
@@ -308,60 +299,37 @@ export default function LeagueGamesManager({ league }) {
           <div className={styles.gamesList}>
             {leagueWeekGames.map(g => {
               const hasResult = g.finished && g.result
+              const editing = resultForm === g.id
               return (
                 <div
                   key={g.id}
-                  className={`${styles.gameRow} ${g.active === false ? styles.inactive : ''} ${hasResult ? styles.hasResult : ''}`}
+                  className={`${styles.gameRow} ${g.active === false ? styles.inactive : ''} ${hasResult ? styles.hasResult : ''} ${editing ? styles.editing : ''}`}
+                  onClick={() => { if (!editing) setResultForm(g.id) }}
                 >
                   {g.active === false && <span className={styles.inactiveBadge}>🚫</span>}
-                  <div className={styles.teamsRow}>
-                    <TeamLogo abbr={g.away_abbr} className={styles.emoji} size={24} />
-                    <span className={`${styles.abbr} ${hasResult && g.result === g.away_abbr ? styles.winner : ''}`}>{g.away_abbr}</span>
-                    {hasResult ? (
-                      <span className={styles.score}>{g.away_score}</span>
-                    ) : (
-                      <span className={styles.vs}>@</span>
-                    )}
-                    <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
-                    <span className={`${styles.abbr} ${hasResult && g.result === g.home_abbr ? styles.winner : ''}`}>{g.home_abbr}</span>
-                    {hasResult && <span className={styles.score}>{g.home_score}</span>}
-                  </div>
 
-                  <div className={styles.rowMeta}>
+                  {!editing && (
+                    <div className={styles.teamsRow}>
+                      <TeamLogo abbr={g.away_abbr} className={styles.emoji} size={24} />
+                      <span className={`${styles.abbr} ${hasResult && g.result === g.away_abbr ? styles.winner : ''}`}>{g.away_abbr}</span>
+                      {hasResult ? (
+                        <span className={styles.score}>{g.away_score}</span>
+                      ) : (
+                        <span className={styles.vs}>@</span>
+                      )}
+                      <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
+                      <span className={`${styles.abbr} ${hasResult && g.result === g.home_abbr ? styles.winner : ''}`}>{g.home_abbr}</span>
+                      {hasResult && <span className={styles.score}>{g.home_score}</span>}
+                    </div>
+                  )}
+
+                  <div className={editing ? styles.editMeta : styles.rowMeta}>
                     <span className={styles.time}><GameTime when={g.game_time} /></span>
 
-                    {resultForm === g.id ? (
-                      <div className={styles.scoreForm}>
-                        <input
-                          type="number" min="0" max="99"
-                          value={awayScore}
-                          onChange={e => setAwayScore(e.target.value)}
-                          className={styles.scoreInput}
-                          placeholder="0"
-                          autoFocus
-                        />
-                        <span className={styles.vs}>-</span>
-                        <input
-                          type="number" min="0" max="99"
-                          value={homeScore}
-                          onChange={e => setHomeScore(e.target.value)}
-                          className={styles.scoreInput}
-                          placeholder="0"
-                        />
-                        <button
-                          className={styles.saveScoreBtn}
-                          onClick={() => handleSetScores(g)}
-                          disabled={saving}
-                        >{saving ? '...' : '✓'}</button>
-                        <button
-                          className={styles.cancelScoreBtn}
-                          onClick={() => { setResultForm(null); setHomeScore(''); setAwayScore('') }}
-                        >✕</button>
-                      </div>
-                    ) : (
+                    {!editing && (
                       <button
                         className={styles.resultBtn}
-                        onClick={() => handleOpenResult(g)}
+                        onClick={(e) => { e.stopPropagation(); setResultForm(g.id) }}
                         title={hasResult ? 'Editar resultado' : 'Ingresar resultado'}
                       >
                         {hasResult ? '📝' : '🏆'}
@@ -369,12 +337,24 @@ export default function LeagueGamesManager({ league }) {
                     )}
                     <button
                       className={g.active === false ? styles.enableBtn : styles.disableBtn}
-                      onClick={() => handleToggleActive(g.game_id, g.active !== false)}
+                      onClick={(e) => { e.stopPropagation(); handleToggleActive(g.game_id, g.active !== false) }}
                       title={g.active === false ? 'Habilitar' : 'Inhabilitar'}
                     >
                       {g.active === false ? '✓' : '✕'}
                     </button>
                   </div>
+
+                  {editing && (
+                    <ScoreEditor
+                      away={{ abbr: g.away_abbr, name: g.away_team }}
+                      home={{ abbr: g.home_abbr, name: g.home_team }}
+                      initialAwayScore={g.away_score}
+                      initialHomeScore={g.home_score}
+                      saving={saving}
+                      onSave={(away, home) => handleSetScores(g, away, home)}
+                      onCancel={() => setResultForm(null)}
+                    />
+                  )}
                 </div>
               )
             })}

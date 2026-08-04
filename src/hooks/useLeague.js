@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
 import { genInviteCode, NFL_TEAMS } from '../data/nflData'
 import { localTZOffset } from '../utils/dates'
+import { hydrateLeague } from '../domains/league'
 
 export function useLeague(user) {
   const [myLeagues,      setMyLeagues]      = useState([])
@@ -20,7 +21,7 @@ export function useLeague(user) {
     const { data, error } = await leaguesApi.getMyLeagues(user.id)
     if (!error && data) {
       const leagues = data
-        .map(row => ({ ...row.leagues, role: row.role }))
+        .map(row => hydrateLeague({ ...row.leagues, role: row.role }))
         .filter(Boolean)
       setMyLeagues(leagues)
     }

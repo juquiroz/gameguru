@@ -80,6 +80,13 @@ src/
 │       ├── repositories/sportsRepository.js  # interfaz: getScoreboard/getNews/getTeamStandings
 │       ├── services/sportsService.js         # fachada del dominio sports
 │       └── index.js               # barrel exports
+│   └── league/
+│       ├── index.js               # barrel exports (PLAN-004.1)
+│       ├── models/
+│       │   ├── modes.js           # LEAGUE_MODES, getLeagueMode(), getLeagueSeason()
+│       │   └── seasons.js         # SEASONS, providerAvailable()
+│       └── services/
+│           └── leagueService.js   # hydrateLeague()
 ├── data/
 │   ├── nflData.js                 # NFL_TEAMS, TEAM_LOGOS, SPORTS, NFL_WEEKS (mock), genInviteCode(), translateAuthError()
 │   └── nflSchedule2026.json       # Calendario real 2026 (desde API)
@@ -124,6 +131,8 @@ src/
     ├── InviteModal.module.css
     ├── LeagueGamesManager.jsx     # Admin: importar/activar juegos, resultados, agregar manual
     ├── LeagueGamesManager.module.css
+    ├── ScoreEditor.jsx            # (PLAN-003) editor universal de scores: fila expandida con columnas Visitante/Local
+    ├── ScoreEditor.module.css
     └── LanguageSwitch.jsx         # Toggle ES/EN
     └── LanguageSwitch.module.css
 ```
@@ -164,6 +173,8 @@ src/
 | `admin_id` | UUID (FK profiles) |
 | `deadline_mode` | text ('weekly' fijo) |
 | `simulation` | boolean |
+| `league_mode` | text ('practice' \| 'preseason' \| 'regular') — BUILD-004.1, default 'regular' |
+| `season` | text (default '2026') — BUILD-004.1 |
 | `created_at` | timestamptz |
 
 ### `league_members`
@@ -192,6 +203,7 @@ UK: `(league_id, user_id)`
 | `away_score` | int (nullable) |
 | `result` | text (nullable, abbr del ganador) |
 | `finished` | boolean |
+| `phase` | text ('preseason' \| 'regular' \| 'postseason') — BUILD-004.1, default 'regular' |
 
 ### `league_games`
 Mismas columnas que `master_games` + `league_id` (FK) + `master_game_id` (FK, nullable) + `active` (boolean)
@@ -258,7 +270,7 @@ t('home.createLeague')           // → "Crear liga"
 t('home.leagueMeta', { sport, code }) // → "NFL · ABC123"
 ```
 
-Claves organizadas por módulo: `auth.*`, `topbar.*`, `bottomNav.*`, `home.*`, `dashboard.*`, `picks.*`, `leaderboard.*`, `league.*`, `lobby.*`, `superadmin.*`, `invite.*`, `gameCard.*`, `weekTabs.*`, `common.*`.
+Claves organizadas por módulo: `auth.*`, `topbar.*`, `bottomNav.*`, `home.*`, `dashboard.*`, `picks.*`, `leaderboard.*`, `league.*`, `manager.*` (ScoreEditor), `lobby.*`, `superadmin.*`, `invite.*`, `gameCard.*`, `weekTabs.*`, `common.*`.
 
 Resolución: busca en lang actual → fallback a ES → fallback a la key textual.
 
@@ -360,7 +372,7 @@ Leaderboard.jsx → carga `league_games` + `picks` con join a `profiles` → com
 LeaguePage → muestra código, enlace, permite eliminar liga. LeagueGamesManager:
 - Importa juegos del calendario maestro a la liga (individual o todos).
 - Agrega juegos manuales (con fecha/hora real).
-- Ingresa resultados (scores) que se persisten en `league_games` y opcionalmente en `master_games`.
+- Ingresa resultados (scores) que se persisten en `league_games` y opcionalmente en `master_games`. (PLAN-003: la fila se expande en un `ScoreEditor` universal con columnas Visitante/Local y barra Guardar/Cancelar full-width.)
 - Habilita/inhabilita juegos.
 
 ### SuperAdmin (calendario maestro)
@@ -463,3 +475,41 @@ Genera calendario NFL programático (división, inter-conference, intra-conferen
 - **Copiar recordatorio (admin)**: botón en el dashboard que copia un mensaje con liga/semana/hora de cierre, sin identidades ni progreso.
 
 **Qué NO se hace**: ningún listado de miembros con estado "hizo/no hizo picks" antes del cierre; ningún porcentaje por jugador individual de la semana abierta.
+
+---
+
+## Captura de resultados — PLAN-003 (ScoreEditor universal)
+
+**Problema resuelto**: los inputs de score estaban agrupados al extremo derecho de la fila, sin anclaje visual a su equipo (ambigüedad "¿cuál marcador es de cuál equipo?").
+
+**Solución (Opción A, fila expandida)**: al tocar 🏆/📝 la fila se expande (`gameRow.editing`): meta arriba (hora + toggle), columnas VISITANTE/LOCAL con logo + abbr + input **debajo de cada equipo**, y barra **Guardar/Cancelar full-width** (Mobile First).
+
+**`ScoreEditor`** (`src/components/ScoreEditor.jsx`) es un componente universal y deporte-agnóstico (dos equipos + dos scores + guardar/cancelar):
+- Props: `away`/`home` (`{abbr}`), `initialAwayScore`/`initialHomeScore`, `saving`, `onSave(awayScore, homeScore)`, `onCancel`.
+- Estado interno de inputs, autofocus en away, Enter → Guardar, Esc → Cancelar.
+- Reutilizable para NFL/MLB/NBA (Fase 4 multi-deporte).
+- i18n: `manager.away`, `manager.home`, `manager.save`, `manager.cancel` (única parte traducida del manager).
+
+**`LeagueGamesManager`**: eliminado el estado `homeScore`/`awayScore`; `handleSetScores(game, awayValue, homeValue)` cambió de firma pero la persistencia (`league_games` + `master_games`), validación y mensajes quedaron idénticos. Los displays de lectura (GameCard, PublicPicks, Leaderboard, dashboard) no se tocaron.
+
+---
+
+## Sistema de Temporadas — PLAN-004 (BUILD-004.1 implementado, wizard pendiente)
+
+Evoluciona `leagues.simulation` (boolean) → 3 experiencias: **🎓 Práctica**, **🏈 Pretemporada**, **🏆 Temporada Oficial**. Documento completo en `opencode/plans/PLAN-004.md`.
+
+**Campos nuevos** (BUILD-004.1):
+- `leagues.league_mode` (text, `'practice'|'preseason'|'regular'`, default `'regular'`): discrimina la experiencia.
+- `leagues.season` (text, default `'2026'`): elimina el hardcode `'2026'`.
+- `master_games.phase` (text, `'preseason'|'regular'|'postseason'`, default `'regular'`): desambigua fases en semanas con mismo número.
+- `leagues.simulation` se mantiene para compatibilidad temporal; se deprecará en BUILD-004.7.
+
+**Decisión de nombre** (BUILD-004.1): se evaluó `experience_mode` (concepto UX, rechazado), `season_mode` (implica por-temporada, rechazado) y `league_mode` (✅ enum de la liga, extensible a múltiples deportes/años). El campo `phase` en `master_games` complementa: una liga = un modo = una fase.
+
+**Script de migración**: `supabase/004.1-season-system.sql` — DDL + backfill idempotente, **manual** (ejecutar en SQL Editor de Supabase). Actualiza `simulation=true→practice`, `simulation=false→regular`. No toca calendarios.
+
+**Compatibilidad**: `getLeagueMode(league)` devuelve `league.league_mode` (si existe) o `simulation ? 'practice' : 'regular'` (fallback). `getLeagueSeason(league)` devuelve `league.season || '2026'`. El código funciona correctamente ANTES y DESPUÉS de ejecutar el script; `fetchMyLeagues` ya hidrata cada liga con derivados `mode`/`season` (valores atajos para consumidores).
+
+**Dominio** (`src/domains/league/`): config `LEAGUE_MODES`/`SEASONS` + helpers `getLeagueMode`/`getLeagueSeason`/`isOfficialMode`/`providerAvailable` + servicio `hydrateLeague`. Listo para uso por BUILD-004.2+.
+
+- **Roadmap**: BUILD-004.1 ✅ → 004.2 (badges) → 004.3 (wizard) → 004.4 (gating+aviso) → 004.5 (provider) → 004.6 (resultados automáticos) → 004.7 (multi-deporte/limpieza) → 004.8 (Edge Function/noticias).

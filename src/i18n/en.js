@@ -170,6 +170,13 @@ export default {
     sport: '{icon} {sport}',
   },
 
+  manager: {
+    away: 'Away',
+    home: 'Home',
+    save: 'Save',
+    cancel: 'Cancel',
+  },
+
   lobby: {
     createTitle: '➕ Create League',
     createDesc: 'Create your own league and share the invite link.',
