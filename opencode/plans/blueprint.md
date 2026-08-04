@@ -210,6 +210,37 @@ Elimina la separación conceptual entre `NewUserHome`, `LeaguesOverview` y `Leag
 
 ---
 
+## PRIVACY-001 — Picks privados hasta el cierre
+
+**Principio**: los picks individuales son privados hasta que la semana se bloquea. El dashboard solo muestra métricas agregadas/anónimas; el progreso semanal usa porcentajes/contadores, nunca identidades. Los admins incentivan con recordatorios, no con vigilancia.
+
+### Auditoría previa (conforme sin cambios)
+- `PublicPicks` muestra solo `lockedGames`; `Leaderboard` solo con juegos finalizados; export auditoría gated con `weekLocked`; `LeagueGamesManager`/`LeaguePage`/`InviteModal` sin info de picks.
+
+### Nuevos archivos
+- `src/domains/dashboard/components/CopyReminder.jsx` — botón admin que copia un recordatorio localizado (liga, semana, hora de cierre). Sin identidades ni progreso.
+
+### Archivos modificados
+- `src/domains/dashboard/hooks/useDashboardData.js`:
+  - `lastLockedWeek` = semana más reciente con `isWeekLocked` (deadline vencido o finalizada). Los standings/posiciones se calculan solo de esa semana → nunca se agregan picks pre-cierre.
+  - `participation` = `{ submitted, total }` anónimo (distinct `user_id` de la semana abierta ÷ miembros), solo si `isContextAdmin` y semana abierta.
+  - `getForWeek` (picks propios) sin cambios.
+- `src/domains/dashboard/components/LeagueDashboard.jsx` → renderiza `.participationBar` (admin) y `CopyReminder` en los accesos rápidos (solo `!locked`); pasa `week={lastLockedWeek}` a `MiniLeaderboard`.
+- `src/domains/dashboard/components/MiniLeaderboard.jsx` → prop opcional `week` para título "Top — Semana {week}".
+- `src/domains/dashboard/dashboard.module.css` → `.participationBar`.
+- `src/i18n/es.js` / `en.js` → `dashboard.copyReminder`, `reminderCopied`, `reminderText`, `adminParticipation`, `top3Week`.
+
+### Decisiones (elegidas por el usuario)
+- Recordatorio: solo admin, en el dashboard.
+- MiniLeaderboard: muestra la **última semana bloqueada** (antes quedaba vacío con la semana abierta).
+- Contador anónimo de participación para admin: **sí** (porcentaje/contador sin nombres).
+
+### Verificación
+- `npm run build` ✅ (127 módulos).
+- Manual: sim con admin → contador "n de total" + recordatorio; MiniLeaderboard con la semana cerrada; sin datos individuales pre-cierre.
+
+---
+
 ## Estado actual (2026-08-01)
 
 BUILD-001 ✅, BUILD-002 ✅ y BUILD-002.1 ✅ (código + docs + build 127 módulos).

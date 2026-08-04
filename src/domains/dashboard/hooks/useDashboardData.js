@@ -26,6 +26,7 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
   const [streak, setStreak] = useState(0)
   const [memberCounts, setMemberCounts] = useState({})
   const [masterGames, setMasterGames] = useState([])
+  const [participation, setParticipation] = useState(null)
 
   // Perfil del usuario (username para el saludo)
   useEffect(() => {
@@ -49,9 +50,26 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
 
   const sourceGames = contextLeague ? leagueGames : masterGames
 
+  const weeksOrdered = useMemo(
+    () => [...new Set((sourceGames || []).map(g => g.week))].sort((a, b) => a - b),
+    [sourceGames]
+  )
+
   // Semana actual: primera con juego pendiente y deadline no vencido; si toda
   // la temporada terminó, la última semana.
   const currentWeek = useMemo(() => getCurrentWeek(sourceGames), [sourceGames])
+
+  // PRIVACY-001: última semana ya bloqueada (deadline vencido o finalizada).
+  // Los standings/posiciones solo se agregan a partir de semanas bloqueadas;
+  // nunca se revelan picks antes del cierre.
+  const lastLockedWeek = useMemo(() => {
+    let last = null
+    for (const w of weeksOrdered) {
+      const wg = (sourceGames || []).filter(g => g.week === w)
+      if (isWeekLocked(wg)) last = w
+    }
+    return last
+  }, [sourceGames, weeksOrdered])
 
   const weekGames = useMemo(
     () => (sourceGames || []).filter(g => g.week === currentWeek),
@@ -62,15 +80,25 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
   const deadline = useMemo(() => getWeekDeadline(weekGames), [weekGames])
   const locked = useMemo(() => isWeekLocked(weekGames), [weekGames])
 
-  // Picks del usuario + clasificación de la semana (solo con liga de contexto)
+  const isContextAdmin = !!contextLeague &&
+    (contextLeague.admin_id === user?.id || contextLeague.role === 'admin')
+
+  // Picks propios de la semana abierta (para PendingAction/QuickStats)
   useEffect(() => {
     if (!contextLeague?.id || currentWeek == null) return
     let active = true
-    ;(async () => {
-      const myRes = await picksApi.getForWeek(user?.id, contextLeague.id, currentWeek)
-      if (active && !myRes.error) setWeekPicks(myRes.data || [])
+    picksApi.getForWeek(user?.id, contextLeague.id, currentWeek).then(({ data, error }) => {
+      if (active && !error) setWeekPicks(data || [])
+    })
+    return () => { active = false }
+  }, [contextLeague?.id, user?.id, currentWeek])
 
-      const lbRes = await picksApi.getLeaderboard(contextLeague.id, currentWeek)
+  // Standings de la última semana BLOQUEADA (nunca de la semana abierta)
+  useEffect(() => {
+    if (!contextLeague?.id || lastLockedWeek == null) return
+    let active = true
+    ;(async () => {
+      const lbRes = await picksApi.getLeaderboard(contextLeague.id, lastLockedWeek)
       const allPicks = lbRes.error ? null : lbRes.data
       let profileMap = {}
       const userIds = allPicks ? [...new Set(allPicks.map(p => p.user_id))] : []
@@ -78,13 +106,32 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
         const { data } = await profilesApi.getMany(userIds)
         ;(data || []).forEach(p => { profileMap[p.id] = p.username })
       }
-      const scored = weekGames.filter(g => g.finished && g.result)
+      const scored = (sourceGames || [])
+        .filter(g => g.week === lastLockedWeek && g.finished && g.result)
       if (active) {
         setStandings(allPicks && scored.length ? calcStandings(allPicks, scored, profileMap) : [])
       }
     })()
     return () => { active = false }
-  }, [contextLeague?.id, user?.id, currentWeek, weekGames])
+  }, [contextLeague?.id, lastLockedWeek, sourceGames])
+
+  // PRIVACY-001: contador ANÓNIMO de participación (solo admin, semana abierta).
+  // Muestra "n de total" sin identidades. Visible aunque nadie haya enviado aún.
+  useEffect(() => {
+    if (!contextLeague?.id || !isContextAdmin || currentWeek == null || locked) {
+      setParticipation(null)
+      return
+    }
+    let active = true
+    ;(async () => {
+      const { data } = await picksApi.getLeaderboard(contextLeague.id, currentWeek)
+      if (!active) return
+      const submitted = data ? new Set(data.map(p => p.user_id)).size : 0
+      const total = memberCounts[contextLeague.id] || 0
+      setParticipation(total > 0 ? { submitted, total } : null)
+    })()
+    return () => { active = false }
+  }, [contextLeague?.id, isContextAdmin, currentWeek, locked, memberCounts])
 
   // Racha: semanas consecutivas (hacia atrás) con al menos un acierto
   useEffect(() => {
@@ -178,10 +225,13 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
     masterGames,
     sourceGames,
     currentWeek,
+    lastLockedWeek,
     weekGames,
     hasWeekGames,
     deadline,
     locked,
+    isContextAdmin,
+    participation,
     weekPicks,
     standings,
     streak,
@@ -197,6 +247,6 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
     showLeagueSummary: hasLeagues,
     showPendingAction: !!contextLeague,
     showLeaderboard: !!contextLeague,
-    showCountdown: hasCurrentLeague,
+    showCountdown: !!contextLeague,
   }
 }
