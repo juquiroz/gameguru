@@ -241,10 +241,75 @@ Elimina la separación conceptual entre `NewUserHome`, `LeaguesOverview` y `Leag
 
 ---
 
-## Estado actual (2026-08-01)
+## PLAN-003 — Rediseño UX de captura de resultados
 
-BUILD-001 ✅, BUILD-002 ✅ y BUILD-002.1 ✅ (código + docs + build 127 módulos).
-Pendiente de verificación manual: los 3 escenarios de BUILD-002.1 (usuario nuevo / con ligas sin activa / liga activa) y las capturas del spec.
-Nada de BUILD-001/002/002.1 está commiteado aún. Resumen diario de contexto en `gameguru-day-2026-08-01.md`.
-Próximas decisiones: commit, modo de deploy (CI vs manual) y limpieza del `.env` commiteado.
+Diseño + implementación de la captura de scores en `LeagueGamesManager`. Detalle completo en `opencode/plans/PLAN-003.md`.
+
+### Decisión (elegida por el usuario)
+- **Opción A: fila expandida** — al editar, la fila se expande con columnas Visitante/Local y barra Guardar/Cancelar full-width.
+- i18n solo en el editor (`manager.*`).
+
+### Nuevos archivos
+- `src/components/ScoreEditor.jsx` + `ScoreEditor.module.css` — editor universal y deporte-agnóstico (NFL/MLB/NBA): estado interno de inputs, autofocus, Enter/Esc, barra de acciones full-width.
+
+### Archivos modificados
+- `src/components/LeagueGamesManager.jsx` → eliminados estado `homeScore`/`awayScore` y `handleOpenResult`; `handleSetScores(game, awayValue, homeValue)` cambia de firma (persistencia, validación y mensajes idénticos); render condicional `editing` con `editMeta` + `ScoreEditor`.
+- `src/components/LeagueGamesManager.module.css` → nuevos `.gameRow.editing` y `.editMeta`; eliminados `.scoreForm`, `.scoreInput`, `.saveScoreBtn`, `.cancelScoreBtn`.
+- `src/i18n/es.js` / `en.js` → sección `manager.*` (`away`, `home`, `save`, `cancel`).
+
+### Verificación
+- `npm run build` ✅ (130 módulos, warning chunk >500 kB pre-existente).
+- Manual pendiente: guardar nuevo / editar existente (pre-fill) / cancelar / toggle, en móvil.
+
+---
+
+## PLAN-004 — Sistema de Temporadas (Practice / Preseason / Regular)
+
+**Diseño aprobado, SIN implementar** (solo arquitectura y documentación; no se tocó código, BD ni componentes). Detalle completo en `opencode/plans/PLAN-004.md`.
+
+### Decisión (elegida por el usuario)
+- `league_mode` ('practice'|'preseason'|'regular') + `season` en `leagues`; `phase` ('preseason'|'regular'|'postseason') en `master_games`.
+- **Contingencia sin doble fuente de verdad**: captura manual en oficiales SOLO con provider offline + aviso ⚠; con provider online → "Editar resultado" deshabilitado.
+- "Liga" en UI; "experiencia" solo en el wizard.
+- Práctica: switch `Equipos NFL / Personalizado`.
+- Backfill SQL manual (no migración formal).
+
+### Entregables del plan
+Modelo de datos, wireframes del wizard (3 pasos con cards), matriz de comportamiento por modo, flujo provider (Provider→Adapter→Repository→Service con `syncSeason`), estrategia de migración, UX (`ExperiencePicker` + badges de modo), roadmap BUILD-004.1→004.8, riesgos y recomendaciones.
+
+---
+
+## PLAN-004.1 — Persistencia del Sistema de Temporadas (BUILD-004.1)
+
+Modelo de datos + dominio listos para soportar las 3 experiencias. Sin cambios visuales; sin tocar componentes de UI.
+
+### Campos nuevos
+- `leagues.league_mode` (text, CHECK `practice|preseason|regular`, default `'regular'`).
+- `leagues.season` (text, default `'2026'`).
+- `master_games.phase` (text, CHECK `preseason|regular|postseason`, default `'regular'`).
+
+### Decisión: `league_mode` (vs `experience_mode` / `season_mode`)
+`league_mode` es un enum estable de la liga (extensible a múltiples deportes/años). `experience_mode` es concepto UX (no un dato). `season_mode` implica que cambia por temporada; la decisión es de la liga.
+
+### Script de migración
+`supabase/004.1-season-system.sql` — DDL (`ADD COLUMN IF NOT EXISTS`) + check constraints + índices + backfill idempotente (`simulation=true→practice`, `false→regular`). **Manual**: ejecutar en SQL Editor de Supabase, no forma parte del deploy de la app.
+
+### Dominio
+- `src/domains/league/models/modes.js` — `LEAGUE_MODES`, `getLeagueMode(league)` (con fallback a `simulation`), `getLeagueSeason(league)`.
+- `src/domains/league/models/seasons.js` — `SEASONS`, `providerAvailable(sport, season, phase)`.
+- `src/domains/league/services/leagueService.js` — `hydrateLeague(league)`.
+- `src/hooks/useLeague.js` — `fetchMyLeagues` ya hidrata con `hydrateLeague` (aditivo, sin cambiar comportamiento).
+
+### Compatibilidad
+Funciona ANTES del script (fallback a `simulation`) y DESPUÉS (lee `league_mode`). No se tocaron Dashboard, LeagueGamesManager ni CreateLeagueModal.
+
+---
+
+## Estado actual (2026-08-03)
+
+BUILD-001 ✅, BUILD-002 ✅, BUILD-002.1 ✅, PRIVACY-001 ✅, fix de navegación (nav siempre visible) ✅ y PLAN-003 (ScoreEditor) ✅ (código + docs + build). PLAN-004 (Sistema de Temporadas) en diseño ✅; BUILD-004.1 (modelo persistente + dominio) ✅. Pendiente de ejecutar el backfill SQL manual `supabase/004.1-season-system.sql`.
+Pendiente de verificación manual: los 3 escenarios de BUILD-002.1 (usuario nuevo / con ligas sin activa / liga activa), PRIVACY-001 (contador + recordatorio en sim), PLAN-003 (guardar/editar/cancelar/toggle) y PLAN-004.1 (verificar tras ejecutar backfill: las ligas existentes muestran `mode` y `season` correctamente).
+Nada está commiteado aún (BUILD-001/002/002.1 + PRIVACY-001 + nav + PLAN-003 + BUILD-004.1). Resúmenes diarios en `gameguru-day-2026-08-01.md` y `gameguru-day-2026-08-03.md`.
+Próximas decisiones: commit, modo de deploy, limpieza del `.env`; luego BUILD-004.2 (badges de modo) y ejecución del script SQL cuando se autorice.
+
 

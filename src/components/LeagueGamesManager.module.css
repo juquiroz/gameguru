@@ -91,6 +91,21 @@
 .gameRow:hover { background: var(--surface); }
 .gameRow.selected { background: rgba(245, 166, 35, 0.08); }
 
+.gameRow.editing {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: default;
+}
+
+.editMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
 .teamsRow {
   display: flex;
   align-items: center;
@@ -248,70 +263,6 @@
 
 @media (min-width: 480px) {
   .resultBtn { padding: 0.2rem 0.45rem; font-size: 0.85rem; }
-}
-
-.scoreForm {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.scoreForm .vs {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text2);
-}
-
-.scoreInput {
-  width: 3.2rem;
-  padding: 0.45rem 0.4rem;
-  font-size: 1.05rem;
-  text-align: center;
-  background: var(--bg2);
-  border: 1.5px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: 'Bebas Neue', sans-serif;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.scoreInput:focus {
-  border-color: var(--accent);
-}
-
-.saveScoreBtn {
-  padding: 0.45rem 0.65rem;
-  font-size: 0.9rem;
-  background: var(--accent);
-  color: #000;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 700;
-  flex-shrink: 0;
-  transition: opacity 0.15s;
-}
-
-.saveScoreBtn:hover {
-  opacity: 0.85;
-}
-
-.cancelScoreBtn {
-  padding: 0.45rem 0.55rem;
-  font-size: 0.8rem;
-  background: none;
-  border: 1.5px solid var(--border);
-  color: var(--text3);
-  border-radius: 6px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: border-color 0.15s;
-}
-
-.cancelScoreBtn:hover {
-  border-color: var(--text2);
 }
 
 /* ─── Add custom game form ─────────────────────────────────────── */
