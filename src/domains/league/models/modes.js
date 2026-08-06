@@ -1,7 +1,7 @@
 export const DEFAULT_SEASON = '2026'
 
 export const LEAGUE_MODES = {
-  practice:  { id: 'practice',  icon: '🎓', label: 'Práctica' },
+  practice:  { id: 'practice',  icon: '🎓', label: 'Training Camp' },
   preseason: { id: 'preseason', icon: '🏈', label: 'Pretemporada' },
   regular:   { id: 'regular',   icon: '🏆', label: 'Temporada Oficial' },
 }

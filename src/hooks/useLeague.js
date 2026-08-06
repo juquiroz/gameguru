@@ -3,6 +3,7 @@ import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supab
 import { genInviteCode, NFL_TEAMS } from '../data/nflData'
 import { localTZOffset } from '../utils/dates'
 import { hydrateLeague } from '../domains/league'
+import { trainingSessionService } from '../domains/training/services/trainingSessionService'
 
 export function useLeague(user) {
   const [myLeagues,      setMyLeagues]      = useState([])
@@ -140,6 +141,37 @@ export function useLeague(user) {
     setCurrentLeague(league)
   }, [])
 
+  // Training Camp (BUILD-TC-001): crea la liga + su evento en un solo paso.
+  // Sin generación de partidos: el fixture llega con el Simulation Engine.
+  const createTrainingCamp = useCallback(async (name, config = {}) => {
+    if (!user) return { error: { message: 'No hay sesión activa.' } }
+    const code = genInviteCode()
+
+    const { data: league, error } = await leaguesApi.create({
+      name,
+      sport: 'NFL',
+      code,
+      admin_id: user.id,
+      deadline_mode: 'weekly',
+      simulation: true,
+    })
+    if (error) return { error }
+
+    await membersApi.join(league.id, user.id, 'admin')
+
+    const { data: event, persisted, fallback } = await trainingSessionService.create(league.id, config)
+
+    const newLeague = { ...league, role: 'admin', league_mode: 'practice' }
+    setMyLeagues(prev => [newLeague, ...prev])
+    return { data: newLeague, event, persisted, fallback }
+  }, [user])
+
+  // Configura/crea el evento de una liga ya existente (lobby → botón admin).
+  const configureTrainingCamp = useCallback(async (league, config = {}) => {
+    if (!user || !league?.id) return { error: { message: 'No hay liga activa.' } }
+    return trainingSessionService.create(league.id, config)
+  }, [user])
+
   const leaveCurrentLeague = useCallback(() => {
     setCurrentLeague(null)
   }, [])
@@ -151,6 +183,8 @@ export function useLeague(user) {
     fetchMyLeagues,
     createLeague,
     createSimulationLeague,
+    createTrainingCamp,
+    configureTrainingCamp,
     joinByCode,
     enterLeague,
     leaveCurrentLeague,

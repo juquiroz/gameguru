@@ -1,5 +1,33 @@
 # GameGuru — Blueprint de cambios
 
+## Experiencias oficiales (referencias)
+
+GameGuru ofrece 3 experiencias, cada una con su documento de referencia oficial:
+
+| Experiencia | Modo BD | Documento |
+|---|---|---|
+| 🎓 Training Camp | `practice` | [`opencode/plans/training-camp.md`](training-camp.md) — evento simulado automáticamente (PLAN-005) |
+| 🏈 Pretemporada | `preseason` | [`opencode/plans/preseason.md`](preseason.md) — liga exclusiva de calendario oficial |
+| 🏆 Temporada Oficial | `regular` | [`opencode/plans/regular-season.md`](regular-season.md) — la experiencia completa |
+
+- "Liga" en la UI; "experiencia" solo dentro del wizard.
+- **PRIVACY-001** (picks privados hasta el cierre) aplica a Pretemporada y Temporada; **Training Camp está exento** (objetivo educativo, transparencia en vivo).
+- Roadmaps independientes: **BUILD-TC-\*** (Training Camp), **BUILD-PS-\*** (Pretemporada), **BUILD-RS-\*** (Temporada).
+
+### Identidad visual por experiencia (decisión 2026-08-04)
+
+Cada experiencia tiene **identidad visual propia**, no solo un badge. El usuario debe saber en qué experiencia está **con solo abrir una liga**.
+
+| Experiencia | Color | Token CSS | Ícono | Banner | Tono de mensajes |
+|---|---|---|---|---|---|
+| 🎓 Training Camp | Azul `#3B82F6` | `--mode-tc` | 🎓 | "Training Camp" | Aprendizaje, primeros pasos, bienvenida |
+| 🏈 Preseason | Teal `#14B8A6` | `--mode-ps` | 🏈 | "Pretemporada" | Puesta a punto, calendario oficial |
+| 🏆 Temporada Oficial | Dorado `#F5A623` (accent del producto) | `--mode-rs` | 🏆 | "Temporada Oficial" | La experiencia completa |
+
+Cada modo aplica: **color distintivo** (tokens `--mode-*` en `global.css`), **ícono propio**, **banner específico** en el header de la liga/dashboard (fondo/gradiente del color del modo), y **mensajes adaptados** (i18n `modes.*`) en wizard, dashboard, notificaciones y Activity Feed.
+
+**Pendiente de refinamiento visual** (paleta final a validar en implementación). Se materializa en BUILD-004.2 (badges + color/ícono/banner en dashboard/summary) y se extiende en BUILD-TC-001 (banner y mensajes del evento Training Camp).
+
 ## Eliminación del modo "Juego por juego"
 
 ### Archivos modificados
@@ -305,11 +333,29 @@ Funciona ANTES del script (fallback a `simulation`) y DESPUÉS (lee `league_mode
 
 ---
 
-## Estado actual (2026-08-03)
+## PLAN-005 — Training Camp Experience (🎓)
 
-BUILD-001 ✅, BUILD-002 ✅, BUILD-002.1 ✅, PRIVACY-001 ✅, fix de navegación (nav siempre visible) ✅ y PLAN-003 (ScoreEditor) ✅ (código + docs + build). PLAN-004 (Sistema de Temporadas) en diseño ✅; BUILD-004.1 (modelo persistente + dominio) ✅. Pendiente de ejecutar el backfill SQL manual `supabase/004.1-season-system.sql`.
-Pendiente de verificación manual: los 3 escenarios de BUILD-002.1 (usuario nuevo / con ligas sin activa / liga activa), PRIVACY-001 (contador + recordatorio en sim), PLAN-003 (guardar/editar/cancelar/toggle) y PLAN-004.1 (verificar tras ejecutar backfill: las ligas existentes muestran `mode` y `season` correctamente).
-Nada está commiteado aún (BUILD-001/002/002.1 + PRIVACY-001 + nav + PLAN-003 + BUILD-004.1). Resúmenes diarios en `gameguru-day-2026-08-01.md` y `gameguru-day-2026-08-03.md`.
-Próximas decisiones: commit, modo de deploy, limpieza del `.env`; luego BUILD-004.2 (badges de modo) y ejecución del script SQL cuando se autorice.
+**Diseño aprobado, en implementación (BUILD-TC-001 Lobby ✅ + BUILD-TC-002 Experience Picker/Entrada oficial ✅ + BUILD-TC-003 Event Director ✅, sin commitear)**. Detalle completo en `opencode/plans/training-camp.md`.
+
+### Decisiones (elegidas por el usuario)
+- **Training Camp es un EVENTO, no una liga**: se mantienen los **9 estados** (`created → waiting_players → countdown → training_started → picks_open → picks_locked → games_in_progress → simulation_running → finished` + `cancelled`); cada estado es una experiencia distinta para Dashboard, notificaciones y Activity Feed.
+- **Exención de PRIVACY-001 solo en TC**: leaderboard y picks públicos en vivo (objetivo educativo). Preseason/Regular conservan la privacidad estricta.
+- **Event Director** (TC-003): el director **coordina, no genera** — contrato `EventDirector` + `TrainingCampDirector`; la UI solo conoce el contrato.
+- **Motor cliente v1** (TC-005) con lógica aislada de React: `SimulationService → SimulationEngine → RandomGenerator`; Edge Functions futuras solo reemplazan el Engine.
+- **Fixture Mode** (TC-004): `auto` (genera enfrentamientos) | `manual` (reutiliza el constructor de partidos).
+- **Training Session** como entidad independiente 1:N-ready (`session_no`), temporalmente 1:1 por liga; internamente "Training Session", visible "Training Camp".
+- El nombre "Practice" se abandona en el lenguaje de producto; la BD conserva `'practice'` (sin migración).
+
+### Entregables del plan
+Modelo de datos (`training_sessions` 1:N-ready con `leagues`: `session_no`, `start_at`, `game_count` 5/10/15/20, `speed` demo/normal/fast, `fixture_mode`, `state`, `seed`), contrato común `ResultSource` (Training vs Official Provider Engine), wizard del evento (con pantalla de confirmación), Event Director con `currentStep`/`lastCompletedStep`, UX en vivo (lobby, countdown, partidos animados, champion), roadmaps **BUILD-TC-001→008**, riesgos y recomendaciones.
+
+---
+
+## Estado actual (2026-08-04)
+
+BUILD-001 ✅, BUILD-002 ✅, BUILD-002.1 ✅, PRIVACY-001 ✅, fix de navegación (nav siempre visible) ✅ y PLAN-003 (ScoreEditor) ✅ (código + docs + build). PLAN-004 (Sistema de Temporadas) en diseño ✅; BUILD-004.1 (modelo persistente + dominio) ✅. **PLAN-005 (Training Camp Experience): diseño ✅ + BUILD-TC-001 (Lobby) ✅ + BUILD-TC-002 (Experience Picker + entrada oficial) ✅ + BUILD-TC-003 (Event Director) ✅** — renaming "Practice"→"Training Camp", tabla `training_sessions` 1:N-ready (SQL manual 005.1 no ejecutado), dominio `src/domains/training/` (service/hook renombrados a sesiones), dominio `src/domains/event/` (EventDirector + TrainingCampDirector), lobby con countdown/roster/estado + personalidad, persistencia con fallback a localStorage; wizard oficial de creación con Experience Picker (TC/Preseason/Regular), intro educativa del TC y pantalla de confirmación (flujo: Crear Liga → Picker → Intro → Configuración → Confirmación → Lobby). Sin motores (Fixture Generator TC-004 / Simulation Engine TC-005).
+Pendiente de verificación manual: los 3 escenarios de BUILD-002.1 (usuario nuevo / con ligas sin activa / liga activa), PRIVACY-001 (contador + recordatorio en sim), PLAN-003 (guardar/editar/cancelar/toggle), PLAN-004.1 (verificar tras ejecutar backfill) y BUILD-TC-001/002/003 (flujo crear → picker → intro → config → confirmación → lobby → countdown → cancelar; desktop + móvil; capturas).
+Nada está commiteado aún (BUILD-001/002/002.1 + PRIVACY-001 + nav + PLAN-003 + BUILD-004.1 + PLAN-005 docs + BUILD-TC-001 + BUILD-TC-002 + BUILD-TC-003). Resúmenes diarios en `gameguru-day-2026-08-01.md`, `gameguru-day-2026-08-03.md` y `gameguru-day-2026-08-04.md`.
+Próximas decisiones: commit, modo de deploy, limpieza del `.env`; luego BUILD-004.2 (badges de modo), ejecución del script SQL cuando se autorice y, posteriormente, BUILD-TC-004 (Fixture Generator).
 
 

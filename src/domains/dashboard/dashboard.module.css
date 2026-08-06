@@ -281,6 +281,7 @@
 }
 .miniBadgeCurrent { background: rgba(34,197,94,.12);   color: #86EFAC; border: 1px solid rgba(34,197,94,.3); }
 .miniBadgeAdmin   { background: rgba(245,166,35,.15);  color: var(--accent); border: 1px solid rgba(245,166,35,.3); }
+.miniBadgeTc      { background: rgba(59,130,246,.15);  color: #93C5FD; border: 1px solid rgba(59,130,246,.4); }
 .leagueMiniDelete {
   background: none;
   border: none;
@@ -446,6 +447,29 @@
   font-weight: 500;
   color: var(--accent);
 }
+
+.lobbyBanner {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: .9rem 1.1rem;
+  background:
+    radial-gradient(120% 140% at 10% -10%, rgba(59,130,246,.35), transparent 55%),
+    linear-gradient(135deg, rgba(59,130,246,.15), rgba(7,11,20,.3));
+  border: 1px solid rgba(59,130,246,.45);
+  border-radius: var(--r-lg);
+  color: var(--text);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: .05em;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.lobbyBanner:hover { border-color: var(--mode-tc, #3B82F6); background: rgba(59,130,246,.12); }
+.lobbyBannerIcon { font-size: 1.4rem; }
+.lobbyBannerArrow { margin-left: auto; color: #93C5FD; font-size: 1.3rem; }
 
 @media (min-width: 480px) {
   .gameCard { flex-basis: 250px; }

@@ -135,7 +135,8 @@ espnProvider (real: schedule + scoreboard por sport/season/phase)
 ## 6. UX
 
 - Config `MODES`/`SEASONS` data-driven → wizard y badges reutilizables multi-deporte.
-- Badge de modo en `LeaguesSummary`/`LeagueDashboard`: 🎓 Práctica / 🏈 Pretemporada / 🏆 Temporada (reemplaza 🧪 Sim).
+- **Identidad visual por experiencia (decisión 2026-08-04)**: cada modo tiene color distintivo (tokens `--mode-*`), ícono propio, banner específico en el header de la liga/dashboard y mensajes adaptados (i18n `modes.*`), no solo un badge. 🎓 Training Camp azul `#3B82F6` / 🏈 Pretemporada teal `#14B8A6` / 🏆 Temporada dorado `#F5A623`. Ver índice de experiencias en `blueprint.md`.
+- Badge de modo en `LeaguesSummary`/`LeagueDashboard`: 🎓 Training Camp / 🏈 Pretemporada / 🏆 Temporada (reemplaza 🧪 Sim).
 - i18n es/en: `wizard.*` (pasos, cards, descripciones), `modes.*`, aviso de contingencia (`manager.manualResultWarning`).
 - Componente reutilizable `ExperiencePicker` (cards).
 

@@ -513,3 +513,35 @@ Evoluciona `leagues.simulation` (boolean) → 3 experiencias: **🎓 Práctica**
 **Dominio** (`src/domains/league/`): config `LEAGUE_MODES`/`SEASONS` + helpers `getLeagueMode`/`getLeagueSeason`/`isOfficialMode`/`providerAvailable` + servicio `hydrateLeague`. Listo para uso por BUILD-004.2+.
 
 - **Roadmap**: BUILD-004.1 ✅ → 004.2 (badges) → 004.3 (wizard) → 004.4 (gating+aviso) → 004.5 (provider) → 004.6 (resultados automáticos) → 004.7 (multi-deporte/limpieza) → 004.8 (Edge Function/noticias).
+
+---
+
+## Experiencias oficiales (referencias)
+
+GameGuru ofrece 3 experiencias, cada una con su documento de referencia oficial en `opencode/plans/`:
+
+| Experiencia | Modo BD | Documento |
+|---|---|---|
+| 🎓 Training Camp | `practice` | [`opencode/plans/training-camp.md`](opencode/plans/training-camp.md) — evento simulado automáticamente (PLAN-005) |
+| 🏈 Pretemporada | `preseason` | [`opencode/plans/preseason.md`](opencode/plans/preseason.md) — liga exclusiva de calendario oficial |
+| 🏆 Temporada Oficial | `regular` | [`opencode/plans/regular-season.md`](opencode/plans/regular-season.md) — la experiencia completa |
+
+- "Liga" en la UI; "experiencia" solo dentro del wizard.
+- **PRIVACY-001** (picks privados hasta el cierre) aplica a Pretemporada y Temporada; **Training Camp está exento** (objetivo educativo, transparencia en vivo).
+- Roadmaps independientes: **BUILD-TC-\*** (Training Camp), **BUILD-PS-\*** (Pretemporada), **BUILD-RS-\*** (Temporada).
+
+**Identidad visual por experiencia (decisión 2026-08-04)**: cada experiencia tiene identidad visual propia (no solo badge) — color distintivo (tokens `--mode-tc`/`--mode-ps`/`--mode-rs` en `global.css`), ícono propio, banner específico en el header de liga/dashboard y mensajes adaptados (i18n `modes.*`). 🎓 Training Camp azul `#3B82F6` · 🏈 Pretemporada teal `#14B8A6` · 🏆 Temporada Oficial dorado `#F5A623`. Se materializa en BUILD-004.2 y BUILD-TC-001. Paleta final pendiente de validar.
+
+## Training Camp Experience — PLAN-005 (diseño aprobado · BUILD-TC-001/002/003 implementados)
+
+Reemplaza conceptualmente al "Practice Mode". Detalle completo en `opencode/plans/training-camp.md`.
+
+- **Training Camp es un EVENTO, no una liga**: liga `practice` + sesión de entrenamiento (`training_sessions`, entidad independiente 1:N-ready con `session_no`; temporalmente una única sesión por liga) con `start_at`, `game_count` (5/10/15/20), `speed` (demo/normal/fast), `fixture_mode` (auto/manual), `state` (9 estados), `seed` (RNG determinista).
+- **9 estados**: `created → waiting_players → countdown → training_started → picks_open → picks_locked → games_in_progress → simulation_running → finished` (+ `cancelled`). Cada estado es una experiencia distinta para Dashboard, notificaciones y Activity Feed.
+- **Event Director (BUILD-TC-003)**: dominio `src/domains/event/` con el contrato base `EventDirector` (steps + `currentStep`/`lastCompletedStep` + `dispatch`) y `TrainingCampDirector`. El Director **coordina, no genera** (no crea partidos ni resultados): avanza por hora (`waiting→countdown→training_started`), resuelve acciones admin (abrir lobby / comenzar / cancelar) y deja la generación a los motores (Fixture Generator TC-004 / Simulation Engine TC-005). La UI solo conoce el contrato, no el motor.
+- **Motor cliente v1** (futuro, TC-005) con lógica aislada de React: `SimulationService → SimulationEngine → RandomGenerator`. Edge Functions futuras solo reemplazan el Engine.
+- **Contrato común `ResultSource`**: Training Engine (genera fixture/resultados, escribe `league_games` con `master_game_id: null`) y Official Provider Engine (lee `master_games`, escribe ambas) → la lectura no distingue el origen.
+- **Exención de PRIVACY-001** solo en TC: leaderboard y picks públicos en vivo (transparencia educativa).
+- **Naming**: "Practice" se abandona en el lenguaje de producto; la BD conserva `'practice'` (sin migración; renombrar el enum a `training_camp` queda como migración formal futura). Internamente **"Training Session"**, visible al usuario **"Training Camp"**.
+- **Roadmap**: BUILD-TC-001 ✅ (renaming + tabla SQL + lobby) → TC-002 ✅ (Experience Picker + intro educativa + **entrada oficial por el wizard**: `Crear Liga → Picker → Intro TC → Configuración → Confirmación → Lobby`) → TC-003 ✅ (**Event Director** + sesión 1:N-ready + confirmación en el wizard + personalidad del Lobby) → TC-004 (Fixture Generator) → TC-005 (Simulation Engine) → TC-006 (Resultados/UX live) → TC-007 (Graduación 🏆) → TC-008 futuro (Edge/realtime + fixtures manuales). Sin motores hasta TC-004/005.
+- **Entrada oficial**: el Training Camp no es una opción aislada; se llega por el flujo de creación (wizard con Experience Picker). El CTA "🎓 Training Camp" del Topbar abre el wizard en la intro del TC (o navega al Lobby si la liga actual ya es practice). Embudo de adopción: **Training Camp → Pretemporada → Temporada Oficial**.

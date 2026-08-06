@@ -128,6 +128,38 @@ export const profilesApi = {
       .in('id', userIds),
 }
 
+// ─── Training Sessions helpers (BUILD-TC-003, tabla manual 005.1-training-sessions.sql)
+// 1:N-ready con leagues (session_no único por liga). Temporalmente la app usa
+// una única sesión por liga y accede siempre a la más reciente.
+export const trainingSessionsApi = {
+  insert: (record) =>
+    supabase.from('training_sessions').insert(record).select().single(),
+
+  get: (leagueId) =>
+    supabase
+      .from('training_sessions')
+      .select('*')
+      .eq('league_id', leagueId)
+      .order('session_no', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+
+  list: (leagueId) =>
+    supabase
+      .from('training_sessions')
+      .select('id, session_no')
+      .eq('league_id', leagueId),
+
+  updateById: (id, patch) =>
+    supabase.from('training_sessions').update(patch).eq('id', id),
+
+  updateByLeague: (leagueId, patch) =>
+    supabase.from('training_sessions').update(patch).eq('league_id', leagueId),
+
+  remove: (leagueId) =>
+    supabase.from('training_sessions').delete().eq('league_id', leagueId),
+}
+
 // ─── Master Games helpers (global calendar managed by superadmin) ─────────────
 export const masterGamesApi = {
   insertAll: (games) =>

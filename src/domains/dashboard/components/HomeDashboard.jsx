@@ -1,6 +1,7 @@
 import { leaguesApi } from '../../../supabase'
 import { useLanguage } from '../../../i18n/context'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { getLeagueMode } from '../../league/models/modes'
 import DashboardHeader from './DashboardHeader'
 import HeroCard from './HeroCard'
 import HowItWorks from './HowItWorks'
@@ -15,7 +16,7 @@ import CopyReminder from './CopyReminder'
 import homeStyles from '../../../pages/Home.module.css'
 import styles from '../dashboard.module.css'
 
-export default function HomeDashboard({ user, myLeagues, currentLeague, onNavigate, onEnterLeague, onCreateNew, onJoinClick, onRefreshLeagues }) {
+export default function HomeDashboard({ user, myLeagues, currentLeague, onNavigate, onEnterLeague, onCreateNew, onJoinClick, onRefreshLeagues, onCreateTrainingCamp }) {
   const { t } = useLanguage()
   const state = useDashboardData({ user, myLeagues, currentLeague })
 
@@ -102,6 +103,9 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         <button className="btn-primary" style={{ width: '100%', maxWidth: 520 }} onClick={onCreateNew}>
           {t('dashboard.startNow')}
         </button>
+        <button className="btn-primary" style={{ width: '100%', maxWidth: 520, background: 'var(--mode-tc, #3B82F6)', borderColor: 'var(--mode-tc, #3B82F6)' }} onClick={onCreateTrainingCamp}>
+          {t('training.ctaWelcome')}
+        </button>
       </div>
     )
   }
@@ -120,6 +124,17 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         leagueCount={myLeagues?.length || 0}
         user={user}
       />
+
+      {hasCurrentLeague && getLeagueMode(currentLeague) === 'practice' && (
+        <button
+          className={styles.lobbyBanner}
+          onClick={() => onNavigate('training')}
+        >
+          <span className={styles.lobbyBannerIcon}>🎓</span>
+          <span>{t('training.lobbyBanner')}</span>
+          <span className={styles.lobbyBannerArrow}>→</span>
+        </button>
+      )}
 
       {isContextAdmin && participation && (
         <div className={styles.participationBar}>

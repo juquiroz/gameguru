@@ -11,10 +11,12 @@ import Leaderboard from './pages/Leaderboard'
 import PublicPicks from './pages/PublicPicks'
 import LeaguePage  from './pages/LeaguePage'
 import SuperAdmin  from './pages/SuperAdmin'
+import TrainingCamp from './pages/TrainingCamp'
 import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
-import CreateLeagueModal from './components/CreateLeagueModal'
 import CreateSimulationModal from './components/CreateSimulationModal'
+import ExperienceWizard from './domains/experience/components/ExperienceWizard'
+import TrainingCampSetupModal from './domains/training/components/TrainingCampSetupModal'
 
 export default function App() {
   return (
@@ -26,9 +28,12 @@ export default function App() {
 
 function AppInner() {
   const [activePage, setActivePage] = useState('dashboard')
-  const [showCreate, setShowCreate] = useState(false)
+  const [showWizard, setShowWizard] = useState(false)
+  const [wizardInit, setWizardInit] = useState(null)
   const [showJoin,   setShowJoin]   = useState(false)
   const [showSimulation, setShowSimulation] = useState(false)
+  const [showTrainingCamp, setShowTrainingCamp] = useState(false)
+  const [lobbyVersion, setLobbyVersion] = useState(0)
   const { t } = useLanguage()
 
   const PAGE_KEYS = {
@@ -37,6 +42,7 @@ function AppInner() {
     board: 'topbar.board',
     publicpicks: 'Picks Públicos',
     league: 'topbar.league',
+    training: 'training.name',
     superadmin: 'superadmin.title',
   }
 
@@ -50,6 +56,8 @@ function AppInner() {
     fetchMyLeagues,
     createLeague,
     createSimulationLeague,
+    createTrainingCamp,
+    configureTrainingCamp,
     joinByCode,
     enterLeague,
     leaveCurrentLeague,
@@ -74,6 +82,9 @@ function AppInner() {
     leaveCurrentLeague()
     handleNavigate('dashboard')
   }
+
+  const openWizard = (initialExperience = null) => { setWizardInit(initialExperience); setShowWizard(true) }
+  const openConfigTrainingCamp = () => { setShowTrainingCamp(true) }
 
   if (loading || adminChecking) {
     return (
@@ -120,10 +131,11 @@ function AppInner() {
         currentLeague={currentLeague}
         loadingLeagues={loadingLeagues}
         onNavigate={handleNavigate}
-        onCreateNew={() => setShowCreate(true)}
+        onCreateNew={() => openWizard()}
         onJoinClick={() => setShowJoin(true)}
         onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard') }}
         onRefreshLeagues={fetchMyLeagues}
+        onCreateTrainingCamp={() => openWizard('practice')}
       />
     )
 
@@ -146,6 +158,7 @@ function AppInner() {
     if (activePage === 'board') return <Leaderboard {...p} />
     if (activePage === 'publicpicks') return <PublicPicks {...p} />
     if (activePage === 'league') return <LeaguePage {...p} />
+    if (activePage === 'training') return <TrainingCamp key={lobbyVersion} {...p} onConfigure={openConfigTrainingCamp} />
     return home
   }
 
@@ -159,21 +172,33 @@ function AppInner() {
         onChangeLeague={handleChangeLeague}
         onLogout={signOut}
         isSuperAdmin={isSuperAdmin}
-        onCreateNew={() => setShowCreate(true)}
+        onCreateNew={() => openWizard()}
         onCreateSimulation={() => setShowSimulation(true)}
+        onCreateTrainingCamp={() => openWizard('practice')}
       />
 
       <main style={{ flex: 1, paddingBottom: '64px' }}>
         {renderPage()}
       </main>
 
-      <BottomNav activePage={activePage} onNavigate={handleNavigate} isSuperAdmin={isSuperAdmin} />
+      <BottomNav
+        activePage={activePage}
+        onNavigate={handleNavigate}
+        isSuperAdmin={isSuperAdmin}
+        isPractice={!!currentLeague && (currentLeague.league_mode === 'practice' || currentLeague.simulation)}
+      />
 
-      {showCreate && (
-        <CreateLeagueModal
-          onClose={() => setShowCreate(false)}
+      {showWizard && (
+        <ExperienceWizard
+          initialExperience={wizardInit}
+          onClose={() => setShowWizard(false)}
           onCreateLeague={createLeague}
-          onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard'); setShowCreate(false) }}
+          onCreateTrainingCamp={(cfg) => createTrainingCamp(cfg.name, cfg)}
+          onEnterLeague={(lg, experience) => {
+            setShowWizard(false)
+            enterLeague(lg)
+            handleNavigate(experience === 'practice' ? 'training' : 'dashboard')
+          }}
         />
       )}
 
@@ -188,6 +213,19 @@ function AppInner() {
           onClose={() => setShowSimulation(false)}
           onCreateSimulation={createSimulationLeague}
           onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard'); setShowSimulation(false) }}
+        />
+      )}
+
+      {showTrainingCamp && (
+        <TrainingCampSetupModal
+          mode="config"
+          initialName={currentLeague?.name}
+          onClose={() => setShowTrainingCamp(false)}
+          onCreate={(cfg) => configureTrainingCamp(currentLeague, cfg)}
+          onDone={() => {
+            setShowTrainingCamp(false)
+            setLobbyVersion(v => v + 1)
+          }}
         />
       )}
     </div>

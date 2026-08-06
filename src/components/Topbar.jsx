@@ -2,14 +2,16 @@ import { useLanguage } from '../i18n/context'
 import LanguageSwitch from './LanguageSwitch'
 import styles from './Topbar.module.css'
 
-export default function Topbar({ user, league, onChangeLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation }) {
+export default function Topbar({ user, league, onChangeLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation, onCreateTrainingCamp }) {
   const { t } = useLanguage()
+  const isPractice = league && (league.league_mode === 'practice' || league.simulation)
 
   const navItems = [
     { id: 'dashboard',   label: t('topbar.dashboard') },
     { id: 'picks',       label: t('topbar.picks') },
     { id: 'board',       label: t('topbar.board') },
     { id: 'league',      label: t('topbar.league') },
+    ...(isPractice ? [{ id: 'training', label: '🎓 Training Camp' }] : []),
   ]
 
   return (
@@ -48,6 +50,13 @@ export default function Topbar({ user, league, onChangeLeague, onLogout, activeP
           </>
         )}
         <button className={styles.createBtn} onClick={onCreateNew}>{t('topbar.create')}</button>
+        <button
+          className={styles.createBtn}
+          onClick={() => isPractice ? onNavigate('training') : onCreateTrainingCamp()}
+          style={{ borderColor: 'var(--mode-tc, #3B82F6)', color: 'var(--mode-tc, #3B82F6)' }}
+        >
+          {t('training.cta')}
+        </button>
         {isSuperAdmin && (
           <button className={styles.createBtn} onClick={onCreateSimulation} style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
             🧪 Simular
