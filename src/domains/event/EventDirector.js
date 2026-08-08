@@ -9,19 +9,44 @@
 // eso es trabajo de los motores (Fixture Generator / Simulation Engine).
 // Futuros directores (PreseasonDirector, OfficialSeasonDirector) extienden
 // este mismo contrato; la UI solo conoce `steps`/`currentStep`/`dispatch`.
+//
+// BUILD-TC-004: cada evento tiene un `type` (EVENT_TYPES) persistido en la
+// sesión (`event.event_type`); el hook elige el director por ese tipo. Las
+// acciones de generación (START_GENERATION / GENERATION_PROGRESS /
+// SAVE_COMPLETE / COMPLETE_EVENT) son del contrato común para que cualquier
+// motor futuro (Simulation Engine TC-005) reporte por el mismo camino.
 // ════════════════════════════════════════════════════════════════════
+
+export const EVENT_TYPES = {
+  TRAINING_CAMP: 'training_camp',
+  FIXTURE_GENERATION: 'fixture_generation',
+  GAME_WEEK: 'game_week',
+}
 
 export const EVENT_ACTIONS = {
   OPEN_LOBBY: 'OPEN_LOBBY',
   START_NOW: 'START_NOW',
   CANCEL: 'CANCEL',
   TICK: 'TICK',
+  START_GENERATION: 'START_GENERATION',
+  GENERATION_PROGRESS: 'GENERATION_PROGRESS',
+  SAVE_COMPLETE: 'SAVE_COMPLETE',
+  COMPLETE_EVENT: 'COMPLETE_EVENT',
+  OPEN_WEEK: 'OPEN_WEEK',
+  LOCK_PICKS: 'LOCK_PICKS',
+  OPEN_NEXT_WEEK: 'OPEN_NEXT_WEEK',
 }
 
 export class EventDirector {
-  constructor({ id, steps }) {
+  constructor({ id, type, steps }) {
     this.id = id
+    this.type = type || id
     this.steps = steps
+  }
+
+  // Tipo de evento (EVENT_TYPES) que identifica a este director en la sesión.
+  getEventType() {
+    return this.type
   }
 
   // Secuencia canónica del evento (pasos ordenados).

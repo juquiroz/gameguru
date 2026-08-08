@@ -86,10 +86,10 @@ export const membersApi = {
 
 // ─── Picks helpers ──────────────────────────────────────────────────────────
 export const picksApi = {
-  upsert: (picks) =>
+  upsert: (picks, { onConflict = 'user_id,league_id,week,game_id' } = {}) =>
     supabase
       .from('picks')
-      .upsert(picks, { onConflict: 'user_id,league_id,week,game_id' }),
+      .upsert(picks, { onConflict }),
 
   getForWeek: (userId, leagueId, week) =>
     supabase
@@ -98,6 +98,25 @@ export const picksApi = {
       .eq('user_id', userId)
       .eq('league_id', leagueId)
       .eq('week', week),
+
+  // Picks de una sesión de entrenamiento (BUILD-TC-005): la jornada juega
+  // sobre los partidos generados, no sobre una semana del calendario maestro.
+  getForSession: (userId, leagueId, trainingSessionId) =>
+    supabase
+      .from('picks')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('league_id', leagueId)
+      .eq('training_session_id', trainingSessionId),
+
+  // Todos los picks confirmados de una sesión (punto de integración TC-006:
+  // el Simulation Engine consume la planilla sin tocar la UI).
+  getAllForSession: (leagueId, trainingSessionId) =>
+    supabase
+      .from('picks')
+      .select('user_id, pick, game_id')
+      .eq('league_id', leagueId)
+      .eq('training_session_id', trainingSessionId),
 
   getLeaderboard: (leagueId, week) =>
     supabase
@@ -147,8 +166,9 @@ export const trainingSessionsApi = {
   list: (leagueId) =>
     supabase
       .from('training_sessions')
-      .select('id, session_no')
-      .eq('league_id', leagueId),
+      .select('id, session_no, event_type')
+      .eq('league_id', leagueId)
+      .order('session_no', { ascending: false }),
 
   updateById: (id, patch) =>
     supabase.from('training_sessions').update(patch).eq('id', id),
@@ -280,4 +300,64 @@ export const leagueGamesApi = {
     if (!data || data.length === 0) return { error: { message: 'No se encontró el juego en la base de datos (posible problema de permisos).' } }
     return { data: { success: true } }
   },
+}
+
+// ─── Game Week helpers (BUILD-TC-005, tabla manual 005.2-game-week.sql) ─────
+// Jornada de juego de una sesión (WeekState). 1:N-ready con training_sessions
+// vía (training_session_id, week) UNIQUE; el TC tiene una sola jornada.
+export const gameWeeksApi = {
+  insert: (record) =>
+    supabase.from('game_weeks').insert(record).select().single(),
+
+  getBySession: (trainingSessionId) =>
+    supabase
+      .from('game_weeks')
+      .select('*')
+      .eq('training_session_id', trainingSessionId)
+      .order('week', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+
+  list: (trainingSessionId) =>
+    supabase
+      .from('game_weeks')
+      .select('*')
+      .eq('training_session_id', trainingSessionId)
+      .order('week'),
+
+  update: (id, patch) =>
+    supabase.from('game_weeks').update(patch).eq('id', id).select().single(),
+
+  removeBySession: (trainingSessionId) =>
+    supabase.from('game_weeks').delete().eq('training_session_id', trainingSessionId),
+}
+
+// ─── Pick Submissions helpers (BUILD-TC-005) ────────────────────────────────
+// Confirmación/bloqueo de la planilla de una jornada por usuario
+// (PickSubmission). Presencia = planilla confirmada; el bloqueo real de la
+// jornada lo decide el director (LOCK_PICKS).
+export const pickSubmissionsApi = {
+  upsert: (record) =>
+    supabase
+      .from('pick_submissions')
+      .upsert(record, { onConflict: 'game_week_id,user_id' })
+      .select()
+      .single(),
+
+  getForWeek: (gameWeekId) =>
+    supabase
+      .from('pick_submissions')
+      .select('user_id, pick_count, submitted_at')
+      .eq('game_week_id', gameWeekId),
+
+  getByUser: (gameWeekId, userId) =>
+    supabase
+      .from('pick_submissions')
+      .select('*')
+      .eq('game_week_id', gameWeekId)
+      .eq('user_id', userId)
+      .maybeSingle(),
+
+  removeByWeek: (gameWeekId) =>
+    supabase.from('pick_submissions').delete().eq('game_week_id', gameWeekId),
 }

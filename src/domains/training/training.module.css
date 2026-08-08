@@ -98,6 +98,25 @@
   color: var(--text2);
   margin-bottom: .6rem;
 }
+/* ─── Estado vacío (sin evento) ───────────── */
+.sectionEmpty { margin-top: .5rem; }
+.emptyState {
+  border: 1px dashed rgba(148,163,184,.35);
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  color: var(--text2);
+  font-size: .92rem;
+  line-height: 1.5;
+}
+.emptyHint {
+  font-size: .85rem;
+  color: var(--text3, #94A3B8);
+  margin: 0;
+}
+.emptyState .btnTc { align-self: flex-start; }
 .status {
   background: var(--bg2);
   border: 1px solid var(--border);
@@ -233,6 +252,35 @@
   color: var(--text3);
   font-family: 'Barlow Condensed', sans-serif;
   letter-spacing: .05em;
+}
+/* ─── Fixture progress (BUILD-TC-004) ──────── */
+.progressPersona {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.2rem, 6vw, 1.7rem);
+  letter-spacing: .05em;
+  color: #DBEAFE;
+  margin-bottom: .8rem;
+  min-height: 1.6em;
+}
+.progressTrack {
+  height: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563EB, #60A5FA);
+  transition: width .3s ease;
+}
+.progressMeta {
+  margin-top: .6rem;
+  font-size: .76rem;
+  color: #93C5FD;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .06em;
 }
 .countdownReady {
   padding: 1rem;

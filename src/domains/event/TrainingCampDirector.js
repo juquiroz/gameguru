@@ -17,7 +17,7 @@ import {
   getDerivedPhase,
   COUNTDOWN_THRESHOLD_MS,
 } from '../training/models/states'
-import { EventDirector, EVENT_ACTIONS } from './EventDirector'
+import { EventDirector, EVENT_ACTIONS, EVENT_TYPES } from './EventDirector'
 
 const STEPS = [
   { id: 'created',            icon: '🎓' },
@@ -42,7 +42,7 @@ const mapPhase = (phase) => PHASE_TO_STEP[phase] || phase
 
 export class TrainingCampDirector extends EventDirector {
   constructor() {
-    super({ id: 'training_camp', steps: STEPS })
+    super({ id: 'training_camp', type: EVENT_TYPES.TRAINING_CAMP, steps: STEPS })
   }
 
   getCurrentStep(event, now = new Date()) {

@@ -1,6 +1,7 @@
 export {
   TRAINING_STATES,
   TRAINING_STATES_LIST,
+  FIXTURE_GENERATION_STATES,
   isValidTrainingState,
   getTrainingState,
   getDerivedPhase,

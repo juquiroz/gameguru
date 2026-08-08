@@ -1,6 +1,6 @@
 # PLAN-005 — Training Camp Experience (🎓)
 
-**Estado**: Diseño aprobado (2026-08-04) y **en implementación (BUILD-TC-001 ✅, TC-002 ✅, TC-003 ✅; sin commitear)**. Los BUILD que ya tienen § propio marcan su alcance entregado; el resto queda como diseño pendiente de implementar.
+**Estado**: Diseño aprobado (2026-08-04) y **en implementación (BUILD-TC-001 ✅, TC-002 ✅, TC-003 ✅, TC-004 ✅, TC-004.2 ✅, TC-005 ✅ + TC-005.1 persistencia en nube; sin commitear)**. **PLAN-TC-005 (Game Week & Picks): implementado (2026-08-05) y validado en modo nube (BUILD-TC-005.1, 2026-08-07)** — ver §8.5.1: migraciones `005.2` (aplicada) y `004.1` (backfill ejecutado), E2E real 25/25, regresión 56/56, Fixes A (constraint única para upsert) y B (GameWeekContext con sesión FG). Los BUILD que ya tienen § propio marcan su alcance entregado; el resto queda como diseño pendiente de implementar.
 
 ## Contexto / problema actual
 
@@ -125,7 +125,7 @@ Tunable; la duración total estimada = `game_count × time_per_game` (documentar
 3. **Velocidad**: Demo / Normal / Rápida.
 4. **Fixture Mode**: `auto` (genera enfrentamientos aleatorios de los 32 equipos NFL — default recomendado) | `manual` (reutiliza el builder de partidos existente de `LeagueGamesManager` → demos personalizadas).
 
-El wizard de creación de experiencia (PLAN-004, BUILD-004.3) es quien abre el TC; el TC agrega estos 4 pasos como configuración del evento. **BUILD-TC-002 ya implementa el wizard de experiencias** (`ExperienceWizard`): el paso 3 (cantidad de partidos) y 4 (velocidad) hoy viven en el nivel Custom del formulario de configuración; el `fixture_mode` queda fijo en `auto` hasta BUILD-TC-004 (Fixture Generator).
+El wizard de creación de experiencia (PLAN-004, BUILD-004.3) es quien abre el TC; el TC agrega estos 4 pasos como configuración del evento. **BUILD-TC-002 ya implementa el wizard de experiencias** (`ExperienceWizard`): el paso 3 (cantidad de partidos) y 4 (velocidad) hoy viven en el nivel Custom del formulario de configuración; el `fixture_mode` queda fijo en `auto` (BUILD-TC-004 implementa la generación automática; `manual` queda pendiente de pulir).
 
 ## 6. UX del evento en vivo
 
@@ -163,13 +163,14 @@ El objetivo: con solo abrir la liga, el usuario sabe de inmediato que está en u
 | **TC-001** ✅ | Renaming "Practice"→"Training Camp" en UI/i18n + tabla `training_sessions` (SQL manual) + lobby (crear evento, countdown, roster, comenzar/cancelar) | Lobby funcional (sala previa) |
 | **TC-002** ✅ | Experience Picker + intro educativa + entrada oficial por el wizard de creación de ligas | TC integrado al flujo oficial |
 | **TC-003** ✅ | **Event Director**: contrato `EventDirector` + `TrainingCampDirector`; Training Session como entidad independiente (1:N-ready, `session_no`); pantalla de confirmación en el wizard; personalidad del Lobby | Director coordina el ciclo (sin motores) |
-| **TC-004** | **Fixture Generator** (auto/manual): al llegar `training_started` genera los enfrentamientos en `league_games` | Fixture listo en `picks_open` |
-| **TC-005** | **Simulation Engine** v1 (cliente): `SimulationService` → `SimulationEngine` → `RandomGenerator` (seed) | Resultados generados y reproducibles |
+| **TC-004** ✅ | **Fixture Generator** (auto): evento `fixture_generation` con `FixtureGenerationDirector` + `FixtureGeneratorService` (sin React) + `fixtureCalendar` (RNG seed); se dispara al finalizar la sesión y persiste el calendario en `league_games` | Progreso visible en el Lobby (`currentStep`/`lastCompletedStep` + barra `fixture_progress`) |
+| **TC-005** ✅ | **Game Week & Picks** (implementado 2026-08-05; **validado en modo nube 2026-08-07**, BUILD-TC-005.1): evento `game_week` (3er director) + tablas `game_weeks`/`pick_submissions` (SQL 005.2 **aplicado**, Fix A: `UNIQUE` constraint para upsert) + `picksService`/`useGameWeek` + vista de jornada (selección, pendientes, confirmación, bloqueo) hasta `picks_locked` | Jugar la jornada: seleccionar, confirmar y bloquear picks |
+| **TC-006** | **Simulation Engine** v1 (cliente): `SimulationService` → `SimulationEngine` → `RandomGenerator` (seed); resultados en vivo vía `setScores` | Resultados generados y reproducibles |
 | **TC-006** | **Resultados/UX live**: partidos animados, `simulation_running`, leaderboard en vivo + Picks Públicos en vivo (exención PRIVACY-001) + dashboard card de estado | Experiencia completa en vivo |
 | **TC-007** | **Graduación**: champion 🏆, leaderboard final, resumen del evento, "Crear otro Training Camp" | Cierre del ciclo educativo |
 | **TC-008** (futuro) | Edge Function (solo reemplaza Engine) + realtime + fixtures manuales pulidos | Evento sobrevive al cierre de la pestaña admin |
 
-Dependencias: TC-001/TC-002 adelantan parte del wizard de experiencia de PLAN-004 (BUILD-004.3); los pasos Preseason/Regular del wizard crean ligas con el flujo actual (`createLeague`). TC-003 sienta el contrato que TC-004/TC-005 conectan al Director; el Dashboard solo conoce `EventDirector` (steps + dispatch), nunca el motor.
+Dependencias: TC-001/TC-002 adelantan parte del wizard de experiencia de PLAN-004 (BUILD-004.3); los pasos Preseason/Regular del wizard crean ligas con el flujo actual (`createLeague`). TC-003 sienta el contrato que TC-004/TC-005/TC-006 conectan al Director; el Dashboard solo conoce `EventDirector` (steps + dispatch), nunca el motor. TC-005 cierra la fase de juego hasta el bloqueo de picks; TC-006 aporta el motor de resultados; TC-007 la graduación.
 
 ## 8.1 BUILD-TC-001 — Lobby del Training Camp (implementado 2026-08-04)
 
@@ -323,6 +324,172 @@ src/domains/training/
 - `src/domains/training/components/TrainingCampLobby.jsx`, `TrainingCampHeader.jsx`, `TrainingCampStatus.jsx`, `TrainingCampCountdown.jsx` (personalidad + sessionNo + steps del Director).
 - `src/domains/experience/components/ExperienceWizard.jsx` + `experience.module.css` (paso de confirmación `tc-review`).
 - `src/i18n/es.js` + `en.js` (keys `persona*`, `sessionTag`, `review*`; textos de engineNote/readySub/localPersist actualizados).
+
+## 8.4 BUILD-TC-004 — Fixture Generation Event (implementado 2026-08-05)
+
+**Resultado**: aparece el evento **Fixture Generation** con un director propio (`FixtureGenerationDirector`, mismo contrato `EventDirector`) y un motor **desacoplado de React** (`FixtureGeneratorService` + `fixtureCalendar` puro/determinista). Al **finalizar la sesión de Training Camp** (estado `finished`) el hook crea la sesión `fixture_generation`; el Lobby la muestra con las mismas tarjetas (Header/Status) más un nuevo **Progress** (barra generado→guardado), sin conocer el director. `EVENT_TYPES` identifica el director por `event.event_type`; `EVENT_ACTIONS` se extiende con `START_GENERATION` / `GENERATION_PROGRESS` / `SAVE_COMPLETE` / `COMPLETE_EVENT`.
+
+### Decisiones
+1. **`.js` en lugar de `.ts`**: el prompt pidió `FixtureGenerationDirector.ts`, pero el proyecto es 100% JS (Vite 5 sin toolchain TS); se implementa en `.js` por consistencia con el dominio `event/` (documentado en el header del director).
+2. **Disparo al finalizar el TC** (decisión del usuario en este BUILD): la transición ocurre en `useTrainingSession` cuando el TC llega a `finished` (sin tocar la UI). El plan original apuntaba a `training_started`; la instrucción del BUILD prevalece y queda anotada aquí. El flujo está **preparado** para demo: hoy el TC solo llega a `training_started`, así que el evento se activa al finalizar la sesión.
+3. **Nueva sesión por evento**: `createFixtureEvent` crea una fila con `event_type: 'fixture_generation'` y `session_no` automático → al ser la más reciente, `trainingSessionService.get` la devuelve y el Lobby la pinta sin cambios. En localStorage reemplaza el registro de la sesión TC.
+4. **Progreso persistido en el evento**: `fixture_progress: {generated, saved, total}`; el director deriva el paso activo (`generated < total → generating_fixtures`, `generated === total → saving_matches`, `SAVE_COMPLETE → completed`).
+5. **Idempotencia**: guard `ref` en el hook (StrictMode/re-renders no duplican el evento ni la generación) + el service limpia partidos `tc-<sessionNo>-*` previos antes de insertar.
+
+### Arquitectura
+```
+src/domains/event/
+├── EventDirector.js                   → + EVENT_TYPES, + acciones de generación, `type`/`getEventType()`
+├── TrainingCampDirector.js            → `type: training_camp`
+├── FixtureGenerationDirector.js       → NUEVO: 4 pasos + dispatch (waiting→generating_fixtures→saving_matches→completed)
+├── services/
+│   ├── fixtureCalendar.js             → NUEVO: RNG seed (mulberry32) + rondas round-robin (puro, testable)
+│   └── FixtureGeneratorService.js     → NUEVO: genera + persiste league_games + onProgress (sin React)
+└── index.js
+src/domains/training/
+├── hooks/useTrainingSession.js        → elige director por event_type; orquesta transición TC→FG y la generación
+├── services/trainingSessionService.js → `event_type` en create + `createFixtureEvent` + normalize sin coacción TC
+└── components/ (Status/Header/Lobby genéricos + TrainingCampProgress NUEVO)
+```
+- El calendario usa el **método de la circunferencia** (31 rondas × 16 = 496 pareos únicos): se barajan rondas enteras para que **≤16 partidos cubran los 32 equipos una sola vez** y 17–20 usen la ronda siguiente (doble jornada). Determinista por `seed`.
+- Los partidos viven en `league_games` (`master_game_id: null`, `season: 'Sim'`, `week: 1`, `game_id: tc-<sessionNo>-<n>`, `game_time` = `start_at + n×2min`).
+
+### Validación
+- **Verificación node** (bundle con esbuild): 27 checks ✅ — transiciones del director (incl. `currentStep`/`lastCompletedStep` en `completed` y `cancelled` virtual), idempotencia de dispatch, determinismo por seed, 16 partidos → 32 equipos una vez, 20 partidos sin duplicar pareos, `game_time` +2min.
+- `npm run build` ✅ (158 módulos, +4 vs TC-003).
+- Smoke test ✅ (dev server + headless chrome, sin errores de consola).
+- **Verificación manual pendiente**: crear TC → lobby → comenzar → sesión `finished` → evento `fixture_generation` con progreso → `completed` → partidos visibles en `league_games`.
+
+### Archivos
+- `src/domains/event/EventDirector.js` (EVENT_TYPES + acciones + `type`), `FixtureGenerationDirector.js` (nuevo), `services/fixtureCalendar.js` (nuevo), `services/FixtureGeneratorService.js` (nuevo), `index.js`.
+- `src/domains/training/hooks/useTrainingSession.js`, `services/trainingSessionService.js`.
+- `src/domains/training/components/TrainingCampStatus.jsx` (steps-driven genérico + personas FG), `TrainingCampHeader.jsx` (tag/badge FG), `TrainingCampLobby.jsx` (Progress para FG + acciones TC gated), `TrainingCampProgress.jsx` (nuevo).
+- `src/domains/training/training.module.css` (barra de progreso).
+- `src/i18n/es.js` + `en.js` (keys `fixture*`, personas FG).
+- `supabase/005.1-training-sessions.sql` (columna `event_type` + CHECK de estados FG + CHECK `event_type`).
+
+## 8.4.1 BUILD-TC-004.2 — Estabilización (implementado 2026-08-05)
+
+BUILD de consolidación sobre TC-004: migración aplicada + manejo defensivo.
+
+### Migración aplicada
+- El usuario ejecutó `supabase/005.1-training-sessions.sql` en el SQL Editor (la CLI estaba instalada pero el proyecto no linkeado y solo había anon key; por decisión del usuario se corrió manualmente).
+- Verificación REST con anon key: `GET /rest/v1/training_sessions` → **200** (antes PGRST205); round-trip completo en liga real: INSERT 201 (defaults `event_type`/`state`), PATCH a `generating_fixtures` + `fixture_progress` JSONB 204, READ back, DELETE 204. FK `league_id → leagues` confirmada (409 con id inexistente).
+- El SQL ahora es **crear/actualizar**: `ADD COLUMN IF NOT EXISTS` (1b) para subir tablas parciales al esquema vigente, e índices `league_id`/`state`/`event_type` (5).
+
+### Hardening defensivo
+- `states.js`: `getTrainingState`/`getDerivedPhase` toleran `event` nulo/no-objeto, `start_at` y `now` inválidos sin lanzar y sin `undefined`. Nuevo vocabulario `FIXTURE_GENERATION_STATES` (`waiting/generating_fixtures/saving_matches/completed`): `isValidTrainingState` los reconoce para que `getTrainingState` **no coaccione estados FG a `created`** (el Lobby es compartido por ambos tipos de evento).
+- `useTrainingSession`: `load` con `Promise.allSettled` + `try/finally` (nunca se queda en `loading`); `applyPatch` conserva el estado optimista y no tira la UI si falla la persistencia; logs descriptivos en carga/spawn/generación.
+- `TrainingCampLobby`: estado vacío explícito sin excepciones cuando no hay sesión (CTA admin "Configurar el primer evento"; invitación/código visibles para invitar).
+- `trainingSessionService`: `logFallback(op, err)` y logs descriptivos por operación antes de degradar a localStorage.
+
+### Validación
+- Harness node 18/18 ✅ (`/tmp/opencode/tc0042-verify.mjs`): null/bad-input/FG states. Regresión TC-004 27/27 ✅. `npm run build` ✅ 158 módulos. Smoke ✅ sin errores de consola.
+- Pendiente: verificación manual con sesión iniciada (crear TC → persistencia en nube sin aviso "local").
+
+## 8.5 BUILD-TC-005 — Game Week & Picks (implementado 2026-08-05; **validado en modo nube 2026-08-07 — BUILD-TC-005.1**)
+
+**Resultado**: tras finalizar Fixture Generation, el usuario puede **jugar la jornada de inmediato**: ver los partidos generados, seleccionar sus picks, confirmar la planilla y bloquearla. El flujo llega hasta `picks_locked`; el motor de resultados es BUILD-TC-006.
+
+### Decisiones del usuario (2026-08-05)
+1. **Game Week = tercer evento** `game_week` (TC → FG → Game Week). 1 evento = 1 director = 1 alcance, consistente con el patrón actual (el hook crea el evento al completarse FG).
+2. **Bloqueo de picks** `picks_open → picks_locked`: al vencer el deadline (`start_at + N min`) **o** cuando todos los participantes confirmaron **o** por lock manual del admin (consistente con "Comenzar ahora").
+3. **Ventana de picks por nivel**: Express 5' / Standard 10' / Advanced 15' / Custom editable — extiende `resolveConfig` (no agrega campos a la config salvo en Custom).
+4. **Schema completo** en `005.2-game-week.sql`: `game_weeks` + `pick_submissions` + `training_session_id` en `league_games` y `picks` + `event_type 'game_week'`.
+
+### Flujo
+```
+FG completed ──spawn──▶ game_week (picks_open · Jornada activa)
+  → Grid de partidos (league_games por training_session_id)
+  → Selección + pendientes (x/y) → Confirmación (sheet)
+  → pick_submissions + SUBMIT_PICKS
+  → [deadline | todos confirmaron | admin] → picks_locked (Jornada bloqueada 🔒)
+  → (TC-006) Simulation Engine → games_in_progress → simulation_running → finished
+```
+
+### Entidades (SQL `supabase/005.2-game-week.sql`, manual, idempotente, RLS permisiva)
+- **`game_weeks`**: `id` PK, `training_session_id` FK→`training_sessions`, `league_id` FK, `week` int (1 en TC), `game_count`, `deadline_at` timestamptz, `state` (**WeekState**): `pending → picks_open → picks_locked → games_in_progress → simulation_running → completed` (+ `cancelled`). `UNIQUE (training_session_id, week)`.
+- **`pick_submissions`**: `game_week_id` FK, `user_id` FK, `pick_count` (x/y para el indicador de pendientes), `submitted_at`; `UNIQUE (game_week_id, user_id)`.
+- **`PickStatus`** (derivado, no se persiste): `open → draft → submitted → scored`. Se obtiene de `pick_submissions` + `picks` + resultados.
+- `league_games` + `training_session_id uuid NULL` (lo setea `FixtureGeneratorService`; se elimina el parseo de `game_id tc-<sessionNo>-*`).
+- `picks` + `training_session_id uuid NULL` + `submitted_at` (desambigua sesiones; el contrato `calcStandings`/Leaderboard/PublicPicks **no cambia**).
+- `training_sessions`: CHECK `event_type` + `'game_week'` (el CHECK de `state` ya incluye los estados de juego).
+
+### Director (sin acoplar la UI)
+- **`GameWeekDirector`** (dominio `event/`, evento `game_week`): steps `picks_open → picks_locked → games_in_progress → simulation_running → finished` (+ `cancelled` virtual). `EVENT_ACTIONS` + `SUBMIT_PICKS` / `LOCK_PICKS` / `SIMULATION_START` / `SIMULATION_PROGRESS` / `COMPLETE_EVENT`. TICK: `picks_open → picks_locked` al vencer `deadline_at`.
+- **`picksService`** (sin React): persiste `picks` + `pick_submissions` y dispatchea `SUBMIT_PICKS`/`LOCK_PICKS` al director. Hook **`useGameWeekPicks`** expone `weekState`, `PickStatus`, `deadlineMs`, acciones; la UI nunca conoce el director ni Supabase directo.
+- `useTrainingSession`: `directorFor` gana la rama `game_week`; efecto `spawn` FG `completed` → Game Week (patrón TC→FG, guard `ref` anti StrictMode).
+- UI: `GameWeekView` en el dominio `training` (la vista del evento cambia por `event_type`, como ya hace el Lobby con TC/FG); reutiliza `GameCard`. Deadline TC = `start_at + N` (**no** `getWeekDeadline`); `N` desde `resolveConfig` extendido.
+
+### Frontera TC-005 / TC-006 (Simulation Engine)
+- **TC-005**: jornada activa + selección + pendientes + confirmación + bloqueo hasta **`picks_locked`**; la transición a `games_in_progress` queda **definida** en el director pero inactiva (placeholder "Esperando simulación").
+- **TC-006**: `SimulationService → SimulationEngine → RandomGenerator` (seed), `SIMULATION_START/PROGRESS`, resultados vía `leagueGamesApi.setScores` (mismo contrato que ScoreEditor), leaderboard/picks públicos en vivo (exención PRIVACY-001) y `finished`.
+
+### Backlog BUILD-TC-005
+1. `supabase/005.2-game-week.sql` (tablas + columnas + CHECK `event_type`).
+2. `GameWeekDirector` (+ `EVENT_ACTIONS` nuevas).
+3. `picksService` + `useGameWeekPicks`.
+4. `FixtureGeneratorService`: setear `training_session_id` en `league_games`.
+5. `useTrainingSession`: rama `game_week` + spawn FG→GW.
+6. `GameWeekView` + componentes (jornada, pendientes, confirmación, bloqueo) + i18n es/en.
+7. `resolveConfig`: ventana de picks por nivel.
+8. Verificación: harness node (transiciones del director + derivación PickStatus), `npm run build`, smoke, docs.
+
+### Validación prevista
+- Harness node del `GameWeekDirector` (picks_open→picks_locked por deadline/todos/admin; `cancelled` virtual; `lastCompletedStep`).
+- Derivation de `PickStatus` (open/draft/submitted/scored) contra estados del director.
+- `npm run build` + smoke; verificación manual con sesión (FG → jornada → picks → confirmar → bloqueo).
+
+## 8.5.1 BUILD-TC-005 — alcance entregado (2026-08-05)
+
+**Estado**: implementado, verificado y documentado, **sin commitear**. **Validado en modo nube el 2026-08-07 (BUILD-TC-005.1)**: la migración `005.2` ya estaba aplicada en Supabase (verificada íntegra vía Management API), se ejecutó el backfill `004.1` pendiente, y el flujo completo de nube quedó verificado con un E2E real 25/25 + regresión 56/56 (detalle en `gameguru-day-2026-08-07.md`).
+
+### BUILD-TC-005.1 (2026-08-07) — Persistencia en modo nube
+- **Migraciones**: `005.2-game-week.sql` verificada en DB (tablas `game_weeks`/`pick_submissions`, UKs, CHECKs WeekState/`event_type`, FKs, columnas de `league_games`/`picks`/`training_sessions`). `004.1-season-system.sql` ejecutada vía Management API (`leagues.league_mode/season` + `master_games.phase` + backfill → liga real `16d92451-…` quedó `practice`).
+- **Fix A (DB)**: `picks_session_game_unique` era índice parcial y PostgREST `on_conflict` solo acepta unique constraints → sustituido por `UNIQUE CONSTRAINT (user_id, league_id, training_session_id, game_id)` (aplicado en DB + actualizado en el SQL). El upsert por sesión funciona y el duplicado devuelve 23505.
+- **Fix B (app)**: `GameWeekContext` filtraba partidos solo por `event.id` (GW), pero `FixtureGeneratorService` enlaza los `league_games` a la sesión **fixture_generation** → jornada vacía en nube. `sessionGameMatch` ahora acepta un `Set` de ownerIds (GW + FG vía `trainingSessionsApi.list` con `event_type`) + fallback `tc-<sessionNo>-`.
+- **E2E real 25/25** (`/tmp/opencode/tc0051-e2e.mjs`, usuario autenticado real): perfil → liga → join admin → TC → FG (10 partidos con `training_session_id=fgId`) → GW (sesión + fila `game_weeks`) → picks×10 upsert → confirmación (`pick_submissions`) → `picks_locked` → **persistencia tras refresh** → `completed` → delete liga cascade limpio. Datos de prueba borrados.
+- **Regresión 56/56** (harness node esbuild + mock: directores, calendario, estados defensivos, servicios GW/picks/levels/FG/TS).
+- `npm run build` ✅ (165 módulos) + smoke `vite preview` ✅.
+
+### Lo que se construyó
+- **Migración `supabase/005.2-game-week.sql`** (idempotente, RLS permisiva): tablas `game_weeks` (WeekState `pending/waiting/picks_open/picks_locked/games_in_progress/simulation_running/completed/cancelled`, `UNIQUE(training_session_id, week)`, `deadline_at/locked_at/completed_at`) y `pick_submissions` (`UNIQUE(game_week_id, user_id)`, `pick_count`, `submitted_at`); `league_games.training_session_id` + `picks.training_session_id`/`submitted_at`; CHECK `event_type IN ('training_camp','fixture_generation','game_week')`; `training_sessions.picks_deadline_at`; índices. **Fix A (005.1)**: `picks_session_game_unique` pasó de índice parcial a `UNIQUE CONSTRAINT (user_id, league_id, training_session_id, game_id)` para que PostgREST acepte `on_conflict`.
+- **Nuevo dominio `src/domains/game-week/`** (decisión de implementación: dominio propio con CSS púrpura propio, no dentro de `training/`):
+  - `GameWeekDirector.js` — director puro (contrato `EventDirector`): steps `waiting → picks_open → picks_locked → completed` (+ `cancelled` virtual); `OPEN_WEEK` (setea `picks_deadline_at`), `LOCK_PICKS` (con `reason: deadline|all_submitted|admin` + `locked_at`), `OPEN_NEXT_WEEK`, `COMPLETE_EVENT`, `CANCEL`, `TICK` (bloquea por deadline leído de `payload.deadline_at || event.picks_deadline_at`). No conoce Supabase ni la NFL.
+  - `GameWeekService.js` — `computePickDeadline` (apertura + ventana del nivel), `openWeek` (crea fila idempotente + parche `OPEN_WEEK`), `lockWeek` (`LOCK_PICKS` + sync de fila), `openNextWeek` (1:N-ready; `null` si `week >= totalWeeks`), `getActiveWeek`/`listWeeks`. Degrada a localStorage (`gameguru.gw.<sessionId>`).
+  - `PicksService.js` — `savePick`/`updatePick` (upsert con `onConflict` por sesión, `submitted_at: null`), `validateComplete` (todos los `game_id`), `confirmPicks` (marca `submitted_at` + inserta `pick_submissions`, devuelve `allSubmitted`), `areAllSubmitted` (todos los miembros confirmaron → bloqueo colectivo), **`getConfirmedPicks` = punto de integración de TC-006** (Simulation Engine consume los picks confirmados sin tocar la UI). `PickStatus`: `open/draft/submitted`.
+  - `GameWeekContext.jsx` + `useGameWeek` — único puente React → dominio: estado derivado (`weekState`, `PickStatus`, `pickCount/totalGames`, `deadlineMs`, `isOpen/isLocked/...`) y acciones (`selectPick`, `confirmPicks` [dispara `all_submitted`], `lockWeek` [admin]). Ninguna regla de dominio en componentes.
+  - `GameWeekView.jsx` + `game-week.module.css` — listado de partidos (reutiliza `GameCard`), selección, contador `x/y`, banner de ventana abierta/cerrada con countdown, confirmación, estados waiting/locked/completed/cancelled. i18n `gameWeek.*` (es/en).
+- **Contrato extendido**: `EventDirector.js` — `EVENT_TYPES.GAME_WEEK: 'game_week'` + `EVENT_ACTIONS.OPEN_WEEK/LOCK_PICKS/OPEN_NEXT_WEEK`.
+- **`supabase.js`**: `picksApi.getForSession`/`getAllForSession`/`upsert({onConflict})`; nuevas `gameWeeksApi` y `pickSubmissionsApi`.
+- **`trainingSessionService.js`**: `createGameWeekEvent` (sesión `game_week` `waiting`, persiste `level` + `pick_window_minutes`). `createFixtureEvent` ahora propaga `level`.
+- **`useTrainingSession.js`**: `directorFor` con rama `game_week`; spawn FG `completed` → GW (guard `ref`); apertura de jornada (`waiting` → `OPEN_WEEK`, guard `ref`); `phase` por `currentStep` para GW; expone `applyPatch` para que `GameWeekProvider` avance la sesión.
+- **`TrainingCampLobby.jsx`**: conmuta a `GameWeekProvider` + `GameWeekView` cuando `event_type === 'game_week'`.
+- **`FixtureGeneratorService.js`**: setea `training_session_id` en los `league_games` persistidos.
+- **`levels.js`**: `resolveConfig` extendido — `pickWindowMinutes` Express 5' / Standard 10' / Advanced 15' / Custom editable (param `pickWindowMinutes`).
+
+### Desviaciones del diseño §8.5 (documentadas)
+- UI en dominio propio `game-week/` (no `training/`); hook `useGameWeek` (no `useGameWeekPicks`).
+- `EVENT_ACTIONS` para picks: `OPEN_WEEK`/`LOCK_PICKS`/`OPEN_NEXT_WEEK` (no `SUBMIT_PICKS`); el lock siempre lleva `reason` (`deadline|all_submitted|admin`).
+- Steps del director dejan fuera `games_in_progress`/`simulation_running`/`finished` (quedan declarados en el CHECK de la migración para TC-006; el director los activará con `SIMULATION_START/PROGRESS` de TC-006).
+- La ventana de picks se propaga por el ciclo TC→FG→GW (`level` + `pick_window_minutes`), y el deadline se computa en `openWeek` (no en el director).
+
+### Verificación (todo en verde)
+- Harness node `tc005-verify.mjs` (esbuild + mock de supabase): **57 checks** — director (transiciones, reasons de lock, TICK por deadline, idempotencia, cancelled virtual), service (openWeek idempotente, deadline = ventana del nivel, openNextWeek 1:N, degradación a localStorage), picks (ventana cerrada → error, confirm incompleto → missing, confirm completo → `submitted_at` + `pick_submissions`, allSubmitted al confirmar todos, `getConfirmedPicks` con los 6 picks, degradación local) y `resolveConfig` (5/10/15/editable).
+- Regresión: harness TC-004 (director FG + calendar, 24 checks) y TC-004.2 (states defensivos, 18 checks) siguen en verde.
+- `npm run build` ✓ (165 módulos) + smoke headless Chrome sin errores de consola.
+
+### Siguiente paso (✅ HECHO en BUILD-TC-005.1, 2026-08-07)
+1. ~~Ejecutar `supabase/005.2-game-week.sql` en el SQL Editor~~ → **ya estaba aplicada**; verificada íntegra vía Management API.
+2. Verificación REST/round-trip + flujo completo FG → jornada → picks → confirmación → bloqueo → **E2E real 25/25** ✅.
+3. Handoff final en `blueprint.md` / `gameguru.md` / daily (`gameguru-day-2026-08-07.md`) y commit (cuando el usuario lo pida).
+
+## 8.6 BUILD-TC-006 — Simulation Engine (backlog)
+
+- `RandomGenerator` (RNG con seed → resultados reproducibles) + `SimulationEngine` (state machine puro + batches por `speed`: demo/normal/fast) + `SimulationService` (fachada; migración Edge = solo reemplaza el Engine).
+- Wiring al `GameWeekDirector` (`SIMULATION_START`/`SIMULATION_PROGRESS`/`COMPLETE_EVENT`); resultados escritos vía `leagueGamesApi.setScores` (mismo contrato que ScoreEditor; `result` = abbr del ganador).
+- UX en vivo: partidos que avanzan a FINAL, leaderboard en vivo y Picks Públicos en vivo (exención PRIVACY-001 para `practice`), notificaciones por estado.
+- Frontera con TC-005: TC-006 NO toca la fase de picks; toma el evento en `picks_locked` y lo lleva a `finished`.
 
 ## 9. Riesgos
 
