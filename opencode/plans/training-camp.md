@@ -1,6 +1,6 @@
 # PLAN-005 — Training Camp Experience (🎓)
 
-**Estado**: Diseño aprobado (2026-08-04) y **en implementación (BUILD-TC-001 ✅, TC-002 ✅, TC-003 ✅, TC-004 ✅, TC-004.2 ✅, TC-005 ✅ + TC-005.1 persistencia en nube; sin commitear)**. **PLAN-TC-005 (Game Week & Picks): implementado (2026-08-05) y validado en modo nube (BUILD-TC-005.1, 2026-08-07)** — ver §8.5.1: migraciones `005.2` (aplicada) y `004.1` (backfill ejecutado), E2E real 25/25, regresión 56/56, Fixes A (constraint única para upsert) y B (GameWeekContext con sesión FG). Los BUILD que ya tienen § propio marcan su alcance entregado; el resto queda como diseño pendiente de implementar.
+**Estado**: Diseño aprobado (2026-08-04) y **en implementación (BUILD-TC-001 ✅, TC-002 ✅, TC-003 ✅, TC-004 ✅, TC-004.2 ✅, TC-005 ✅ + TC-005.1 persistencia en nube)**. **PLAN-TC-005 (Game Week & Picks): implementado (2026-08-05) y validado en modo nube (BUILD-TC-005.1, 2026-08-07)** — ver §8.5.1: migraciones `005.2` (aplicada) y `004.1` (backfill ejecutado), E2E real 25/25, regresión 56/56, Fixes A (constraint única para upsert) y B (GameWeekContext con sesión FG). **Hito TC-005 commiteado `7cb799a` (rama `development`, sin push) + BUILD-TC-005.3 (2026-08-08): flujo QA desbloqueado de punta a punta (admin advance `ADVANCE_EVENT`), QA browser 43/43 con 0 errores consola/red — ver §8.5.2; QA final BUILD-TC-005.4 48/48 + fix `league_mode: 'practice'` — ver §8.5.3**. **BUILD-TC-006.1 (2026-08-08): Simulation Engine núcleo implementado (máquina interna + MatchSimulator determinista + StandingsCalculator + fachada) sin UX, regresión 140/140 — ver §8.6.1**. **BUILD-TC-006.2 (2026-08-08): orquestación automática en `useTrainingSession` (auto-start en `picks_locked`, batches por `speed`, resume, finalización `completed`/`finished`), regresión 187/187 — ver §8.6.2**. **BUILD-TC-006.3 (2026-08-08): UX en vivo (SimulationProgress + Results + Leaderboard + picks públicos) implementado y CERRADO EN LA NUBE — migraciones `006.1` y `006.1b` aplicadas vía Management API (PATCH `game_weeks` 200; setScores por membresía), 3 bugs reales corregidos (`defaultRun(null)`, RLS `league_games`, `participants.id`), QA browser 45/45 + regresión 231/231 — ver §8.6.3**. **BUILD-TC-006.4-FIX (2026-08-08): persistencia de picks idempotente (`23505` cross-liga resuelto con `onConflict (user_id, week, game_id)`) + banner fantasma de Mis Picks corregido — QA browser 45/45 re-ejecutado + regresión 242/242 + verificación en BD real (1 fila por `(user_id, game_id)`) — ver §8.6.4**. **PLAN-LEAGUE-CONTEXT (2026-08-08): diseño de múltiples ligas por usuario APROBADO y documentado (URL `#/league/:id/...` como fuente de verdad, LeagueContext/LeagueRoute/LeagueSelector, hub + auto-enter persistido, header selector; sin código) — ver `opencode/plans/plan-league-context.md` + nota en `gameguru-day-2026-08-08.md` Sesión 6**. **PLAN-LEAGUE-CONTEXT-01.1 (2026-08-09): aislamiento multi-liga de picks (migración `006.2` — se elimina la UK global de 006.4-FIX, UKs por liga; `picksApi` default por-liga, `PicksService` UK de sesión), LeagueIdentity siempre visible, routing de standings por tipo de liga, LeagueSelector en el Topbar — ver `opencode/plans/plan-league-context-01.1.md`**. Los BUILD que ya tienen § propio marcan su alcance entregado; el resto queda como diseño pendiente de implementar.
 
 ## Contexto / problema actual
 
@@ -164,8 +164,8 @@ El objetivo: con solo abrir la liga, el usuario sabe de inmediato que está en u
 | **TC-002** ✅ | Experience Picker + intro educativa + entrada oficial por el wizard de creación de ligas | TC integrado al flujo oficial |
 | **TC-003** ✅ | **Event Director**: contrato `EventDirector` + `TrainingCampDirector`; Training Session como entidad independiente (1:N-ready, `session_no`); pantalla de confirmación en el wizard; personalidad del Lobby | Director coordina el ciclo (sin motores) |
 | **TC-004** ✅ | **Fixture Generator** (auto): evento `fixture_generation` con `FixtureGenerationDirector` + `FixtureGeneratorService` (sin React) + `fixtureCalendar` (RNG seed); se dispara al finalizar la sesión y persiste el calendario en `league_games` | Progreso visible en el Lobby (`currentStep`/`lastCompletedStep` + barra `fixture_progress`) |
-| **TC-005** ✅ | **Game Week & Picks** (implementado 2026-08-05; **validado en modo nube 2026-08-07**, BUILD-TC-005.1): evento `game_week` (3er director) + tablas `game_weeks`/`pick_submissions` (SQL 005.2 **aplicado**, Fix A: `UNIQUE` constraint para upsert) + `picksService`/`useGameWeek` + vista de jornada (selección, pendientes, confirmación, bloqueo) hasta `picks_locked` | Jugar la jornada: seleccionar, confirmar y bloquear picks |
-| **TC-006** | **Simulation Engine** v1 (cliente): `SimulationService` → `SimulationEngine` → `RandomGenerator` (seed); resultados en vivo vía `setScores` | Resultados generados y reproducibles |
+| **TC-005** ✅ | **Game Week & Picks** (implementado 2026-08-05; **validado en modo nube 2026-08-07**, BUILD-TC-005.1; **QA end-to-end 2026-08-08**, BUILD-TC-005.3): evento `game_week` (3er director) + tablas `game_weeks`/`pick_submissions` (SQL 005.2 **aplicado**, Fix A: `UNIQUE` constraint para upsert) + `picksService`/`useGameWeek` + vista de jornada (selección, pendientes, confirmación, bloqueo) hasta `picks_locked` + admin advance `ADVANCE_EVENT` que desbloquea el flujo completo en QA | Jugar la jornada: seleccionar, confirmar y bloquear picks |
+| **TC-006** ✅ (núcleo) | **Simulation Engine** v1 (cliente): `SimulationService` → `SimulationDirector` (máquina interna) → `MatchSimulator` (RNG seed) + `StandingsCalculator`; resultados en vivo vía `setScores` (**BUILD-TC-006.1**: núcleo sin UX, **implementado 2026-08-08**, migración `006.1` aplicada; **BUILD-TC-006.2**: orquestación automática en `useTrainingSession` — auto-start en `picks_locked`, batches por `speed`, resume, `completed`/`finished`, regresión 187/187; UX live = TC-006.3) | Resultados generados y reproducibles |
 | **TC-006** | **Resultados/UX live**: partidos animados, `simulation_running`, leaderboard en vivo + Picks Públicos en vivo (exención PRIVACY-001) + dashboard card de estado | Experiencia completa en vivo |
 | **TC-007** | **Graduación**: champion 🏆, leaderboard final, resumen del evento, "Crear otro Training Camp" | Cierre del ciclo educativo |
 | **TC-008** (futuro) | Edge Function (solo reemplaza Engine) + realtime + fixtures manuales pulidos | Evento sobrevive al cierre de la pestaña admin |
@@ -484,6 +484,140 @@ FG completed ──spawn──▶ game_week (picks_open · Jornada activa)
 2. Verificación REST/round-trip + flujo completo FG → jornada → picks → confirmación → bloqueo → **E2E real 25/25** ✅.
 3. Handoff final en `blueprint.md` / `gameguru.md` / daily (`gameguru-day-2026-08-07.md`) y commit (cuando el usuario lo pida).
 
+## 8.5.2 BUILD-TC-005.3 (2026-08-08) — QA end-to-end desbloqueado + admin advance
+
+**Estado**: implementado y verificado, **sin commitear**. El hito TC-005 quedó cerrado en el commit `7cb799a` (rama `development`, sin push); los cambios de este BUILD están en el working tree.
+
+**Problema raíz**: el flujo QA se quedaba bloqueado en el estado START del Training Camp (countdown de 60 s por la hora del evento) y nunca se llegaba a Fixture Generation → Game Week → Picks, por lo que la cadena completa no podía verificarse en navegador real. Además, el esquema desplegado de `training_sessions` no tiene columnas que el código sí enviaba (`finished_reason`, `locked_at`, `lock_reason`) y los parches internos `__week` → los PATCH fallaban con 400 y degradaban a localStorage (la UI funcionaba, pero la nube quedaba atrás y el estado no sobrevivía al refresh).
+
+**Lo que se construyó**
+- **`ADVANCE_EVENT`** (contrato genérico del `EventDirector`, al estilo de `TICK`; descartado `COMPLETE_TRAINING_CAMP`): en `TrainingCampDirector` es idempotente — devuelve `null` si `finished`/`cancelled`/`created`; en cualquier otro estado → `{ state: 'finished', finished_at, finished_reason: 'admin' }`. Al quedar `finished`, los spawns existentes del hook disparan FG → GW → Picks sin duplicar (guards ref).
+- **`useTrainingSession.advanceEvent()`** — dispatch + `applyPatch` (patrón de `cancelEvent`); lo consume el panel admin del lobby.
+- **`TrainingCampLobby.jsx`**: panel admin (`Admin controls (QA)`) solo visible para admin + TC + evento activo (`phase ready|training_started`) + `state !== 'finished'`, con el botón `⏭️ Advance event (complete Training Camp)` (confirm por `window.confirm`). El estado START ahora muestra la UX activa (countdown/elapsed).
+- **`TrainingCampCountdown.jsx`**: estado activo nuevo — "Training Camp is live" + `Running for: hh:mm:ss` + siguiente paso (FG). i18n `personaActive/activeSub/elapsed/nextStep/adminControls/advanceEvent/...` (es/en).
+- **Fix de esquema (persistencia)**: `trainingSessionService.toCloudPatch()` — los parches del director conservan su contrato (harness los lee) pero antes del PATCH a la nube se excluyen los campos internos/QA que no son columnas: claves `__`-prefijo (`__week`), `finished_reason`, `locked_at`, `lock_reason`. Así el esquema desplegado no se rompe y la nube queda al día (el estado sobrevive al refresh).
+- **Favicon**: `public/favicon.svg` + `<link rel="icon">` en `index.html` (elimina el 404 de consola de `/favicon.ico`).
+
+**Verificación (todo en verde)**
+- QA browser real (`/tmp/opencode/qae2e/qa-tc0053.mjs`, puppeteer + Chrome v151 + preview de Vite en 4175): **43/43 PASS** — signup por UI → wizard → lobby → `Open lobby` → `Start now` → countdown → fast-forward del reloj vía PATCH REST `start_at` + reload → re-entrada a la liga → TICK transiciona solo a `training_started` → panel admin → `ADVANCE_EVENT` → FG (1 sola vez) → GW (1 jornada) → 10 picks → confirm → lock `all_submitted` → **persistencia tras refresh** (bloqueada, 20 botones deshabilitados, 0 `SIN SELECCIÓN`) → edición tras lock = no-op → integridad de red: `training_sessions` POST ×3, `league_games` ×1, `game_weeks` ×1, `pick_submissions` ×1, 0 respuestas ≥500, 0 peticiones fallidas, **0 errores de consola** → delete liga cascade limpio.
+- Regresión harness 69/69 (build-harness + regression.bundled) + `npm run build` ✅.
+- Correcciones durante el QA: selectores del harness para lenguaje inglés de la UI, re-entrada a la liga tras reload (el contexto de liga es cliente), notas que solo se muestran con la ventana abierta (solo-1-usuario bloquea al instante), y conteo de botones de equipo por card (el `@` es un `<span>`, no parte del botón).
+
+### Siguiente paso (backlog TC-006, NO iniciado)
+El flujo llega hasta `picks_locked` y queda listo para el Simulation Engine (BUILD-TC-006), que toma el evento en `picks_locked` y lo lleva a `finished`. No se debe iniciar TC-006 hasta que el usuario lo pida.
+
+## 8.5.3 BUILD-TC-005.4 (2026-08-08) — QA final TC-005 + fix de `league_mode`
+
+**Estado**: implementado y verificado, **sin commitear** (mismo working tree que TC-005.3).
+
+**QA final** (`/tmp/opencode/qae2e/qa-tc0054.mjs`, browser real): **48/48 PASS** + regresión harness **82/82** tras rebuild del bundle.
+
+**Bug fijado**: en el QA, tras recargar la liga creada con el wizard, el gate del CTA rompía: `createTrainingCamp()` persistía `simulation: true` pero NO `league_mode`, y la BD tiene default `'regular'` → tras reload `getLeagueMode()` devolvía `'regular'` y el CTA de "crear TC" no aparecía. Fix: `createTrainingCamp()` (src/hooks/useLeague.js) ahora persiste explícitamente `league_mode: 'practice'` junto a `simulation: true`.
+
+**Nota**: quedan 4 ligas huérfanas de QA que no se pueden borrar vía API (RLS exige token del owner); limpieza manual en Supabase Dashboard con ids `603b07f8-…`, `f7a717a8-…`, `7f23bd9a-…`, `e3b225e1-…`.
+
+## 8.6.1 BUILD-TC-006.1 (2026-08-08) — Simulation Engine: núcleo (sin UX)
+
+**Estado**: implementado y verificado (harness **140/140**: 82 previos + 58 TC-006; build ✅; smoke preview 200). **Sin commitear**. La migración `006.1` **fue aplicada manualmente** en el SQL Editor de Supabase (verificada antes de BUILD-TC-006.2).
+
+**Alcance**: núcleo del motor de resultados, sin UI. El orquestador real (hook) y la UX en vivo son BUILD-TC-006.2/6.3.
+
+**Arquitectura (aprobada en PLAN-TC-006, 4 módulos en `src/domains/simulation/`)**:
+- `SimulationDirector.js` — máquina INTERNA de la corrida (pura, extensión de `EventDirector`): `waiting → simulating → persisting_results → updating_standings → completed` (+ `failed`/`cancelled` virtuales). `dispatch` idempotente (re-despachar → null), `SIMULATION_PROGRESS` monotónico, `currentStep`/`lastCompletedStep` derivados. Persistida en `game_weeks.simulation_progress`.
+- `MatchSimulator.js` — determinista (reglas PLAN-TC-006): `simulateGame(game, {seed, index})` → `{home_score, away_score, result}`. RNG `mulberry32(seed+index)` (mismo que fixtureCalendar); rango v1 3..38; empate → `result = null`; `result` SIEMPRE coincide con los scores. `simulateBatch` con índices estables `[start, start+limit)`.
+- `SimulationService.js` — fachada (sin React): `start` (picks_locked → simulating + persiste seed/progreso en `game_weeks`, evento `games_in_progress`), `runBatch` (simula `[from, from+count)` y persiste SOLO en `league_games` vía `setScores`; evento `simulation_running`; degrada a localStorage `gameguru.sim.<weekId>`), `finalize` (PERSIST_DONE → computeStandings → STANDINGS_DONE → week `completed` + `simulated_at`), `getConfirmedPicks` (delegado a `picksService`). **Nunca escribe picks**.
+- `StandingsCalculator.js` — puro: cada participante aparece (sin pick → 0); `correct`/`total`/`points`; empate no suma; orden correct desc → total asc → username asc. No persiste.
+
+**Máquina pública del evento** (`GameWeekDirector`): steps `waiting → picks_open → picks_locked → games_in_progress → simulation_running → completed`; casos `SIMULATION_START` (picks_locked → games_in_progress), `SIMULATION_PROGRESS` (→ simulation_running), `ADVANCE_EVENT` idempotente (QA/admin). `EVENT_ACTIONS` (+`PERSIST_DONE`/`STANDINGS_DONE`/`FAIL`) en `EventDirector`. `toCloudPatch` (`trainingSessionService`) excluye `simulation_progress` del PATCH a la nube (no es columna de `training_sessions`).
+
+**Migración `supabase/006.1-simulation.sql`** (idempotente, **APLICADA manualmente en Supabase**): `ALTER game_weeks ADD COLUMN IF NOT EXISTS seed int / simulation_progress jsonb / simulated_at timestamptz` + `CREATE INDEX IF NOT EXISTS game_weeks_sim_state_idx`.
+
+**Verificación**: harness `regression.mjs` + `mock-supabase.js` (agregados `leagueGamesApi.setScores` y export de simulación en `bundle-entry.mjs`): determinismo (misma seed+índice → igual; seed/índice distinto → distinto; rango; empate alcanzable), máquina (transiciones/idempotencia/FAIL/CANCEL/steps), standings, e integración mock completa (start → batch → finalize → completed; cero escrituras picks; re-run no duplica; **índice estable entre batches**). `npm run build` ✅ (bundle `index-CC5Eoaky.js`); preview en **4173** (puerto default del script; antes 4175 era flag del QA) sirviendo 200.
+
+**Nota determinismo**: fix dentro del BUILD — `runBatch` usaba `index: start` para todo el batch (rompía el índice estable al reanudar por batches); corregido a `index: start + i` y cubierto con test.
+
+### Siguiente paso (BUILD-TC-006.2, NO iniciado)
+Orquestador en `useTrainingSession` (dispara simulación al quedar `picks_locked`, batches según `speed`, applyPatch de los eventPatch) + UI: estado `simulation_running`, `GameWeekView` results, leaderboard en vivo. Requiere decidir si se aplica la migración `006.1` (hasta entonces la corrida degrada a localStorage).
+
+## 8.6.2 BUILD-TC-006.2 (2026-08-08) — Orquestación automática de la simulación
+
+**Estado**: implementado y verificado (harness **187/187**: 140 previos + 47 TC-006.2; build ✅; smoke preview 200). **Sin commitear**. La migración `006.1` **YA fue aplicada manualmente** en el SQL Editor de Supabase ANTES de este BUILD (la corrida persiste en la nube; no degrada).
+
+**Alcance**: orquestación en `useTrainingSession.js` — cuando la Game Week queda `picks_locked`, la simulación arranca sola y avanza por batches deterministas hasta `completed` (jornada) + `finished` (sesión). Resultados UI en vivo y leaderboard siguen en TC-006.3.
+
+**Orquestación en el hook** (reglas de dominio en `SimulationService`, nunca en el componente):
+- Efecto con `simGuardRef` **por id de jornada** (no por estado): si el mismo disparo se repite (StrictMode monta el efecto 2 veces, TICK de 1s, re-renders tras applyPatch), la segunda invocación se descarta; la primera completa la corrida. Semana distinta → el guard se re-arranca.
+- **Auto-start** solo si `event_type==='game_week'` y `state==='picks_locked'`; **resume** si viene en `games_in_progress`/`simulation_running` (reload a mitad de corrida lee `game_weeks.simulation_progress`).
+- `batchSizeFor(speed)`: `demo→1`, `normal→3`, `fast→5` (default 3). El pacing visual (live) es TC-006.3.
+- `runBatches` avanza en bucle mientras `simulating`, aplicando el `eventPatch` de cada batch; guarda anti-bucle si el progreso no avanza (setScores fallando).
+- `runFinalize` lee `listSessionGames` (RAW rows) + `getConfirmedPicks` + participantes de `membersRef`/`profilesRef` y cierra con `simulationService.finalize`; luego `markSessionFinished` (`training_sessions.state='finished'`).
+- `runSimulation` ramifica por estado persistido: `waiting→start`, `simulating→batches`, `persisting_results`/`updating_standings→finalize`, `completed→`COMPLETE_EVENT idempotente + `finished` si falta (revisión tras reload).
+
+**Refactor compartido** (mismo BUILD): `GameWeekService.listSessionGames(event, leagueId)` + `sessionGameMatch(game, ownerIds, sessionNo)` extraído (RAW rows de `league_games` con `id`/`game_id`, fallback `tc-<sessionNo>-`); `GameWeekContext` lo usa y `isCompleted` incluye `finished` (alias sesión).
+
+**Fix director**: `GameWeekDirector.getCurrentStep` trataba `finished` con `getWeekState` (estado no mapeado → `waiting`, la UI habría retrocedido al paso inicial). Corregido: `rawState` → alias `finished→completed` antes de mapear. Cubierto por tests 6.2-A/G.
+
+**Verificación (harness A–K en `regression.mjs`, réplica exacta del flujo del hook)**:
+- A: `picks_locked` → corrida automática completa (seed persistido, `simulated_at`, 4 partidos finished, secuencia de sesión `games_in_progress>simulation_running>simulation_running>completed`, cero escrituras picks).
+- B: batching progresivo batch1(2)→batch2(4) con estados de jornada `games_in_progress`→`simulation_running`.
+- C: determinismo entre batches (índice 0 y 3 === `simulateGame(seed, index)` aislado).
+- D: reload/resume a mitad de corrida — lee progreso persistido, completa los restantes, **setScores solo 4 veces** (no re-escribe finished), progreso monotónico, picks intactos.
+- E: StrictMode double-fire **concurrente** (`Promise.all`) — ambos completed, 4 filas sin duplicados, scores deterministas, jornada completed una vez.
+- F: usuario sin pick → 0 puntos en standings.
+- G: finalización completa (jornada `completed` + `simulated_at` + seed; `finished` → paso terminal `completed`).
+- H: idempotencia (runBatch/finalize tras completed → sin cambios).
+- I: cero escrituras sobre picks/pick_submissions.
+- J: `setScores` exactamente 1 por partido.
+- K: estados consistentes `training_sessions` + `game_weeks` durante todo el flujo.
+
+**Fix dentro del BUILD**: los asserts 6.2-D/E leían `simulation_progress.completed` (shape correcto es `simulation_progress.progress.completed`); la mock `setScores` ahora cuenta llamadas (`__stats`) para el test J.
+
+## 8.6.3 BUILD-TC-006.3 (2026-08-08) — Simulation: UX en vivo + cierre en la nube
+
+**Estado**: implementado y **QA E2E browser real completo 45/45 PASS** (0 errores consola/red, 0 ≥500). Harness **231/231 PASS** (187 previos + 44 TC-006.3), `npm run build` ✅ (bundle `index-DwdsI9lI.js`), smoke preview 4173 200. **Sin commitear, sin push**. El QA destrabó y aplicó en la nube las migraciones `006.1` y la nueva `006.1b` (ver "Migraciones") y encontró 3 bugs reales corregidos (ver "Bugs").
+
+**Alcance**: UX en vivo sobre el motor TC-006.1/006.2 — `GameWeekView` en `games_in_progress`/`simulation_running` muestra progreso de simulación; en `completed`/`finished` muestra resultados por partido (FINAL) + feedback de picks + leaderboard; Picks Públicos en vivo con exención PRIVACY-001 para `practice`. El motor ya producía `league_games.finished` + standings calculables.
+
+### Migraciones (bloqueante destrabado en esta sesión)
+- **`supabase/006.1-simulation.sql`**: el handoff previo la daba por aplicada manualmente, pero **no lo estaba** en la nube: PATCH `game_weeks` respondía **400 `Could not find the 'seed'/'simulation_progress' column`** y el front degradaba a localStorage. Aplicada vía **Management API** (`POST /v1/projects/yzssihtflqmgolyajhvb/database/query`), token personal del usuario extraído del gnome-keyring con `libsecret-tools` (`secret-tool` en `/tmp/opencode/secrettool/usr/bin`). Verificado: columnas presentes en `information_schema`; PATCH `seed`/`simulation_progress` → **200** (antes 400).
+- **`supabase/006.1b-league-games-update.sql`** (NUEVO, idempotente): el RLS de `league_games` solo permitía UPDATE a admins (`role='admin'` en `league_members`), pero la simulación se orquesta desde el usuario que dispara el lock (puede ser un `member`) → UPDATE 0 filas → el batch no avanzaba. Nueva política `lg_update` por membresía (`league_members.user_id = auth.uid()`), consistente con el esquema permisivo del demo; ScoreEditor (admin-only) no cambia.
+
+### Bugs reales corregidos (encontrados por el QA E2E)
+1. **`SimulationDirector.defaultRun`/`getSimulationState` no toleraban `null`** (`SIMULATION_STATES[null.state]` → `Cannot read properties of null (reading 'state')` en SimulationProgress). Con la columna recién creada, la nube devuelve `null` (antes `undefined` porque no existía) y `defaultRun(null)` reventaba. Fix: normalización `run && typeof run === 'object' ? run : {}` en ambas. Cubierto por 6.3-A2.
+2. **RLS de `league_games`** → migración 006.1b. Además `SimulationService` ahora loguea el partido + `error.message` en el `break` de setScores fallido (`[simulationService.runBatch] setScores falló ...`).
+3. **`useTrainingSession.participants` no exponía `id`** (miembros RAW con `user_id`): `computeStandings` agrupa por `p.id` → todos colisionaban en `undefined` → leaderboard colapsaba a UNA fila (solo `botB`, no `botA`; resumen "No picks"). Fix: `participants` expone `{ id: m.user_id, username }` (contrato del leaderboard; `TrainingCampParticipants` sigue usando `user_id`). Cubierto por 6.3-E2.
+
+### UX entregada (dominio + componentes)
+- **`src/domains/game-week/simulationView.js`** (dominio puro, sin React): `getSimulationRun` (estado + completed/total + % con clamp), `buildResultsView` (proyección de `league_games` con scores/draw/finished), `sortStandings` (orden determinista), `buildLeaderboard` (rank 1..N, sin pick → 0), `canRevealPicks` (policy práctica vs oficial), `buildPickFeedback` (solo planilla propia en oficial; `revealAll` fuerza policy). Reutiliza `defaultRun`/`StandingsCalculator`/`modes.js`.
+- **`GameWeekContext.jsx`**: prop `participants = []`, state `allPicks`, expone `isSimulating`/`simRun`/`resultsMap`/`standings`/`myUserId`; `selectPick` no bloquea durante simulación (la UI no ofrece acciones).
+- **Componentes**: `SimulationProgress.jsx` (status + barra + %), `GameWeekResults.jsx` (GameCard con scores + "Your picks: {correct}/{total}" + `isDraw`), `GameWeekLeaderboard.jsx` (tabla rank/player/correct/total/pts, fila `boardMe`). Wiring en `GameWeekView.jsx`: en sim → SimulationProgress y NO acciones; en completed/finished → banner + Results + Leaderboard; badge `Simulation starting → Simulation running`; `locked = isLocked || isCompleted`. `TrainingCampLobby` pasa `participants`. i18n ES/EN `gameWeek.*` + CSS `.badgeSim/.simCard/.board*/.completedBanner/.drawTag`.
+
+### Privacy Behavior (PRIVACY-001)
+Practice (Training Camp): `canRevealPicks → true` (transparencia educativa; `buildPickFeedback` revela todas las planillas si `revealAll`). Oficial (preseason/regular): privado, solo la propia planilla. Policy vía `isOfficialMode`/`getLeagueMode` de `modes.js` (sin hardcodear). El leaderboard solo muestra agregados (correct/total/points), nunca picks ajenos.
+
+### Verificación (harness + QA browser real)
+- **Regresión 231/231**: 187 previos + 44 TC-006.3 (A: run null/waiting/30%/100% + clamp; A2: `defaultRun(null)`/`getSimulationState(null)`; B: 3/10→30%, completed→100%; C/D: buildResultsView + `finished` con `result` null = draw; E: leaderboard 4 usuarios, rank, tie-break, sin pick → 0; E2: participants `user_id` → `id` sin colapso; F/G: flujo mock completo; H: run completed tras refresh sin re-simular; I: privacy practice vs regular/season; J/K: `isWindowOpen` en estados sim + `savePick` rechazado).
+- **QA E2E real 45/45** (`/tmp/opencode/qae2e/qa-tc0063.mjs`, puppeteer + Chrome contra preview 4173, migraciones aplicadas): 2 usuarios → liga → TC → advance → FG → GW → 10 picks c/u → confirmación → lock → **auto-simulación completa (REST `game_weeks.state='completed'`)** → ambos ven resultados (10 scores, feedback ✓/✗, "Your picks", leaderboard con ambos) → refresh: resultados sobreviven sin re-simular → **resume** (run 3/10 inyectado + reload → "Simulation progress · 3 of 10 games" → completa) → integridad de red (training_sessions POST ×3, league_games ×1, game_weeks ×1, pick_submissions ×2, picks ≥20, setScores ≥1, 0 ≥500, 0 fallidas, **0 errores de consola**) → DELETE league cascade.
+
+## 8.6.4 BUILD-TC-006.4-FIX (2026-08-08) — Persistencia de picks idempotente (23505) + banner fantasma
+
+> **⚠️ SUPERADO el 2026-08-09 por PLAN-LEAGUE-CONTEXT-01.1 + migración `006.2`** — el fix band-aid `onConflict (user_id, week, game_id)` detenía el crash 23505 pero **sobrescribía en silencio** picks entre ligas (mismo `game_id` en otra liga → perdía el pick de la anterior). `006.2` eliminó la UK global `picks_user_id_week_game_id_key`, dejó UKs **por liga** (`(user_id, league_id, week, game_id)` / `(user_id, league_id, training_session_id, game_id)`) y restauró la **aislamiento multi-liga** (harness 285/285 + QA multi-liga 23/23). Ver `opencode/plans/plan-league-context-01.1.md`.
+
+**Estado**: corregido y verificado. Harness **242/242 PASS** (231 + 11 nuevos 006.4-A..J), `npm run build` ✅ (bundle `index-CoPeYQpY.js`), smoke preview 4173 200, QA E2E `qa-tc0063.mjs` re-ejecutado **45/45 PASS**, y reproducción/verificación en **BD real** (ROLLBACK): el escenario del bug ya no produce `23505` y queda **1 fila por (user_id, game_id)**. **Sin commitear, sin push**. No se tocó SimulationDirector/MatchSimulator/StandingCalculator/EventDirector/TC-007.
+
+**Root cause** (reproducida en BD real): la página regular **Mis Picks** (`Picks.jsx` + `usePicks`) muestra el calendario estático `NFL_WEEKS[week]` (6 juegos `w1g1..w1g6`) cuando la liga no tiene `league_games` importados. Los `game_id` se **reutilizan entre ligas** (estáticos `w1gN` y TC `tc-<sessionNo>-<n>`; `tc-2-1` está en 11 ligas). El upsert usaba `ON CONFLICT (user_id, league_id, ...)` que NO cubre el constraint real `picks_user_id_week_game_id_key UNIQUE(user_id, week, game_id)` (sin liga/sesión) → guardar el mismo `(user, week, game_id)` en otra liga lanzaba `23505` (error real reportado como `picks_user_id_game_id_key`; el nombre exacto del constraint varía según dónde se cree, la raíz es el conflicto cross-liga no cubierto por el `onConflict`).
+
+**Fix**:
+- `src/supabase.js` — `picksApi.upsert` default `onConflict: 'user_id,week,game_id'` (cubre el constraint sin liga/sesión; el pick se actualiza idempotentemente, nunca 2 filas por `(user_id, game_id)`). `usePicks.js` usa el default.
+- `src/domains/game-week/PicksService.js` — `savePick` y `confirmPicks` usan el mismo onConflict (antes `user_id,league_id,training_session_id,game_id`).
+- `src/pages/Picks.jsx:228` — banner fantasma: condición `!loadingGames && !useDynamic` → `!loadingGames && !useDynamic && !weekData`. Ya no se muestra "No se encontraron juegos en esta liga." mientras se renderizan los 6 juegos del calendario estático; solo aparece cuando la semana activa no tiene juegos de ninguna fuente.
+- Contrato de persistencia: un pick por `(user_id, week, game_id)` global (regla "1 pick por game"). El mismo juego en 2 ligas del mismo usuario actualiza la fila al último contexto. `picks_user_id_week_game_id_key` intacto.
+
+**Verificación**:
+- Harness 006.4-A..J: A primer pick (INSERT), B re-save idempotente, C cambiar pick (UPDATE), D 4 cambios → 1 fila, E 6/6 → 6 filas, F re-save 6/6 sin duplicar, G 2 usuarios × 6 juegos, H **mismo game en otra liga → 1 fila (fix 23505)**, I invariante 1 fila por (user_id, game_id) multi-liga, J confirmPicks 6/6 en 2 ligas sin duplicado.
+- BD real `verify_fix3.sql` (ROLLBACK): guardar `(6812c5fe-…, week=1, '__test__fix1')` en liga 2 → `filas=1, pick_final=SF` (antes: 23505). Duplicados actuales: 130 filas, 0 pares duplicados.
+- QA E2E re-ejecutado 45/45; bundle con `user_id,week,game_id` ×3; preview 4173 200.
+
 ## 8.6 BUILD-TC-006 — Simulation Engine (backlog)
 
 - `RandomGenerator` (RNG con seed → resultados reproducibles) + `SimulationEngine` (state machine puro + batches por `speed`: demo/normal/fast) + `SimulationService` (fachada; migración Edge = solo reemplaza el Engine).
@@ -493,7 +627,7 @@ FG completed ──spawn──▶ game_week (picks_open · Jornada activa)
 
 ## 9. Riesgos
 
-1. **Escritor único (pestaña del admin)**: si el admin cierra la pestaña, la simulación pausa. Aceptado para v1 (el admin preside el evento); resuelto con BUILD-TC-006.
+1. **Escritor único (pestaña del admin)**: si el admin cierra la pestaña, la simulación pausa. Aceptado para v1 (el admin preside el evento); mitigado en BUILD-TC-006.2 con **resume**: cualquier recarga durante `games_in_progress`/`simulation_running` retoma la corrida desde `simulation_progress` (progreso monotónico, partidos ya `finished` no se re-simulan). Resuelto del todo con BUILD-TC-008 (Edge Function).
 2. **Deadline de picks TC** no deriva de `getWeekDeadline` → integración puntual en `isGameLocked`/Picks solo para ligas `practice` (no debe filtrarse a Preseason/Regular).
 3. **Exención de PRIVACY-001** es solo para TC → documentar explícitamente para que no se filtre a Preseason/Regular (donde aplica la privacidad estricta).
 4. **Deriva de doble escritura** (motor TC vs manual en el mismo manager) → el flujo normal del TC es el motor; `manual` es solo fixture (no resultado).
