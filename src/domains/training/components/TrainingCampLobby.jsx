@@ -3,6 +3,7 @@ import { useLanguage } from '../../../i18n/context'
 import { useTrainingSession } from '../hooks/useTrainingSession'
 import { getTrainingLevel } from '../models/levels'
 import { EVENT_TYPES } from '../../event'
+import { canJoinLeague } from '../../league'
 import TrainingCampHeader from './TrainingCampHeader'
 import TrainingCampStatus from './TrainingCampStatus'
 import TrainingCampCountdown from './TrainingCampCountdown'
@@ -25,7 +26,7 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
   const tc = useTrainingSession({ leagueId: league?.id, userId: user?.id, league })
   const {
     event, persisted, eventType, phase, remainingMs, participants, loading, isAdmin,
-    now, openLobby, startNow, cancelEvent, steps, currentStep, lastCompletedStep, sessionNo, fixtureProgress,
+    now, openLobby, startNow, cancelEvent, advanceEvent, steps, currentStep, lastCompletedStep, sessionNo, fixtureProgress,
   } = tc
 
   const isFixture = eventType === EVENT_TYPES.FIXTURE_GENERATION
@@ -34,6 +35,14 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
   const level = getTrainingLevel(event?.level)
   const levelLabel = t(`training.level${level.id.charAt(0).toUpperCase()}${level.id.slice(1)}`)
   const preEvent = phase === 'created' || phase === 'waiting' || phase === 'countdown' || phase === 'ready'
+  // Estado activo del Training Camp (START): la fase derivada puede ser `ready`
+  // (transitoria, antes del TICK) o `training_started` (estado persistido).
+  const isTrainingActive = phase === 'ready' || phase === 'training_started'
+
+  // BUILD-TC-005.4 — Regla central del roster (dominio): abierto desde League
+  // Created → TC WAITING → TC COUNTDOWN; se cierra cuando el TC entra en START.
+  // La invitación (código) solo se muestra mientras el roster está abierto.
+  const rosterOpen = !event || canJoinLeague(event)
 
   const copyInvite = () => {
     const link = `${window.location.origin}/gameguru/?join=${league.code}`
@@ -47,6 +56,14 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
     cancelEvent()
   }
 
+  // BUILD-TC-005.3 — Acción QA/admin: completa el Training Camp de inmediato.
+  // Solo visible para el admin y solo cuando el TC está en START (la duración
+  // normal se respeta; esto es una válvula de QA, no la regla de producto).
+  const handleAdvance = () => {
+    if (!window.confirm(t('training.advanceConfirm'))) return
+    advanceEvent()
+  }
+
   if (loading) {
     return <div className={styles.loading}>{t('app.loading')}</div>
   }
@@ -57,7 +74,7 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
   // del hook), único escritor de la sesión.
   if (isGameWeek) {
     return (
-      <GameWeekProvider event={event} league={league} user={user} onTransition={tc.applyPatch}>
+      <GameWeekProvider event={event} league={league} user={user} participants={participants} onTransition={tc.applyPatch}>
         <GameWeekView />
       </GameWeekProvider>
     )
@@ -121,16 +138,33 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
       {isFixture ? (
         <TrainingCampProgress phase={phase} fixtureProgress={fixtureProgress} currentStep={currentStep} />
       ) : (
-        <TrainingCampCountdown phase={phase} remainingMs={remainingMs} startAt={event?.start_at} sessionNo={sessionNo} />
+        <TrainingCampCountdown
+          phase={phase}
+          remainingMs={remainingMs}
+          startAt={event?.start_at}
+          startedAt={event?.started_at}
+          sessionNo={sessionNo}
+          now={now}
+        />
       )}
 
-      {preEvent && (
+      {rosterOpen && (
         <div className={styles.invite}>
           <div className={styles.inviteLabel}>{t('training.inviteCode')}</div>
           <div className={styles.inviteCode}>{league.code}</div>
           <button className={styles.inviteCopy} onClick={copyInvite}>
             {copied ? t('training.copied') : t('training.copyLink')}
           </button>
+        </div>
+      )}
+
+      {event && !rosterOpen && (
+        <div className={styles.rosterClosed}>
+          <span className={styles.rosterClosedIcon}>🔒</span>
+          <div className={styles.rosterClosedText}>
+            <div className={styles.rosterClosedTitle}>{t('training.rosterClosedTitle')}</div>
+            <div className={styles.rosterClosedDesc}>{t('training.rosterClosedDesc')}</div>
+          </div>
         </div>
       )}
 
@@ -171,10 +205,24 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
         </div>
       )}
 
-      {isAdmin && phase === 'ready' && (
+      {isAdmin && isTrainingActive && (
         <div className={`${styles.note} ${styles.noteLocal}`}>
           <span>⚙️</span>
           <span>{t('training.engineNote')}</span>
+        </div>
+      )}
+
+      {/* BUILD-TC-005.3 — Controles QA/admin: válvula para completar el Training
+          Camp en START sin esperar la duración. Solo admin. Idempotente: al
+          quedar `finished` el botón desaparece y el hook dispara FG→GW→Picks. */}
+      {isAdmin && eventType === EVENT_TYPES.TRAINING_CAMP && isTrainingActive && event?.state !== 'finished' && (
+        <div className={styles.adminPanel}>
+          <div className={styles.adminBadge}>{t('training.adminControls')}</div>
+          <p className={styles.adminHint}>{t('training.adminControlsHint')}</p>
+          <button className={styles.btnTcGhost} onClick={handleAdvance}>
+            {t('training.advanceEvent')}
+          </button>
+          <p className={styles.adminHint}>{t('training.advanceSub')}</p>
         </div>
       )}
 

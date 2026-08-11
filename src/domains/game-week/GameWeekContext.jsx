@@ -13,21 +13,14 @@
 // ════════════════════════════════════════════════════════════════════
 
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
-import { leagueGamesApi, trainingSessionsApi } from '../../supabase'
 import { gameWeekService } from './GameWeekService'
 import { picksService, PICK_STATUS } from './PicksService'
+import { buildResultsMap } from '../simulation/StandingsCalculator'
+import { getSimulationRun, buildLeaderboard } from './simulationView'
 
 const GameWeekContext = createContext(null)
 
-// Coincide partidos de la jornada por el vínculo explícito (005.2): los juegos
-// fueron generados por la sesión `fixture_generation`, así que se aceptan
-// tanto esa sesión generadora como la sesión `game_week` actual (los 08-06
-// ligados a mano). Fallback al prefijo `tc-<sessionNo>-` para datos previos a
-// la migración.
-const sessionGameMatch = (game, ownerIds, sessionNo) =>
-  (typeof game.training_session_id === 'string' && ownerIds.has(game.training_session_id)) ||
-  (typeof game.game_id === 'string' && sessionNo && game.game_id.startsWith(`tc-${sessionNo}-`))
-
+// Normaliza una fila de league_games para la UI.
 const normGame = (g) => ({
   ...g,
   id:   g.game_id   || g.id,
@@ -38,11 +31,12 @@ const normGame = (g) => ({
   home: g.home_team || g.home,
 })
 
-export function GameWeekProvider({ event, league, user, onTransition, children }) {
+export function GameWeekProvider({ event, league, user, participants = [], onTransition, children }) {
   const [week, setWeek] = useState(null)
   const [weekPersisted, setWeekPersisted] = useState('local')
   const [games, setGames] = useState([])
   const [picks, setPicks] = useState({})
+  const [allPicks, setAllPicks] = useState([])
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -64,24 +58,11 @@ export function GameWeekProvider({ event, league, user, onTransition, children }
     }
     setLoading(true)
     try {
-      const [weekRes, gamesRes, picksRes] = await Promise.allSettled([
+      const [weekRes, gamesRes, picksRes, allPicksRes] = await Promise.allSettled([
         gameWeekService.getActiveWeek(event.id),
-        (async () => {
-          // Owner candidates de los partidos: la sesión `game_week` actual y la
-          // sesión `fixture_generation` que generó el calendario (el service los
-          // enlaza a la sesión generadora, no a la jornada).
-          const ownerIds = new Set([event.id])
-          const { data: sessions, error: sessionsErr } = await trainingSessionsApi.list(league?.id)
-          if (!sessionsErr && sessions) {
-            sessions.forEach(s => { if (s.event_type === 'fixture_generation') ownerIds.add(s.id) })
-          }
-          const { data, error } = await leagueGamesApi.getForLeague(league?.id)
-          if (error) throw error
-          return (data || [])
-            .filter(g => sessionGameMatch(g, ownerIds, event.session_no))
-            .map(normGame)
-        })(),
+        gameWeekService.listSessionGames(event, league?.id).then(r => r.games.map(normGame)),
         picksService.getPicks({ user, league, event }),
+        picksService.getConfirmedPicks(league?.id, event.id),
       ])
 
       setWeek(weekRes.status === 'fulfilled' ? weekRes.value.week : null)
@@ -90,6 +71,9 @@ export function GameWeekProvider({ event, league, user, onTransition, children }
       if (picksRes.status === 'fulfilled') {
         setPicks(picksRes.value.picks)
         setSubmitted(picksRes.value.submitted)
+      }
+      if (allPicksRes.status === 'fulfilled') {
+        setAllPicks(allPicksRes.value.picks || [])
       }
       setError(null)
     } catch (err) {
@@ -174,8 +158,14 @@ export function GameWeekProvider({ event, league, user, onTransition, children }
   const isWaiting   = event?.state === 'waiting'
   const isOpen      = event?.state === 'picks_open'
   const isLocked    = event?.state === 'picks_locked'
-  const isCompleted = event?.state === 'completed'
+  // BUILD-TC-006.2: al finalizar, la jornada queda `completed` (game_weeks) y
+  // la sesión `finished` (training_sessions, estado terminal del ciclo TC);
+  // ambos se consideran fin de la Game Week para la UI.
+  const isCompleted = event?.state === 'completed' || event?.state === 'finished'
   const isCancelled = event?.state === 'cancelled'
+  // BUILD-TC-006.3: la simulación corre entre el lock y el final; mientras
+  // está activa NO se editan picks y se muestra el progreso en vivo.
+  const isSimulating = event?.state === 'games_in_progress' || event?.state === 'simulation_running'
 
   const pickStatus = (isLocked || isCompleted || submitted)
     ? PICK_STATUS.SUBMITTED
@@ -184,11 +174,22 @@ export function GameWeekProvider({ event, league, user, onTransition, children }
   const deadlineMs = week?.deadline_at ? new Date(week.deadline_at) - now : null
   const isAdmin = !!league && (league.admin_id === user?.id || league.role === 'admin')
 
+  // BUILD-TC-006.3 — Estado derivado de la simulación (proyecciones puras,
+  // sin recalcular en React): run interno, mapa de resultados por partido
+  // (para el feedback ✓/✗ de GameCard) y leaderboard por usuario.
+  const simRun = getSimulationRun(week)
+  const resultsMap = buildResultsMap(games)
+  const standings = buildLeaderboard({ participants, picks: allPicks, games })
+
   const value = {
     week, weekPersisted,
     games, requiredGames, picks, pickCount, totalGames, complete,
-    pickStatus, isWaiting, isOpen, isLocked, isCompleted, isCancelled,
+    pickStatus, isWaiting, isOpen, isLocked, isCompleted, isCancelled, isSimulating,
     deadlineMs, loading, busy, error, isAdmin, now,
+    participants, allPicks, simRun, resultsMap, standings, myUserId: user?.id,
+    // PLAN-LEAGUE-CONTEXT-01.1: liga y evento expuestos para la identidad de
+    // liga siempre visible (LeagueIdentity) dentro de la jornada.
+    league, event,
     selectPick, confirmPicks, lockWeek, openWeek, reload,
   }
 

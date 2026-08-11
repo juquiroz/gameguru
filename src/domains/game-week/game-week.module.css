@@ -64,6 +64,11 @@
 .badgeOpen { border-color: rgba(52,211,153,.5); color: #6EE7B7; }
 .badgeLocked { border-color: rgba(251,191,36,.5); color: #FCD34D; }
 .badgeIdle { border-color: rgba(148,163,184,.35); color: #94A3B8; }
+.badgeSim { border-color: rgba(251,191,36,.6); color: #FBBF24; animation: simPulse 1.2s ease-in-out infinite; }
+@keyframes simPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
 .title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(1.9rem, 8vw, 2.5rem);
@@ -244,3 +249,126 @@
   background: rgba(11,19,38,.55);
   border: 1px dashed var(--border2);
 }
+
+/* ─── Simulation: progreso en vivo (BUILD-TC-006.3) ─── */
+.simCard {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  align-items: center;
+}
+.simTitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .8rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.simStatus {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #FBBF24;
+}
+.simCounter {
+  font-size: .85rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.simBarTrack {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(11,19,38,.8);
+  border: 1px solid var(--border2);
+  overflow: hidden;
+}
+.simBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(251,191,36,.9), rgba(168,85,247,.9));
+  transition: width .3s ease;
+}
+.simPercent {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: .08em;
+  color: #D8B4FE;
+}
+.simDesc {
+  font-size: .75rem;
+  color: var(--text2);
+}
+
+/* ─── Results (BUILD-TC-006.3) ─── */
+.completedBanner {
+  width: 100%;
+  border-radius: var(--r-lg);
+  padding: .85rem 1rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: .95rem;
+  color: #6EE7B7;
+  background: rgba(52,211,153,.08);
+  border: 1px solid rgba(52,211,153,.35);
+}
+.resultWrap {
+  position: relative;
+}
+.drawTag {
+  display: inline-block;
+  margin-top: .35rem;
+  font-size: .68rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #94A3B8;
+  border: 1px solid rgba(148,163,184,.35);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+
+/* ─── Leaderboard (BUILD-TC-006.3) ─── */
+.board {
+  width: 100%;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border2);
+  background: rgba(11,19,38,.55);
+  overflow: hidden;
+}
+.boardRow {
+  display: grid;
+  grid-template-columns: 2rem 1fr 3rem 3rem 3rem;
+  gap: .4rem;
+  align-items: center;
+  padding: .55rem .8rem;
+  font-size: .85rem;
+  border-top: 1px solid rgba(148,163,184,.12);
+}
+.boardRow:first-child { border-top: none; }
+.boardHead {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text2);
+  background: rgba(168,85,247,.08);
+}
+.boardName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.boardRank, .boardNum {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text2);
+}
+.boardPoints {
+  color: #D8B4FE;
+  font-weight: 700;
+}
+.boardMe {
+  background: rgba(168,85,247,.14);
+  border-left: 3px solid rgba(168,85,247,.7);
+}
+.boardMe .boardName { color: #D8B4FE; }

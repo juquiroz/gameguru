@@ -19,7 +19,7 @@
 // localStorage (`gameguru.gw.<sessionId>`), igual que training_sessions.
 // ════════════════════════════════════════════════════════════════════
 
-import { gameWeeksApi } from '../../supabase'
+import { gameWeeksApi, leagueGamesApi, trainingSessionsApi } from '../../supabase'
 import { EVENT_ACTIONS } from '../event/EventDirector'
 import { gameWeekDirector } from './GameWeekDirector'
 
@@ -27,6 +27,15 @@ const LS_GW = 'gameguru.gw.'
 const lsKey = (sessionId) => `${LS_GW}${sessionId}`
 
 const nowIso = () => new Date().toISOString()
+
+// Coincide partidos de la jornada por el vínculo explícito (005.2): los juegos
+// fueron generados por la sesión `fixture_generation`, así que se aceptan
+// tanto esa sesión generadora como la sesión `game_week` actual (los 08-06
+// ligados a mano). Fallback al prefijo `tc-<sessionNo>-` para datos previos a
+// la migración. (Lógica compartida con GameWeekContext.)
+const sessionGameMatch = (game, ownerIds, sessionNo) =>
+  (typeof game.training_session_id === 'string' && ownerIds.has(game.training_session_id)) ||
+  (typeof game.game_id === 'string' && sessionNo && game.game_id.startsWith(`tc-${sessionNo}-`))
 
 // Ventana de picks efectiva: base = ahora (o start_at si aún es futuro) + N min.
 export function computePickDeadline(startAt, pickWindowMinutes = 10) {
@@ -72,6 +81,28 @@ export const gameWeekService = {
       console.error('[gameWeekService.listWeeks] no se pudo listar las jornadas desde la nube:', err)
     }
     return { weeks: readLocalWeeks(trainingSessionId), persisted: 'local' }
+  },
+
+  // Partidos de la jornada (filas RAW de league_games, con `id` = PK y
+  // `game_id`): el SimulationService los consume para setScores (id) y
+  // standings (game_id). BUILD-TC-006.2: carga compartida entre la UI
+  // (GameWeekContext) y la orquestación de la simulación (useTrainingSession).
+  async listSessionGames(event, leagueId) {
+    if (!event?.id || !leagueId) return { games: [], persisted: 'local' }
+    try {
+      const { data: sessions } = await trainingSessionsApi.list(leagueId)
+      const ownerIds = new Set([event.id])
+      if (sessions) sessions.forEach(s => { if (s.event_type === 'fixture_generation') ownerIds.add(s.id) })
+      const { data, error } = await leagueGamesApi.getForLeague(leagueId)
+      if (error) throw error
+      const games = (data || [])
+        .filter(g => sessionGameMatch(g, ownerIds, event.session_no))
+        .map(g => ({ ...g }))
+      return { games, persisted: 'cloud' }
+    } catch (err) {
+      console.error('[gameWeekService.listSessionGames] no se pudieron leer los partidos de la jornada:', err)
+      return { games: [], persisted: 'local' }
+    }
   },
 
   // Abre la jornada: crea la fila `game_weeks` (idempotente: si ya existe la

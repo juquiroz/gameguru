@@ -57,19 +57,28 @@
   justify-content: flex-end;
 }
 
-.leagueName {
+.leagueSelect {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   color: var(--accent);
   text-transform: uppercase;
   opacity: 0.85;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100px;
+  max-width: 130px;
+  min-width: 70px;
   flex-shrink: 1;
-  min-width: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 0.25rem 0.35rem;
+  cursor: pointer;
+  outline: none;
+}
+.leagueSelect:hover { border-color: var(--accent); }
+.leagueSelect option {
+  background: var(--bg2);
+  color: var(--text);
+  text-transform: none;
 }
 
 .changeBtn {

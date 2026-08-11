@@ -3,6 +3,7 @@ import { leaguesApi, profilesApi } from '../../../supabase'
 import { trainingSessionService } from '../services/trainingSessionService'
 import { getDerivedPhase } from '../models/states'
 import { decorateParticipants, presenceAvailability } from '../models/presence'
+import { resolveConfig } from '../models/levels'
 import {
   trainingCampDirector,
   fixtureGenerationDirector,
@@ -12,6 +13,10 @@ import {
   EVENT_ACTIONS,
   EVENT_TYPES,
 } from '../../event'
+import {
+  simulationService,
+  SIMULATION_STATES,
+} from '../../simulation'
 
 // Hook de datos de la sesión del evento (BUILD-TC-003 + TC-004).
 // Carga estado, miembros y perfiles, y expone acciones de transición que se
@@ -31,6 +36,14 @@ export function useTrainingSession({ leagueId, userId, league }) {
 
   const eventRef = useRef(event)
   useEffect(() => { eventRef.current = event }, [event])
+
+  // Refs de miembros/perfiles para las fases asíncronas (orquestación de la
+  // simulación, BUILD-TC-006.2): la corrida lee estos datos cuando la semana
+  // llega a picks_locked, no en el render que la dispara.
+  const membersRef = useRef(members)
+  useEffect(() => { membersRef.current = members }, [members])
+  const profilesRef = useRef(profiles)
+  useEffect(() => { profilesRef.current = profiles }, [profiles])
 
   // Director del evento activo, elegido por event_type (contrato EventDirector).
   // training_camp → TrainingCampDirector; fixture_generation → FixtureGenerationDirector;
@@ -239,6 +252,132 @@ export function useTrainingSession({ leagueId, userId, league }) {
       })
   }, [event?.state, leagueId, applyPatch])
 
+  // ── BUILD-TC-006.2 — Orquestación de la simulación ─────────────────
+  // Cuando la Game Week llega a `picks_locked` (y mientras esté en
+  // games_in_progress / simulation_running tras un reload) el SimulationService
+  // avanza la corrida por batches deterministas hasta `completed`; luego la
+  // jornada queda `completed` (game_weeks) y la sesión `finished`
+  // (training_sessions). Sin intervención manual y sin duplicar:
+  // guard ref por sesión de jornada (StrictMode / ticks / re-renders).
+  //
+  // Tamaño de batch según `speed` de la experiencia (demo lento → fast
+  // instantáneo); el pacing visual (live) es BUILD-TC-006.3.
+  const batchSizeFor = (speed) => ({ demo: 1, normal: 3, fast: 5 })[speed] || 3
+
+  const markSessionFinished = async () => {
+    const res = await trainingSessionService.update(leagueId, { state: 'finished' })
+    setEvent(res.data)
+    setPersisted(res.persisted)
+    return res
+  }
+
+  // Cierra la corrida: standings (todos los participantes; sin pick → 0) +
+  // jornada `completed` + simulated_at + sesión `finished`.
+  const runFinalize = async (ev, week, { run }) => {
+    const { games } = await gameWeekService.listSessionGames(ev, league?.id)
+    const picksRes = await simulationService.getConfirmedPicks(league?.id, ev.id)
+    const byProfile = {}
+    profilesRef.current.forEach(p => { byProfile[p.id] = p.username || p.id.slice(0, 8) })
+    const participants = membersRef.current.map(m => ({
+      id: m.user_id,
+      username: byProfile[m.user_id] || m.user_id.slice(0, 8),
+    }))
+
+    const fin = await simulationService.finalize(ev, week, {
+      games,
+      picks: picksRes.picks,
+      participants,
+      run,
+      resultsPersisted: run?.progress?.completed ?? 0,
+    })
+    if (fin.eventPatch) await applyPatch(fin.eventPatch)
+    await markSessionFinished()
+  }
+
+  // Avanza la simulación por batches hasta que el motor pase a la fase de
+  // persistencia (persisting_results); aplica el parche público de cada batch.
+  const runBatches = async (ev, week, { games, seed, run, batchSize }) => {
+    let currentRun = run
+    while (currentRun.state === SIMULATION_STATES.simulating) {
+      const before = currentRun.progress?.completed ?? 0
+      const res = await simulationService.runBatch(ev, week, {
+        games,
+        run: currentRun,
+        seed,
+        from: before,
+        count: batchSize,
+      })
+      if (res.eventPatch) await applyPatch(res.eventPatch)
+      currentRun = res.run
+      // Defensivo: si el batch no avanzó (setScores fallando en todos los
+      // partidos), detener en vez de entrar en bucle; el resume reintentará.
+      if (currentRun.state === SIMULATION_STATES.simulating &&
+          (currentRun.progress?.completed ?? 0) <= before) {
+        console.error('[useTrainingSession] la simulación no avanzó en este batch; se detiene para evitar un bucle:', res)
+        break
+      }
+    }
+    if (currentRun.state === SIMULATION_STATES.persisting_results) {
+      await runFinalize(ev, week, { run: currentRun })
+    }
+  }
+
+  // Pasos de la corrida según el progreso persistido (resume / reload).
+  const runSimulation = async (ev, { batchSize }) => {
+    const { week } = await gameWeekService.getActiveWeek(ev.id)
+    if (!week) return
+    const { games } = await gameWeekService.listSessionGames(ev, league?.id)
+    const run = simulationService.getRun(week)
+    const seed = week?.seed != null ? Number(week.seed) : ev.seed
+
+    if (run.state === SIMULATION_STATES.waiting) {
+      const started = await simulationService.start(ev, week, { games, seed })
+      if (started.eventPatch) await applyPatch(started.eventPatch)
+      await runBatches(ev, week, { games, seed, run: started.run, batchSize })
+      return
+    }
+    if (run.state === SIMULATION_STATES.simulating) {
+      await runBatches(ev, week, { games, seed, run, batchSize })
+      return
+    }
+    if (run.state === SIMULATION_STATES.persisting_results ||
+        run.state === SIMULATION_STATES.updating_standings) {
+      await runFinalize(ev, week, { run })
+      return
+    }
+    if (run.state === SIMULATION_STATES.completed) {
+      // Revisión idempotente tras reload: la corrida ya terminó, pero puede que
+      // el terminal de la sesión (completed/finished) no se haya aplicado.
+      const patch = gameWeekDirector.dispatch(ev, EVENT_ACTIONS.COMPLETE_EVENT, { now: new Date() })
+      if (patch) await applyPatch(patch)
+      if (ev.state !== 'finished') await markSessionFinished()
+    }
+  }
+
+  // Guard por id de jornada (no por estado): si el mismo disparo se repite
+  // (StrictMode monta dos veces el efecto, el tick de 1s, re-renders tras
+  // applyPatch), la segunda invocación se descarta; la primera completa la
+  // corrida. Un id de jornada distinto (semana futura) re-arranca el guard.
+  const simGuardRef = useRef(null)
+  useEffect(() => {
+    const current = eventRef.current
+    if (!current || current.event_type !== EVENT_TYPES.GAME_WEEK) return
+    const playable = current.state === 'picks_locked' ||
+      current.state === 'games_in_progress' || current.state === 'simulation_running'
+    if (!playable) return
+
+    const key = `sim-${current.id}`
+    if (simGuardRef.current === key) return
+    simGuardRef.current = key
+
+    const speed = resolveConfig({ level: current.level, speed: current.speed }).speed
+    runSimulation(current, { batchSize: batchSizeFor(speed) })
+      .catch(err => {
+        console.error('[useTrainingSession] fallo en la orquestación de la simulación:', err)
+        simGuardRef.current = null
+      })
+  }, [event?.state, event?.event_type, leagueId, applyPatch])
+
   const isAdmin = !!league && (league.admin_id === userId || league.role === 'admin')
 
   const director = directorFor(event)
@@ -250,8 +389,13 @@ export function useTrainingSession({ leagueId, userId, league }) {
 
   const profileMap = {}
   profiles.forEach(p => { profileMap[p.id] = p.username || p.id.slice(0, 8) })
+  // BUILD-TC-006.3: los participantes expuestos al GameWeekProvider deben
+  // cumplir el contrato `{ id, username }` del leaderboard (StandingsCalculator
+  // agrupa por `id`); los miembros RAW vienen con `user_id`, así que se expone
+  // `id` explícitamente (TrainingCampParticipants sigue usando `user_id`).
   const participants = decorateParticipants(members, {}).map(m => ({
     ...m,
+    id: m.user_id,
     username: profileMap[m.user_id] || m.user_id.slice(0, 8),
   }))
 
@@ -267,6 +411,14 @@ export function useTrainingSession({ leagueId, userId, league }) {
 
   const cancelEvent = async (reason) => {
     const patch = directorFor(eventRef.current).dispatch(eventRef.current, EVENT_ACTIONS.CANCEL, { now, reason })
+    if (patch) await applyPatch(patch)
+  }
+
+  // BUILD-TC-005.3 — QA/admin: completa el evento de inmediato vía el director
+  // (ADVANCE_EVENT, idempotente). Al quedar `finished`, los efectos de spawn
+  // existentes disparan Fixture Generation → Game Week → Picks sin duplicar.
+  const advanceEvent = async () => {
+    const patch = directorFor(eventRef.current).dispatch(eventRef.current, EVENT_ACTIONS.ADVANCE_EVENT, { now })
     if (patch) await applyPatch(patch)
   }
 
@@ -288,6 +440,7 @@ export function useTrainingSession({ leagueId, userId, league }) {
     openLobby,
     startNow,
     cancelEvent,
+    advanceEvent,
     applyPatch,
     reload: load,
   }

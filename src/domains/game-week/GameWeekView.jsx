@@ -11,6 +11,10 @@ import { useLanguage } from '../../i18n/context'
 import { useGameWeek } from './GameWeekContext'
 import { PICK_STATUS } from './PicksService'
 import GameCard from '../../components/GameCard'
+import LeagueIdentity from '../../components/LeagueIdentity'
+import SimulationProgress from './SimulationProgress'
+import GameWeekResults from './GameWeekResults'
+import GameWeekLeaderboard from './GameWeekLeaderboard'
 import styles from './game-week.module.css'
 
 const fmtCountdown = (ms) => {
@@ -25,6 +29,13 @@ const stateBadge = (ctx, t) => {
   if (ctx.isWaiting) return t('gameWeek.stateWaiting')
   if (ctx.isOpen) return t('gameWeek.statePicksOpen')
   if (ctx.isLocked) return t('gameWeek.statePicksLocked')
+  // BUILD-TC-006.3: transición visible Picks Locked → Simulation Starting →
+  // Simulation Running (progreso del run interno, sin pantalla vacía).
+  if (ctx.isSimulating) {
+    return ctx.simRun?.state === 'waiting'
+      ? t('gameWeek.stateSimStarting')
+      : t('gameWeek.stateSimRunning')
+  }
   if (ctx.isCompleted) return t('gameWeek.stateCompleted')
   if (ctx.isCancelled) return t('gameWeek.stateCancelled')
   return t('gameWeek.statusLabel')
@@ -38,7 +49,7 @@ export default function GameWeekView() {
 
   const {
     week, weekPersisted, games, requiredGames, picks, pickCount, totalGames,
-    complete, pickStatus, isWaiting, isOpen, isLocked, isCompleted, isCancelled,
+    complete, pickStatus, isWaiting, isOpen, isLocked, isCompleted, isCancelled, isSimulating,
     deadlineMs, loading, busy, isAdmin, selectPick, confirmPicks, lockWeek,
   } = gw
 
@@ -65,13 +76,16 @@ export default function GameWeekView() {
 
   const locked = isLocked || isCompleted
   const badge = stateBadge(gw, t)
+  const badgeClass = isOpen ? styles.badgeOpen : isSimulating ? styles.badgeSim : locked ? styles.badgeLocked : styles.badgeIdle
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
+        {/* PLAN-01.1: identidad de la liga siempre visible en la jornada */}
+        <LeagueIdentity league={gw.league} sessionNo={gw.event?.session_no} week={week?.week ?? 1} />
         <div className={styles.headerTop}>
           <span className={styles.tag}>{t('gameWeek.sessionTag', { no: week?.week ?? 1 })}</span>
-          <span className={`${styles.badge} ${isOpen ? styles.badgeOpen : locked ? styles.badgeLocked : styles.badgeIdle}`}>
+          <span className={`${styles.badge} ${badgeClass}`}>
             {badge}
           </span>
         </div>
@@ -113,10 +127,16 @@ export default function GameWeekView() {
         </div>
       )}
 
+      {/* BUILD-TC-006.3 — durante la simulación NO hay acciones de picks:
+          solo el progreso en vivo (estado del run + completed/total + %). */}
+      {isSimulating && <SimulationProgress />}
+
       {isCompleted && (
-        <div className={styles.centerState}>
-          <div className={styles.waitingTitle}>{t('gameWeek.completedTitle')}</div>
-        </div>
+        <>
+          <div className={styles.completedBanner}>{t('gameWeek.simulationCompleted')}</div>
+          <GameWeekResults />
+          <GameWeekLeaderboard />
+        </>
       )}
 
       {!isWaiting && !isCancelled && !isCompleted && (

@@ -4,6 +4,7 @@ import { NFL_WEEKS } from '../data/nflData'
 import { isWeekLocked } from '../utils/dates'
 import { calcStandings } from '../utils/standings'
 import LeaderboardTable from '../components/LeaderboardTable'
+import LeagueIdentity from '../components/LeagueIdentity'
 
 export default function Leaderboard({ user, league, onNavigate }) {
   const [activeWeek, setActiveWeek] = useState(() => {
@@ -149,6 +150,9 @@ export default function Leaderboard({ user, league, onNavigate }) {
     <div className="page">
       <div className="page-title">Tabla de Posiciones</div>
       <div className="page-sub">El que más aciertos logre gana la semana</div>
+
+      {/* PLAN-01.1: identidad de la liga siempre visible (no solo el Topbar) */}
+      <LeagueIdentity league={league} />
 
       {loading ? (
         <div className="empty-state"><div className="big">⏳</div>Cargando...</div>

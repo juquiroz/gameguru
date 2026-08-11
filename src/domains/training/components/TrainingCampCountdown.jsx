@@ -23,18 +23,31 @@ const fmtStart = (d) =>
     minute: '2-digit',
   }).format(new Date(d))
 
-export default function TrainingCampCountdown({ phase, remainingMs, startAt, sessionNo }) {
+export default function TrainingCampCountdown({ phase, remainingMs, startAt, startedAt, sessionNo, now }) {
   const { t } = useLanguage()
 
   const active = phase === 'waiting' || phase === 'countdown'
   const live = phase === 'countdown'
 
+  // BUILD-TC-005.3 — Estado activo (START): muestra el evento en curso, hora de
+  // inicio y tiempo transcurrido, y el próximo paso (Fixture Generation).
   if (phase === 'ready' || phase === 'training_started') {
+    const started = startedAt || startAt
+    const base = started && !Number.isNaN(new Date(started).getTime()) ? new Date(started) : null
+    const elapsed = base ? Math.max(0, (now || new Date()) - base) : 0
+    const { h, m, s } = split(elapsed)
     return (
       <div className={styles.countdownCard}>
         <div className={styles.countdownReady}>
-          <div className={styles.readyTitle}>🎬 {t('training.personaReady')}</div>
-          <div className={styles.readySub}>{t('training.readySub')}</div>
+          <div className={styles.readyTitle}>🏈 {t('training.personaActive')}</div>
+          <div className={styles.readySub}>{t('training.activeSub')}</div>
+          {base && (
+            <div className={styles.activeMeta}>
+              <div className={styles.activeMetaRow}>{t('training.startsAt', { date: fmtStart(base.toISOString()) })}</div>
+              <div className={styles.activeMetaRow}>{t('training.elapsed', { time: `${pad(h)}:${pad(m)}:${pad(s)}` })}</div>
+            </div>
+          )}
+          <div className={styles.readySub}>{t('training.nextStep')}</div>
         </div>
       </div>
     )

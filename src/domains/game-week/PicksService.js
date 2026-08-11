@@ -100,6 +100,8 @@ export const picksService = {
       submitted_at: null,
     }
     try {
+      // PLAN-LEAGUE-CONTEXT-01.1: UK de sesión por liga (006.2 eliminó la global
+      // `user_id,week,game_id` que sobrescribía picks de otra liga).
       const { error } = await picksApi.upsert([row], {
         onConflict: 'user_id,league_id,training_session_id,game_id',
       })

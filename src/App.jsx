@@ -7,7 +7,7 @@ import { LangProvider, useLanguage } from './i18n/context'
 import Auth        from './pages/Auth'
 import Home        from './pages/Home'
 import Picks       from './pages/Picks'
-import Leaderboard from './pages/Leaderboard'
+import LeagueStandings from './pages/LeagueStandings'
 import PublicPicks from './pages/PublicPicks'
 import LeaguePage  from './pages/LeaguePage'
 import SuperAdmin  from './pages/SuperAdmin'
@@ -18,6 +18,10 @@ import CreateSimulationModal from './components/CreateSimulationModal'
 import ExperienceWizard from './domains/experience/components/ExperienceWizard'
 import TrainingCampSetupModal from './domains/training/components/TrainingCampSetupModal'
 
+import { LeagueProvider, useLeagueContext } from './league/context/LeagueContext'
+import { LeagueRoute } from './league/LeagueRoute'
+import { resolveForView, navigate, LEGACY_REDIRECTABLE } from './router/routes'
+
 export default function App() {
   return (
     <LangProvider>
@@ -26,8 +30,9 @@ export default function App() {
   )
 }
 
+// AppInner: auth + estado de liga (useLeague). Monta LeagueProvider sobre
+// AppShell. La carga/auth no dependen del contexto de liga.
 function AppInner() {
-  const [activePage, setActivePage] = useState('dashboard')
   const [showWizard, setShowWizard] = useState(false)
   const [wizardInit, setWizardInit] = useState(null)
   const [showJoin,   setShowJoin]   = useState(false)
@@ -36,55 +41,9 @@ function AppInner() {
   const [lobbyVersion, setLobbyVersion] = useState(0)
   const { t } = useLanguage()
 
-  const PAGE_KEYS = {
-    dashboard: 'topbar.dashboard',
-    picks: 'topbar.picks',
-    board: 'topbar.board',
-    publicpicks: 'Picks Públicos',
-    league: 'topbar.league',
-    training: 'training.name',
-    superadmin: 'superadmin.title',
-  }
-
   const { user, loading, signIn, signUp, signOut } = useAuth()
   const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
-
-  const {
-    myLeagues,
-    currentLeague,
-    loadingLeagues,
-    fetchMyLeagues,
-    createLeague,
-    createSimulationLeague,
-    createTrainingCamp,
-    configureTrainingCamp,
-    joinByCode,
-    enterLeague,
-    leaveCurrentLeague,
-  } = useLeague(user)
-
-  // Sync URL with active page
-  useEffect(() => {
-    const hash = window.location.hash.replace('#', '')
-    if (hash && hash !== activePage) {
-      setActivePage(hash)
-    }
-  }, [])
-
-  const handleNavigate = (page) => {
-    setActivePage(page)
-    window.location.hash = page
-    const pageTitle = t(PAGE_KEYS[page] || 'app.name')
-    document.title = `${pageTitle} · ${t('app.name')}`
-  }
-
-  const handleChangeLeague = () => {
-    leaveCurrentLeague()
-    handleNavigate('dashboard')
-  }
-
-  const openWizard = (initialExperience = null) => { setWizardInit(initialExperience); setShowWizard(true) }
-  const openConfigTrainingCamp = () => { setShowTrainingCamp(true) }
+  const leaguesState = useLeague(user)
 
   if (loading || adminChecking) {
     return (
@@ -119,11 +78,156 @@ function AppInner() {
     return <Auth onAuth={{ signIn, signUp }} />
   }
 
-  const pageProps = { user, onNavigate: handleNavigate, onChangeLeague: handleChangeLeague }
+  return (
+    <LeagueProvider user={user} leaguesState={leaguesState}>
+      <AppShell
+        user={user}
+        isSuperAdmin={isSuperAdmin}
+        signOut={signOut}
+        lobbyVersion={lobbyVersion}
+        setLobbyVersion={setLobbyVersion}
+        showWizard={showWizard}
+        setShowWizard={setShowWizard}
+        wizardInit={wizardInit}
+        setWizardInit={setWizardInit}
+        showJoin={showJoin}
+        setShowJoin={setShowJoin}
+        showSimulation={showSimulation}
+        setShowSimulation={setShowSimulation}
+        showTrainingCamp={showTrainingCamp}
+        setShowTrainingCamp={setShowTrainingCamp}
+      />
+    </LeagueProvider>
+  )
+}
+
+function AppShell({
+  user,
+  isSuperAdmin,
+  signOut,
+  lobbyVersion,
+  setLobbyVersion,
+  showWizard,
+  setShowWizard,
+  wizardInit,
+  setWizardInit,
+  showJoin,
+  setShowJoin,
+  showSimulation,
+  setShowSimulation,
+  showTrainingCamp,
+  setShowTrainingCamp,
+}) {
+  const [activePage, setActivePage] = useState('dashboard')
+  const { t } = useLanguage()
+
+  // Contexto de liga resuelto por la URL (PLAN-LEAGUE-CONTEXT).
+  const {
+    route,
+    activeLeagueId,
+    myLeagues,
+    loadingLeagues,
+    currentLeague,
+    league: routeLeague,
+    fetchMyLeagues,
+    createLeague,
+    createSimulationLeague,
+    createTrainingCamp,
+    configureTrainingCamp,
+    joinByCode,
+    enterLeague,
+    leaveCurrentLeague,
+    setActiveLeague,
+  } = useLeagueContext()
+
+  // PLAN-LEAGUE-CONTEXT-01.1: la liga de contexto es la resuelta por la URL
+  // (fuente de verdad); currentLeague es solo el fallback del flujo legacy.
+  const effectiveLeague = routeLeague || currentLeague
+
+  const PAGE_KEYS = {
+    dashboard: 'topbar.dashboard',
+    picks: 'topbar.picks',
+    board: 'topbar.board',
+    publicpicks: 'Picks Públicos',
+    league: 'topbar.league',
+    training: 'training.name',
+    superadmin: 'superadmin.title',
+  }
+
+  // Sync URL with active page (flujo legacy: #picks, #board, ...)
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '')
+    if (hash && hash !== activePage) {
+      setActivePage(hash)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Redirects legacy (#picks/#board/#league/#publicpicks) hacia
+  // #/league/:id/:view cuando hay contexto resoluble. La URL manda;
+  // activeLeagueId es sugerencia. `training` se excluye hasta Fase 6 (el
+  // lobby del TC no está migrado a contexto de ruta). 2+ ligas sin contexto →
+  // hub (selector de liga llega en BUILD-02).
+  useEffect(() => {
+    if (!route || route.type !== 'legacy') return
+    if (!(route.page in LEGACY_REDIRECTABLE)) return
+    const resolved = resolveForView({ route, myLeagues, activeLeagueId })
+    if (resolved.type === 'league' && resolved.leagueId) {
+      navigate(resolved)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route && route.hash, myLeagues && myLeagues.length])
+
+  const handleNavigate = (page) => {
+    setActivePage(page)
+    window.location.hash = page
+    const pageTitle = t(PAGE_KEYS[page] || 'app.name')
+    document.title = `${pageTitle} · ${t('app.name')}`
+  }
+
+  const handleChangeLeague = () => {
+    leaveCurrentLeague()
+    handleNavigate('dashboard')
+  }
+
+  const openWizard = (initialExperience = null) => { setWizardInit(initialExperience); setShowWizard(true) }
+  const openConfigTrainingCamp = () => { setShowTrainingCamp(true) }
+
+  // PLAN-LEAGUE-CONTEXT-01.1 §5: al cambiar de liga se conserva la vista activa.
+  // Prioridad: el `page` de la ruta actual (URL = fuente de verdad, funciona
+  // también en entradas directas #/league/:id/picks). Fallback a `activePage`
+  // (legacy #picks/#board/...). Training solo se conserva si la liga destino
+  // es practice.
+  const viewForActivePage = (page, lg) => {
+    if (page === 'picks') return 'picks'
+    if (page === 'board') return 'standings'
+    if (page === 'publicpicks') return 'publicpicks'
+    const practice = !!(lg && (lg.league_mode === 'practice' || lg.simulation))
+    if (page === 'training' && practice) return 'training'
+    return 'league'
+  }
+  const preserveLeagueView = (lg) => {
+    if (route && route.type === 'league' && route.page) {
+      const practice = !!(lg && (lg.league_mode === 'practice' || lg.simulation))
+      if (route.page === 'training' && !practice) return 'league'
+      return route.page
+    }
+    return viewForActivePage(activePage, lg)
+  }
+
+  const renderLeagueView = (league) => {
+    const p = { user, league, onNavigate: handleNavigate, onChangeLeague: handleChangeLeague }
+    const page = route && route.page
+    if (page === 'picks') return <Picks {...p} />
+    // PLAN-LEAGUE-CONTEXT-01.1 §6: standings despacha por tipo de liga
+    // (practice → jornada del Training Camp; season → Leaderboard legacy).
+    if (page === 'standings') return <LeagueStandings {...p} />
+    if (page === 'publicpicks') return <PublicPicks {...p} />
+    if (page === 'training') return <TrainingCamp key={lobbyVersion} {...p} onConfigure={openConfigTrainingCamp} />
+    return <LeaguePage {...p} />
+  }
 
   const renderPage = () => {
-    if (activePage === 'superadmin' && isSuperAdmin) return <SuperAdmin />
-
     const home = (
       <Home
         user={user}
@@ -138,6 +242,22 @@ function AppInner() {
         onCreateTrainingCamp={() => openWizard('practice')}
       />
     )
+
+    if (route && route.type === 'superadmin' && isSuperAdmin) return <SuperAdmin />
+
+    // Hub: el dashboard muestra TODAS las ligas (fuente de verdad = ruta).
+    if (route && route.type === 'dashboard') return home
+
+    // Ruta de liga por URL (PLAN-LEAGUE-CONTEXT, Fases 1-3):
+    // #/league/:leagueId[/picks|standings|publicpicks|training]. LeagueRoute
+    // valida membership; key={leagueId} da remount limpio al cambiar de liga.
+    if (route && route.type === 'league' && route.leagueId) {
+      return (
+        <LeagueRoute key={route.leagueId}>
+          {({ league }) => renderLeagueView(league)}
+        </LeagueRoute>
+      )
+    }
 
     if (activePage === 'dashboard') return home
 
@@ -155,7 +275,7 @@ function AppInner() {
 
     const p = { user, league: currentLeague, onNavigate: handleNavigate, onChangeLeague: handleChangeLeague }
     if (activePage === 'picks') return <Picks {...p} />
-    if (activePage === 'board') return <Leaderboard {...p} />
+    if (activePage === 'board') return <LeagueStandings {...p} />
     if (activePage === 'publicpicks') return <PublicPicks {...p} />
     if (activePage === 'league') return <LeaguePage {...p} />
     if (activePage === 'training') return <TrainingCamp key={lobbyVersion} {...p} onConfigure={openConfigTrainingCamp} />
@@ -166,10 +286,15 @@ function AppInner() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Topbar
         user={user}
-        league={currentLeague}
+        league={effectiveLeague}
+        myLeagues={myLeagues}
         activePage={activePage}
         onNavigate={handleNavigate}
         onChangeLeague={handleChangeLeague}
+        onSelectLeague={(lg) => {
+          enterLeague(lg)
+          setActiveLeague(lg.id, preserveLeagueView(lg))
+        }}
         onLogout={signOut}
         isSuperAdmin={isSuperAdmin}
         onCreateNew={() => openWizard()}
@@ -185,7 +310,7 @@ function AppInner() {
         activePage={activePage}
         onNavigate={handleNavigate}
         isSuperAdmin={isSuperAdmin}
-        isPractice={!!currentLeague && (currentLeague.league_mode === 'practice' || currentLeague.simulation)}
+        isPractice={!!effectiveLeague && (effectiveLeague.league_mode === 'practice' || effectiveLeague.simulation)}
       />
 
       {showWizard && (
@@ -197,7 +322,9 @@ function AppInner() {
           onEnterLeague={(lg, experience) => {
             setShowWizard(false)
             enterLeague(lg)
-            handleNavigate(experience === 'practice' ? 'training' : 'dashboard')
+            // PLAN-LEAGUE-CONTEXT-01.1: la entrada establece la URL (fuente de
+            // verdad). Practice → lobby del Training Camp; season → home de la liga.
+            setActiveLeague(lg.id, experience === 'practice' ? 'training' : 'league')
           }}
         />
       )}
@@ -205,14 +332,14 @@ function AppInner() {
       {showJoin && <JoinLeagueModal
         onClose={() => setShowJoin(false)}
         onJoin={joinByCode}
-        onEnter={(lg) => { enterLeague(lg); handleNavigate('dashboard'); setShowJoin(false) }}
+        onEnter={(lg) => { enterLeague(lg); setActiveLeague(lg.id); setShowJoin(false) }}
       />}
 
       {showSimulation && (
         <CreateSimulationModal
           onClose={() => setShowSimulation(false)}
           onCreateSimulation={createSimulationLeague}
-          onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard'); setShowSimulation(false) }}
+          onEnterLeague={(lg) => { enterLeague(lg); setActiveLeague(lg.id); setShowSimulation(false) }}
         />
       )}
 
@@ -243,7 +370,14 @@ function JoinLeagueModal({ onClose, onJoin, onEnter }) {
     setMsg(null)
     const { data, error, alreadyMember } = await onJoin(code)
     setJoining(false)
-    if (error) { setMsg({ type: 'error', text: error.message }); return }
+    if (error) {
+      // BUILD-TC-005.4 — el servicio rechaza con `error.message` la liga cuyo
+      // roster ya cerró (canJoinLeague): "Esta liga ya comenzó y no acepta
+      // nuevos jugadores." También deja `error.code === 'roster_closed'` para
+      // manejo programático. El modal es español, igual que el resto.
+      setMsg({ type: 'error', text: error.message })
+      return
+    }
     if (alreadyMember) {
       setMsg({ type: 'info', text: 'Ya eres miembro. Entrando...' })
     } else {

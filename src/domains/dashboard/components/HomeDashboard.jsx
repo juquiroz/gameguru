@@ -2,6 +2,8 @@ import { leaguesApi } from '../../../supabase'
 import { useLanguage } from '../../../i18n/context'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { getLeagueMode } from '../../league/models/modes'
+import { canJoinLeague } from '../../league'
+import { useLeagueEvent } from '../../training/hooks/useLeagueEvent'
 import DashboardHeader from './DashboardHeader'
 import HeroCard from './HeroCard'
 import HowItWorks from './HowItWorks'
@@ -46,6 +48,12 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
     showLeaderboard,
     showCountdown,
   } = state
+
+  // BUILD-TC-005.4 — Evento más reciente de la liga activa (lectura ligera,
+  // sin orquestación) para el CTA MAKE YOUR PICKS y el estado del roster.
+  const event = useLeagueEvent(hasCurrentLeague ? currentLeague?.id : null)
+  const rosterOpen = !event || canJoinLeague(event)
+  const picksOpen = !!event && event.event_type === 'game_week' && event.state === 'picks_open'
 
   const isAdmin = !!currentLeague && (currentLeague.admin_id === user?.id || currentLeague.role === 'admin')
   const pendingResults = leagueGames ? leagueGames.filter(g => !g.finished).length : 0
@@ -126,14 +134,25 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
       />
 
       {hasCurrentLeague && getLeagueMode(currentLeague) === 'practice' && (
-        <button
-          className={styles.lobbyBanner}
-          onClick={() => onNavigate('training')}
-        >
-          <span className={styles.lobbyBannerIcon}>🎓</span>
-          <span>{t('training.lobbyBanner')}</span>
-          <span className={styles.lobbyBannerArrow}>→</span>
-        </button>
+        picksOpen ? (
+          <button
+            className={styles.picksCta}
+            onClick={() => onNavigate('training')}
+          >
+            <span className={styles.picksCtaIcon}>🏈</span>
+            <span className={styles.picksCtaLabel}>{t('training.makePicksCta')}</span>
+            <span className={styles.lobbyBannerArrow}>→</span>
+          </button>
+        ) : (
+          <button
+            className={styles.lobbyBanner}
+            onClick={() => onNavigate('training')}
+          >
+            <span className={styles.lobbyBannerIcon}>🎓</span>
+            <span>{t('training.lobbyBanner')}</span>
+            <span className={styles.lobbyBannerArrow}>→</span>
+          </button>
+        )
       )}
 
       {isContextAdmin && participation && (
@@ -186,13 +205,23 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
 
       {isAdmin && (
         <>
-          <div className={homeStyles.inviteBox}>
-            <div className={homeStyles.inviteLabel}>{t('dashboard.inviteLabel')}</div>
-            <div className={homeStyles.inviteCode}>{currentLeague.code}</div>
-            <button className={homeStyles.inviteCopy} onClick={copyInviteLink}>
-              {t('dashboard.copyLink')}
-            </button>
-          </div>
+          {rosterOpen ? (
+            <div className={homeStyles.inviteBox}>
+              <div className={homeStyles.inviteLabel}>{t('dashboard.inviteLabel')}</div>
+              <div className={homeStyles.inviteCode}>{currentLeague.code}</div>
+              <button className={homeStyles.inviteCopy} onClick={copyInviteLink}>
+                {t('dashboard.copyLink')}
+              </button>
+            </div>
+          ) : (
+            <div className={styles.rosterClosed}>
+              <span className={styles.rosterClosedIcon}>🔒</span>
+              <div className={styles.rosterClosedText}>
+                <div className={styles.rosterClosedTitle}>{t('training.rosterClosedTitle')}</div>
+                <div className={styles.rosterClosedDesc}>{t('training.rosterClosedDesc')}</div>
+              </div>
+            </div>
+          )}
 
           <div className={homeStyles.quickActions}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => onNavigate('league')}>

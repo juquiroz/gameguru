@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import GameCard from '../components/GameCard'
+import LeagueIdentity from '../components/LeagueIdentity'
 import { NFL_WEEKS } from '../data/nflData'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import { isWeekLocked, isGameLocked } from '../utils/dates'
@@ -225,7 +226,10 @@ td:first-child{position:sticky;left:0;background:#0D1525}
       <div className="page-title">Mis Picks</div>
       <div className="page-sub">Selecciona el ganador de cada partido antes del kickoff</div>
 
-      {!loadingGames && !useDynamic && (
+      {/* PLAN-01.1: identidad de la liga siempre visible (no solo el Topbar) */}
+      <LeagueIdentity league={league} week={activeWeek} />
+
+      {!loadingGames && !useDynamic && !weekData && (
         <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
           ⚠️ No se encontraron juegos en esta liga. {league?.admin_id === user?.id
             ? 'Ve a Mi Liga &gt; Gestión de Partidos para importarlos.'

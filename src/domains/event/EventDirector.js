@@ -15,6 +15,14 @@
 // acciones de generación (START_GENERATION / GENERATION_PROGRESS /
 // SAVE_COMPLETE / COMPLETE_EVENT) son del contrato común para que cualquier
 // motor futuro (Simulation Engine TC-005) reporte por el mismo camino.
+// BUILD-TC-005.3: `ADVANCE_EVENT` es la acción administrativa/QA del contrato:
+// completa/adelanta el evento sin esperar la duración real (los directores que
+// la soportan la implementan idempotente: null si no hay transición). La UI la
+// expone solo en contexto de admin.
+// BUILD-TC-006: `SIMULATION_START` / `SIMULATION_PROGRESS` son las acciones
+// del motor de resultados (GameWeekDirector / SimulationDirector);
+// `PERSIST_DONE` / `STANDINGS_DONE` / `FAIL` son del SimulationDirector (la
+// máquina interna de la corrida), también parte del contrato común.
 // ════════════════════════════════════════════════════════════════════
 
 export const EVENT_TYPES = {
@@ -28,6 +36,7 @@ export const EVENT_ACTIONS = {
   START_NOW: 'START_NOW',
   CANCEL: 'CANCEL',
   TICK: 'TICK',
+  ADVANCE_EVENT: 'ADVANCE_EVENT',
   START_GENERATION: 'START_GENERATION',
   GENERATION_PROGRESS: 'GENERATION_PROGRESS',
   SAVE_COMPLETE: 'SAVE_COMPLETE',
@@ -35,6 +44,11 @@ export const EVENT_ACTIONS = {
   OPEN_WEEK: 'OPEN_WEEK',
   LOCK_PICKS: 'LOCK_PICKS',
   OPEN_NEXT_WEEK: 'OPEN_NEXT_WEEK',
+  SIMULATION_START: 'SIMULATION_START',
+  SIMULATION_PROGRESS: 'SIMULATION_PROGRESS',
+  PERSIST_DONE: 'PERSIST_DONE',
+  STANDINGS_DONE: 'STANDINGS_DONE',
+  FAIL: 'FAIL',
 }
 
 export class EventDirector {

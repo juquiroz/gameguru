@@ -163,6 +163,40 @@ a       { color: inherit; text-decoration: none; }
   margin-bottom: 1.75rem;
 }
 
+/* ── League Identity (PLAN-LEAGUE-CONTEXT-01.1) ── */
+.league-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: -0.5rem 0 1.25rem;
+}
+.league-identity-main {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.league-identity-code {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.league-identity-chip {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
 /* ── Section Title ── */
 .sec-title {
   font-family: 'Bebas Neue', sans-serif;

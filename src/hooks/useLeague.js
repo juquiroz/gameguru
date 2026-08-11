@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
 import { genInviteCode, NFL_TEAMS } from '../data/nflData'
 import { localTZOffset } from '../utils/dates'
-import { hydrateLeague } from '../domains/league'
+import { hydrateLeague, canJoinLeague } from '../domains/league'
 import { trainingSessionService } from '../domains/training/services/trainingSessionService'
 
 export function useLeague(user) {
@@ -129,6 +129,21 @@ export function useLeague(user) {
     const { data: league, error: fetchError } = await leaguesApi.getByCode(code.toUpperCase())
     if (fetchError || !league) return { error: { message: 'Código no válido.' } }
 
+    // BUILD-TC-005.4 — Regla central del roster (canJoinLeague, dominio):
+    // una liga cuyo último evento ya superó START (TC activo, Fixture
+    // Generation, Game Week…) NO acepta nuevos jugadores. La validación vive
+    // en la capa de servicio, no solo en la UI; la UI traduce el mensaje por
+    // `error.code` (JoinLeagueModal).
+    const { data: event } = await trainingSessionService.get(league.id)
+    if (!canJoinLeague(event)) {
+      return {
+        error: {
+          code: 'roster_closed',
+          message: 'Esta liga ya comenzó y no acepta nuevos jugadores.',
+        },
+      }
+    }
+
     const { error: joinError } = await membersApi.join(league.id, user.id)
     if (joinError) return { error: joinError }
 
@@ -154,6 +169,7 @@ export function useLeague(user) {
       admin_id: user.id,
       deadline_mode: 'weekly',
       simulation: true,
+      league_mode: 'practice',
     })
     if (error) return { error }
 

@@ -9,4 +9,9 @@ export {
   getLeagueSeason,
 } from './models/modes'
 export { SEASONS, getSeason, providerAvailable } from './models/seasons'
-export { hydrateLeague } from './services/leagueService'
+export {
+  hydrateLeague,
+  canJoinLeague,
+  getRosterStatus,
+  ROSTER_STATUS,
+} from './services/leagueService'

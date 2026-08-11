@@ -9,6 +9,14 @@
 //
 // NO genera contenido: el fixture y los resultados llegan con el Fixture
 // Generator (TC-004) y el Simulation Engine (TC-005).
+//
+// BUILD-TC-005.3 — ADVANCE_EVENT (QA/admin): el Training Camp NO tiene un
+// mecanismo visible para completarse (avanza solo por hora), lo que bloquea la
+// llegada a Fixture Generation / Game Week / Picks durante QA. Esta acción
+// administrativa completa el evento de inmediato (`finished`), respetando el
+// contrato: es pura, idempotente (null si ya terminó/canceló) y la UI solo la
+// expone al admin. Al quedar `finished`, el hook dispara la transición TC→FG
+// existente (sin duplicar: guards ref en useTrainingSession).
 // ════════════════════════════════════════════════════════════════════
 
 import {
@@ -90,6 +98,22 @@ export class TrainingCampDirector extends EventDirector {
           }
         }
         return null
+
+      // BUILD-TC-005.3 — QA/admin: completa el Training Camp de inmediato.
+      // Idempotente: si ya está `finished`/`cancelled` no hay transición (la
+      // UI no duplica; el hook ya no dispara spawns). `created` se excluye:
+      // el admin debe abrir el lobby antes de poder avanzar el evento.
+      case EVENT_ACTIONS.ADVANCE_EVENT:
+        if (
+          state === TRAINING_STATES.finished ||
+          state === TRAINING_STATES.cancelled ||
+          state === TRAINING_STATES.created
+        ) return null
+        return {
+          state: TRAINING_STATES.finished,
+          finished_at: now.toISOString(),
+          finished_reason: 'admin',
+        }
 
       default:
         return null

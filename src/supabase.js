@@ -35,6 +35,12 @@ export const leaguesApi = {
   getByCode: (code) =>
     supabase.from('leagues').select('*').eq('code', code).single(),
 
+  // LeagueContext (PLAN-LEAGUE-CONTEXT): distingue "liga inexistente" de
+  // "no sos miembro". RLS: `Anyone can read leagues` (SELECT público), así que
+  // cualquier usuario autenticado puede verificar la existencia de la liga.
+  getById: (id) =>
+    supabase.from('leagues').select('*').eq('id', id).maybeSingle(),
+
   getMyLeagues: (userId) =>
     supabase
       .from('league_members')
@@ -82,10 +88,29 @@ export const membersApi = {
       .upsert({ league_id: leagueId, user_id: userId, role })
       .select()
       .single(),
+
+  // LeagueContext (PLAN-LEAGUE-CONTEXT): membership de un usuario en una liga
+  // consultada directo de la fuente de datos (no solo del frontend). RLS:
+  // `Members can read memberships` (SELECT total).
+  getMembership: (leagueId, userId) =>
+    supabase
+      .from('league_members')
+      .select('role')
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .maybeSingle(),
 }
 
 // ─── Picks helpers ──────────────────────────────────────────────────────────
 export const picksApi = {
+  // PLAN-LEAGUE-CONTEXT-01.1: aislar picks por liga. Migración 006.2 eliminó la
+  // constraint GLOBAL `picks_user_id_week_game_id_key UNIQUE(user_id, week,
+  // game_id)` (causa de corrupción silenciosa multi-liga: el 2do upsert de una
+  // liga sobrescribía la fila de otra con el mismo game_id). El default apunta a
+  // la UK por liga de season/regular (training_session_id NULL):
+  //   `picks_user_league_week_game_key UNIQUE(user_id, league_id, week, game_id)`.
+  // El flujo Training Camp pasa onConflict explícito a la UK de sesión
+  // (`user_id,league_id,training_session_id,game_id` — PicksService).
   upsert: (picks, { onConflict = 'user_id,league_id,week,game_id' } = {}) =>
     supabase
       .from('picks')

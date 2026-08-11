@@ -1,12 +1,13 @@
 // ════════════════════════════════════════════════════════════════════
-// GameWeekDirector — director del evento Game Week (BUILD-TC-005)
+// GameWeekDirector — director del evento Game Week (BUILD-TC-005 / TC-006)
 //
 // Implementa el contrato EventDirector para la jornada de juego del
-// Training Camp: `waiting → picks_open → picks_locked → completed`
-// (+ `cancelled` virtual). La simulación (games_in_progress /
-// simulation_running) llega en BUILD-TC-006 y se disparará desde el
-// director con las acciones SIMULATION_START / SIMULATION_PROGRESS del
-// contrato común.
+// Training Camp: `waiting → picks_open → picks_locked → games_in_progress
+// → simulation_running → completed` (+ `cancelled` virtual). La simulación
+// (BUILD-TC-006) se dispara desde este director con las acciones
+// SIMULATION_START / SIMULATION_PROGRESS del contrato común: el
+// SimulationService las despacha a medida que el motor persiste resultados
+// (la máquina INTERNA de la corrida vive en el SimulationDirector).
 //
 // REGLA: el director coordina, NO genera. No conoce Supabase ni la NFL:
 // traduce acciones/estado/reloj a pasos y parches puros. El deadline de
@@ -17,21 +18,29 @@
 // picks_open → picks_locked (TICK por deadline o LOCK_PICKS explícito con
 // `reason`: deadline | all_submitted | admin). Quién dispara el lock
 // (deadline vencido, todos confirmaron, admin) es decisión del service/hook.
+//
+// BUILD-TC-006: ADVANCE_EVENT (QA/admin) completa la jornada desde cualquier
+// estado jugable de forma idempotente (null si completed/cancelled/waiting),
+// igual que en TrainingCampDirector.
 // ════════════════════════════════════════════════════════════════════
 
 import { EventDirector, EVENT_ACTIONS, EVENT_TYPES } from '../event/EventDirector'
 
 const STEPS = [
-  { id: 'waiting',     icon: '🗓️' },
-  { id: 'picks_open',  icon: '✅' },
-  { id: 'picks_locked', icon: '🔒' },
-  { id: 'completed',   icon: '🏁' },
+  { id: 'waiting',             icon: '🗓️' },
+  { id: 'picks_open',          icon: '✅' },
+  { id: 'picks_locked',        icon: '🔒' },
+  { id: 'games_in_progress',   icon: '📊' },
+  { id: 'simulation_running',  icon: '⚙️' },
+  { id: 'completed',           icon: '🏁' },
 ]
 
 export const GAME_WEEK_STATES = {
   waiting: 'waiting',
   picks_open: 'picks_open',
   picks_locked: 'picks_locked',
+  games_in_progress: 'games_in_progress',
+  simulation_running: 'simulation_running',
   completed: 'completed',
   cancelled: 'cancelled',
 }
@@ -45,12 +54,18 @@ export class GameWeekDirector extends EventDirector {
   }
 
   getCurrentStep(event, _now = new Date()) {
-    const state = getWeekState(event)
-    if (state === GAME_WEEK_STATES.cancelled) {
+    // BUILD-TC-006.2: al finalizar, la sesión del evento termina en `finished`
+    // (estado terminal del ciclo TC, TRAINING_STATES) mientras la jornada queda
+    // `completed` (WeekState). Para la derivación de pasos, `finished` se trata
+    // como el terminal `completed` (la UI no debe retroceder al paso waiting).
+    const rawState = event?.state || 'waiting'
+    const state = GAME_WEEK_STATES[rawState] || GAME_WEEK_STATES.waiting
+    const effective = rawState === 'finished' ? GAME_WEEK_STATES.completed : state
+    if (effective === GAME_WEEK_STATES.cancelled) {
       return { id: 'cancelled', index: this.steps.length, state }
     }
-    const index = this.getStepIndex(state)
-    return { id: state, index: index >= 0 ? index : 0, state }
+    const index = this.getStepIndex(effective)
+    return { id: effective, index: index >= 0 ? index : 0, state }
   }
 
   dispatch(event, action, payload = {}) {
@@ -93,10 +108,44 @@ export class GameWeekDirector extends EventDirector {
         return null
 
       case EVENT_ACTIONS.COMPLETE_EVENT:
-        if (state === GAME_WEEK_STATES.picks_locked || state === GAME_WEEK_STATES.completed) {
+        if (state === GAME_WEEK_STATES.picks_locked ||
+            state === GAME_WEEK_STATES.games_in_progress ||
+            state === GAME_WEEK_STATES.simulation_running ||
+            state === GAME_WEEK_STATES.completed) {
           return {
             state: GAME_WEEK_STATES.completed,
             finished_at: now.toISOString(),
+          }
+        }
+        return null
+
+      case EVENT_ACTIONS.SIMULATION_START:
+        if (state === GAME_WEEK_STATES.picks_locked) {
+          return {
+            state: GAME_WEEK_STATES.games_in_progress,
+            started_at: now.toISOString(),
+          }
+        }
+        return null
+
+      case EVENT_ACTIONS.SIMULATION_PROGRESS:
+        if (state === GAME_WEEK_STATES.games_in_progress ||
+            state === GAME_WEEK_STATES.simulation_running) {
+          return {
+            state: GAME_WEEK_STATES.simulation_running,
+            simulation_progress: payload.progress || event.simulation_progress || null,
+          }
+        }
+        return null
+
+      case EVENT_ACTIONS.ADVANCE_EVENT:
+        if (state !== GAME_WEEK_STATES.completed &&
+            state !== GAME_WEEK_STATES.cancelled &&
+            state !== GAME_WEEK_STATES.waiting) {
+          return {
+            state: GAME_WEEK_STATES.completed,
+            finished_at: now.toISOString(),
+            finished_reason: 'admin',
           }
         }
         return null

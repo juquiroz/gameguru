@@ -46,6 +46,30 @@ const logFallback = (op, err) => {
   )
 }
 
+// Campos internos/QA que NO son columnas de `training_sessions` (esquema
+// desplegado). Se conservan en el estado optimista del cliente (los lee el
+// harness y los consumidores internos) pero se excluyen del PATCH a la nube:
+//   - claves `__`-prefijo → canal interno entre servicios (p.ej. la fila
+//     `game_weeks` que GameWeekService adjunta al parche de lock).
+//   - `finished_reason` → metadato del ADVANCE_EVENT (QA/admin), sin columna.
+//   - `locked_at`/`lock_reason` → del LOCK_PICKS del GameWeekDirector: son
+//     columnas de `game_weeks` (la jornada), no de `training_sessions`
+//     (GameWeekService las persiste en la tabla correcta).
+//   - `simulation_progress` → del SIMULATION_PROGRESS del GameWeekDirector
+//     (BUILD-TC-006): el progreso de la corrida es un jsonb de `game_weeks`,
+//     no de `training_sessions` (SimulationService lo persiste en la tabla
+//     correcta).
+const INTERNAL_FIELDS = new Set(['finished_reason', 'locked_at', 'lock_reason', 'simulation_progress'])
+const toCloudPatch = (patch) => {
+  const out = {}
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (k.startsWith('__')) continue
+    if (INTERNAL_FIELDS.has(k)) continue
+    out[k] = v
+  }
+  return out
+}
+
 // Service de sesiones de entrenamiento (BUILD-TC-003). Persiste en la nube
 // (tabla training_sessions, script manual 005.1) y degrada a localStorage si
 // la tabla aún no existe, para que el Lobby sea funcional antes de ejecutar
@@ -168,9 +192,10 @@ export const trainingSessionService = {
     const next = normalize({ ...(current.data || {}), ...patch })
     try {
       const id = current.data?.id
+      const cloudPatch = toCloudPatch(patch)
       const { error } = id
-        ? await trainingSessionsApi.updateById(id, patch)
-        : await trainingSessionsApi.updateByLeague(leagueId, patch)
+        ? await trainingSessionsApi.updateById(id, cloudPatch)
+        : await trainingSessionsApi.updateByLeague(leagueId, cloudPatch)
       if (error) throw error
       return { data: next, persisted: 'cloud' }
     } catch (err) {
