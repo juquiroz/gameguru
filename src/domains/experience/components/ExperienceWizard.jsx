@@ -5,6 +5,7 @@ import TrainingCampSetupForm from '../../training/components/TrainingCampSetupFo
 import { getTrainingLevel, resolveConfig } from '../../training/models/levels'
 import ExperiencePicker from './ExperiencePicker'
 import TrainingCampIntro from './TrainingCampIntro'
+import { detectBrowserTimezone } from '../../league/models/timezone'
 import styles from '../experience.module.css'
 
 const levelLabelKey = (id) => `training.level${id.charAt(0).toUpperCase()}${id.slice(1)}`
@@ -73,7 +74,7 @@ export default function ExperienceWizard({ initialExperience, onClose, onCreateL
     setMsg(null)
     if (!name.trim()) return setMsg({ type: 'error', text: t('lobby.nameRequired') })
     setBusy(true)
-    const result = await onCreateLeague(name.trim(), sport)
+    const result = await onCreateLeague(name.trim(), sport, { leagueMode: experience, timezone: detectBrowserTimezone() })
     setBusy(false)
     if (result?.error) { setMsg({ type: 'error', text: result.error.message }); return }
     setInvite(result.data)

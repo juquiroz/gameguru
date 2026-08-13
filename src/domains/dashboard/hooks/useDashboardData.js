@@ -42,7 +42,7 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
   useEffect(() => {
     if (contextLeague) return
     let active = true
-    masterGamesApi.getAll(SPORT, SEASON).then(({ data, error }) => {
+    masterGamesApi.getAll(SPORT, SEASON, 'regular').then(({ data, error }) => {
       if (active && !error) setMasterGames(data || [])
     })
     return () => { active = false }

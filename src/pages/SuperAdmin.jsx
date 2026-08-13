@@ -3,12 +3,19 @@ import { masterGamesApi } from '../supabase'
 import { NFL_TEAMS } from '../data/nflData'
 import TeamLogo from '../components/TeamLogo'
 import GameTime from '../components/GameTime'
+import { localTZOffset } from '../utils/dates'
 import nflSchedule from '../data/nflSchedule2026.json'
+import nflPreseason from '../data/nflPreseason2026.json'
 import styles from './SuperAdmin.module.css'
 
-const TOTAL_WEEKS = 18
+const PHASES = [
+  { id: 'regular', label: '🏆 Temporada', json: nflSchedule, totalWeeks: 18, prefix: 'w' },
+  { id: 'preseason', label: '🏈 Pretemporada', json: nflPreseason, totalWeeks: 4, prefix: 'psw' },
+]
 
 export default function SuperAdmin() {
+  const [phase, setPhase] = useState('regular')
+  const phaseCfg = PHASES.find(p => p.id === phase)
   const [activeWeek, setActiveWeek] = useState(1)
   const [masterGames, setMasterGames] = useState([])
   const [loading, setLoading] = useState(true)
@@ -18,19 +25,23 @@ export default function SuperAdmin() {
   const [showForm, setShowForm] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [form, setForm] = useState({
-    week: 1, home_abbr: '', away_abbr: '', game_time: 'Dom 1:00 PM',
+    week: 1, home_abbr: '', away_abbr: '', game_time: '',
   })
 
-  const loadGames = useCallback(async () => {
+  const loadGames = useCallback(async (ph) => {
     setLoading(true)
     setMsg(null)
-    const { data, error } = await masterGamesApi.getAll('NFL', '2026')
+    const { data, error } = await masterGamesApi.getAll('NFL', '2026', ph)
     if (!error && data) setMasterGames(data)
     else setMsg({ type: 'error', text: 'Error al cargar juegos.' })
     setLoading(false)
   }, [])
 
-  useEffect(() => { loadGames() }, [loadGames])
+  useEffect(() => { loadGames(phase) }, [phase, loadGames])
+
+  useEffect(() => {
+    if (activeWeek > phaseCfg.totalWeeks) setActiveWeek(1)
+  }, [phase, phaseCfg.totalWeeks, activeWeek])
 
   const handleLoadSchedule = async () => {
     setSaving(true)
@@ -42,14 +53,15 @@ export default function SuperAdmin() {
     }
 
     const weekCounts = {}
-    const games = nflSchedule.map(g => {
+    const games = phaseCfg.json.map(g => {
       weekCounts[g.RoundNumber] = (weekCounts[g.RoundNumber] || 0) + 1
       const idx = weekCounts[g.RoundNumber]
       return {
         sport: 'NFL',
         season: '2026',
+        phase,
         week: g.RoundNumber,
-        game_id: `w${g.RoundNumber}g${idx}`,
+        game_id: `${phaseCfg.prefix}${g.RoundNumber}g${idx}`,
         home_team: g.HomeTeam,
         away_team: g.AwayTeam,
         home_abbr: nameToAbbr[g.HomeTeam] || '???',
@@ -60,11 +72,11 @@ export default function SuperAdmin() {
 
     const { error } = await masterGamesApi.insertAll(games)
     if (error) {
-      if (error.code === '23505') setMsg({ type: 'warning', text: 'El calendario 2026 ya ha sido cargado.' })
+      if (error.code === '23505') setMsg({ type: 'warning', text: `El calendario de ${phaseCfg.label} 2026 ya ha sido cargado.` })
       else setMsg({ type: 'error', text: `Error: ${error.message}` })
     } else {
-      setMsg({ type: 'success', text: `¡Calendario 2026 cargado! ${games.length} partidos insertados.` })
-      await loadGames()
+      setMsg({ type: 'success', text: `¡Calendario ${phaseCfg.label} 2026 cargado! ${games.length} partidos insertados.` })
+      await loadGames(phase)
     }
     setSaving(false)
   }
@@ -80,7 +92,7 @@ export default function SuperAdmin() {
 
   const handleAddGame = async (e) => {
     e.preventDefault()
-    if (!form.home_abbr || !form.away_abbr) {
+    if (!form.home_abbr || !form.away_abbr || !form.game_time) {
       setMsg({ type: 'error', text: 'Completa todos los campos.' })
       return
     }
@@ -90,13 +102,14 @@ export default function SuperAdmin() {
     const game = {
       sport: 'NFL',
       season: '2026',
+      phase,
       week: Number(form.week),
-      game_id: `manual-${Date.now()}`,
+      game_id: `${phaseCfg.prefix}-manual-${Date.now()}`,
       home_team: NFL_TEAMS[hAbbr]?.name || hAbbr,
       away_team: NFL_TEAMS[aAbbr]?.name || aAbbr,
       home_abbr: hAbbr,
       away_abbr: aAbbr,
-      game_time: form.game_time,
+      game_time: `${form.game_time}:00${localTZOffset()}`,
     }
     const { data, error } = await masterGamesApi.insert(game)
     if (error) setMsg({ type: 'error', text: `Error: ${error.message}` })
@@ -119,7 +132,18 @@ export default function SuperAdmin() {
           <div className="page-sub">Gestión del calendario maestro de juegos</div>
         </div>
         <div className={styles.headerActions}>
-          <button className="btn-secondary" onClick={loadGames} disabled={loading}>
+          <div className={styles.phaseSwitch}>
+            {PHASES.map(p => (
+              <button
+                key={p.id}
+                className={`${styles.phaseBtn} ${phase === p.id ? styles.phaseBtnActive : ''}`}
+                onClick={() => setPhase(p.id)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <button className="btn-secondary" onClick={() => loadGames(phase)} disabled={loading}>
             ⟳ Recargar
           </button>
           <button
@@ -127,7 +151,7 @@ export default function SuperAdmin() {
             onClick={handleLoadSchedule}
             disabled={saving}
           >
-            {saving ? 'Cargando...' : '📅 Cargar Calendario NFL 2026'}
+            {saving ? 'Cargando...' : `📅 Cargar ${phaseCfg.label} 2026`}
           </button>
           {confirmDelete ? (
             <>
@@ -137,11 +161,11 @@ export default function SuperAdmin() {
                   setConfirmDelete(false)
                   setSaving(true)
                   setMsg(null)
-                  const { error } = await masterGamesApi.deleteAll('NFL', '2026')
+                  const { error } = await masterGamesApi.deleteAll('NFL', '2026', phase)
                   if (error) setMsg({ type: 'error', text: `Error: ${error.message}` })
                   else {
-                    setMsg({ type: 'success', text: 'Todo el calendario 2026 fue eliminado.' })
-                    await loadGames()
+                    setMsg({ type: 'success', text: `Todo el calendario de ${phaseCfg.label} 2026 fue eliminado.` })
+                    await loadGames(phase)
                   }
                   setSaving(false)
                 }}
@@ -194,7 +218,7 @@ export default function SuperAdmin() {
       </div>
 
       <div className="week-tabs">
-        {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map(w => (
+        {Array.from({ length: phaseCfg.totalWeeks }, (_, i) => i + 1).map(w => (
           <button
             key={w}
             className={`week-tab ${activeWeek === w ? 'active' : ''}`}
@@ -219,7 +243,7 @@ export default function SuperAdmin() {
           <div className="field">
             <label>Semana</label>
             <select value={form.week} onChange={e => setForm(f => ({ ...f, week: e.target.value }))}>
-              {Array.from({ length: TOTAL_WEEKS }, (_, i) => (
+              {Array.from({ length: phaseCfg.totalWeeks }, (_, i) => (
                 <option key={i + 1} value={i + 1}>Semana {i + 1}</option>
               ))}
             </select>
@@ -243,18 +267,12 @@ export default function SuperAdmin() {
             />
           </div>
           <div className="field">
-            <label>Horario</label>
-            <select value={form.game_time} onChange={e => setForm(f => ({ ...f, game_time: e.target.value }))}>
-              <option>Jue 8:20 PM</option>
-              <option>Vie 8:15 PM</option>
-              <option>Sáb 4:30 PM</option>
-              <option>Sáb 8:15 PM</option>
-              <option>Dom 1:00 PM</option>
-              <option>Dom 4:05 PM</option>
-              <option>Dom 4:25 PM</option>
-              <option>Dom 8:20 PM</option>
-              <option>Lun 8:15 PM</option>
-            </select>
+            <label>Horario (hora local)</label>
+            <input
+              type="datetime-local"
+              value={form.game_time}
+              onChange={e => setForm(f => ({ ...f, game_time: e.target.value }))}
+            />
           </div>
           <button className="btn-primary" disabled={saving} style={{ marginTop: '.5rem' }}>
             {saving ? 'Guardando...' : 'Guardar Juego'}
@@ -270,7 +288,7 @@ export default function SuperAdmin() {
           No hay juegos para la Semana {activeWeek}.
           {masterGames.length === 0 && (
             <><br /><span style={{ fontSize: '.82rem', color: 'var(--text3)' }}>
-              Haz clic en "Cargar Calendario NFL 2026" para cargar toda la temporada.
+              Haz clic en "Cargar {phaseCfg.label} 2026" para cargar el calendario.
             </span></>
           )}
         </div>
@@ -278,7 +296,7 @@ export default function SuperAdmin() {
         <div className={styles.gamesGrid}>
           {weekGames.map(g => (
             <div key={g.id} className={styles.gameCard}>
-              <div className={styles.gameTime}><GameTime when={g.game_time} /></div>
+              <div className={styles.gameTime}><GameTime when={g.game_time} timeZone="UTC" /></div>
               <div className={styles.teamsRow}>
                 <div className={styles.teamInfo}>
                   <TeamLogo abbr={g.away_abbr} className={styles.teamEmoji} size={32} />

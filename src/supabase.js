@@ -210,23 +210,26 @@ export const masterGamesApi = {
   insertAll: (games) =>
     supabase.from('master_games').insert(games),
 
-  getAll: (sport, season) =>
-    supabase
+  getAll: (sport, season, phase) => {
+    let q = supabase
       .from('master_games')
       .select('*')
       .eq('sport', sport)
       .eq('season', season)
-      .order('week')
-      .order('game_id'),
+    if (phase) q = q.eq('phase', phase)
+    return q.order('week').order('game_id')
+  },
 
-  getByWeek: (sport, season, week) =>
-    supabase
+  getByWeek: (sport, season, week, phase) => {
+    let q = supabase
       .from('master_games')
       .select('*')
       .eq('sport', sport)
       .eq('season', season)
       .eq('week', week)
-      .order('game_id'),
+    if (phase) q = q.eq('phase', phase)
+    return q.order('game_id')
+  },
 
   insert: (game) =>
     supabase.from('master_games').insert(game).select().single(),
@@ -237,12 +240,15 @@ export const masterGamesApi = {
   remove: (id) =>
     supabase.from('master_games').delete().eq('id', id),
 
-  deleteAll: (sport, season) =>
-    supabase
+  deleteAll: (sport, season, phase) => {
+    let q = supabase
       .from('master_games')
       .delete()
       .eq('sport', sport)
-      .eq('season', season),
+      .eq('season', season)
+    if (phase) q = q.eq('phase', phase)
+    return q
+  },
 
   getMasterResults: (sport, season) =>
     supabase

@@ -13,6 +13,34 @@
   flex-wrap: wrap;
 }
 
+.phaseSwitch {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.phaseBtn {
+  padding: 0.7rem 1.1rem;
+  background: var(--bg3);
+  color: var(--text2);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.phaseBtn:hover { color: var(--text); border-color: var(--border2); }
+.phaseBtnActive {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--accent);
+}
+.phaseBtnActive:first-child { border-color: var(--accent); }
+.phaseBtnActive:last-child { border-color: var(--mode-ps, #14B8A6); }
+
 .loadBtn {
   padding: 0.7rem 1.25rem;
   background: linear-gradient(135deg, #22C55E, #16A34A);

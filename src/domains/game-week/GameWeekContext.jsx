@@ -17,6 +17,7 @@ import { gameWeekService } from './GameWeekService'
 import { picksService, PICK_STATUS } from './PicksService'
 import { buildResultsMap } from '../simulation/StandingsCalculator'
 import { getSimulationRun, buildLeaderboard } from './simulationView'
+import { getLeagueTimezone } from '../league/models/timezone'
 
 const GameWeekContext = createContext(null)
 
@@ -190,6 +191,8 @@ export function GameWeekProvider({ event, league, user, participants = [], onTra
     // PLAN-LEAGUE-CONTEXT-01.1: liga y evento expuestos para la identidad de
     // liga siempre visible (LeagueIdentity) dentro de la jornada.
     league, event,
+    // BUILD-TZ-003: timezone oficial de la liga para el display de horas.
+    timezone: getLeagueTimezone(league),
     selectPick, confirmPicks, lockWeek, openWeek, reload,
   }
 

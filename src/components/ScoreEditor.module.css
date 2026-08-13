@@ -7,6 +7,16 @@
   border-top: 1px dashed var(--border);
 }
 
+.warning {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--amber, #F59E0B);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--r-sm);
+  padding: 0.5rem 0.7rem;
+}
+
 .teams {
   display: flex;
   align-items: flex-start;

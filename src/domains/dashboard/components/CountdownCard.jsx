@@ -18,16 +18,17 @@ const fmtLeft = (ms) => {
   return `${h} h ${String(m).padStart(2, '0')} min`
 }
 
-const fmtDeadline = (d) =>
+const fmtDeadline = (d, timeZone) =>
   new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     hour: 'numeric',
     minute: '2-digit',
+    timeZone,
   }).format(d)
 
-export default function CountdownCard({ deadline, locked }) {
+export default function CountdownCard({ deadline, locked, timeZone }) {
   const { t } = useLanguage()
   const now = useNow()
 
@@ -44,7 +45,7 @@ export default function CountdownCard({ deadline, locked }) {
         <div className={`${styles.countdownValue} ${closed ? styles.countdownValueLocked : ''}`}>
           {closed ? t('dashboard.countdownLocked') : t('dashboard.countdownLeft', { time: fmtLeft(remaining) })}
         </div>
-        <div className={styles.countdownMeta}>{fmtDeadline(deadline)}</div>
+        <div className={styles.countdownMeta}>{fmtDeadline(deadline, timeZone)}</div>
       </div>
     </div>
   )

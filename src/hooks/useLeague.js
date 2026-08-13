@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
 import { genInviteCode, NFL_TEAMS } from '../data/nflData'
 import { localTZOffset } from '../utils/dates'
-import { hydrateLeague, canJoinLeague } from '../domains/league'
+import { hydrateLeague, canJoinLeague, getLeagueSeason, masterPhaseForMode, detectBrowserTimezone } from '../domains/league'
 import { trainingSessionService } from '../domains/training/services/trainingSessionService'
 
 export function useLeague(user) {
@@ -29,9 +29,15 @@ export function useLeague(user) {
     setLoadingLeagues(false)
   }, [user])
 
-  const createLeague = useCallback(async (name, sport) => {
+  const createLeague = useCallback(async (name, sport, opts = {}) => {
     if (!user) return { error: { message: 'No hay sesión activa.' } }
     const code = genInviteCode()
+
+    // BUILD-PS-001: el modo y la temporada llegan del wizard de experiencias.
+    // Backward-compatible: sin opts se comporta igual que antes (regular/2026).
+    const leagueMode = opts.leagueMode || 'regular'
+    const season = opts.season || getLeagueSeason({})
+    const phase = masterPhaseForMode(leagueMode)
 
     const { data: league, error } = await leaguesApi.create({
       name,
@@ -39,20 +45,23 @@ export function useLeague(user) {
       code,
       admin_id: user.id,
       deadline_mode: 'weekly',
+      league_mode: leagueMode,
+      season,
+      timezone: opts.timezone || detectBrowserTimezone(),
     })
     if (error) return { error }
 
     // Creator joins as admin
     await membersApi.join(league.id, user.id, 'admin')
 
-    // Auto-import master games for this sport/season
-    const { data: masterGames, error: mgErr } = await masterGamesApi.getAll(sport, '2026')
+    // Auto-import master games for this sport/season/phase
+    const { data: masterGames, error: mgErr } = await masterGamesApi.getAll(sport, season, phase)
     if (mgErr) return { error: { message: `Error al leer juegos maestros: ${mgErr.message}` } }
 
     if (!masterGames?.length) {
       const newLeague = { ...league, role: 'admin' }
       setMyLeagues(prev => [newLeague, ...prev])
-      return { data: newLeague, warning: 'No se encontraron juegos en el calendario maestro. Cargalos desde el panel Super Admin.' }
+      return { data: newLeague, warning: `No se encontraron juegos ${phase === 'preseason' ? 'de pretemporada' : ''} en el calendario maestro. Cargalos desde el panel Super Admin.` }
     }
 
     const rows = masterGames.map(g => ({
@@ -90,6 +99,7 @@ export function useLeague(user) {
       admin_id: user.id,
       deadline_mode: 'weekly',
       simulation: true,
+      timezone: detectBrowserTimezone(),
     })
     if (error) return { error }
 
@@ -170,6 +180,7 @@ export function useLeague(user) {
       deadline_mode: 'weekly',
       simulation: true,
       league_mode: 'practice',
+      timezone: detectBrowserTimezone(),
     })
     if (error) return { error }
 

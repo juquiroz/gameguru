@@ -3,7 +3,7 @@ import GameTime from '../../../components/GameTime'
 import { useLanguage } from '../../../i18n/context'
 import styles from '../dashboard.module.css'
 
-export default function UpcomingGamesList({ games }) {
+export default function UpcomingGamesList({ games, timeZone }) {
   const { t } = useLanguage()
 
   return (
@@ -23,7 +23,7 @@ export default function UpcomingGamesList({ games }) {
                 <span>{g.home_abbr}</span>
               </div>
               <div className={styles.upcomingTime}>
-                <GameTime when={g.game_time} />
+                <GameTime when={g.game_time} timeZone={timeZone} />
               </div>
             </div>
           ))}

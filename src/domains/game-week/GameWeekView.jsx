@@ -162,6 +162,7 @@ export default function GameWeekView() {
                       onPick={handlePick}
                       results={null}
                       locked={locked}
+                      timeZone={gw.timezone}
                     />
                   ))}
                 </div>

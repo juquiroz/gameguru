@@ -2,6 +2,7 @@ import { leaguesApi } from '../../../supabase'
 import { useLanguage } from '../../../i18n/context'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { getLeagueMode } from '../../league/models/modes'
+import { getLeagueTimezone } from '../../league'
 import { canJoinLeague } from '../../league'
 import { useLeagueEvent } from '../../training/hooks/useLeagueEvent'
 import DashboardHeader from './DashboardHeader'
@@ -107,7 +108,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
           locked={locked}
         />
         <HowItWorks />
-        <UpcomingGamesList games={upcomingGames} />
+      <UpcomingGamesList games={upcomingGames} />
         <button className="btn-primary" style={{ width: '100%', maxWidth: 520 }} onClick={onCreateNew}>
           {t('dashboard.startNow')}
         </button>
@@ -123,6 +124,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
   const carouselTitle = dayGames.length
     ? t('dashboard.gamesToday')
     : t('dashboard.weekGames', { week: currentWeek ?? 1 })
+  const leagueTz = getLeagueTimezone(currentLeague || contextLeague)
 
   return (
     <div className={homeStyles.wrap}>
@@ -180,9 +182,9 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         <PendingActionCard pendingCount={pendingCount} locked={locked} onNavigate={onNavigate} />
       )}
 
-      {showCountdown && <CountdownCard deadline={deadline} locked={locked} />}
+      {showCountdown && <CountdownCard deadline={deadline} locked={locked} timeZone={leagueTz} />}
 
-      <GamesCarousel title={carouselTitle} games={carouselGames} locked={locked} />
+      <GamesCarousel title={carouselTitle} games={carouselGames} locked={locked} timeZone={leagueTz} />
 
       {hasCurrentLeague && (
         <LeaguesSummary
@@ -201,7 +203,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         <MiniLeaderboard standings={standings} currentUserId={user?.id} onNavigate={onNavigate} week={lastLockedWeek} />
       )}
 
-      <UpcomingGamesList games={upcomingGames} />
+      <UpcomingGamesList games={upcomingGames} timeZone={leagueTz} />
 
       {isAdmin && (
         <>
@@ -233,7 +235,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
               </button>
             )}
             {!locked && currentWeek != null && (
-              <CopyReminder league={currentLeague} week={currentWeek} deadline={deadline} />
+              <CopyReminder league={currentLeague} week={currentWeek} deadline={deadline} timeZone={leagueTz} />
             )}
           </div>
         </>

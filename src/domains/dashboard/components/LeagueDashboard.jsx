@@ -1,6 +1,7 @@
 import { SPORTS } from '../../../data/nflData'
 import { useLanguage } from '../../../i18n/context'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { getLeagueTimezone } from '../../league'
 import DashboardHeader from './DashboardHeader'
 import PendingActionCard from './PendingActionCard'
 import CountdownCard from './CountdownCard'
@@ -17,6 +18,7 @@ export default function LeagueDashboard({ user, league, myLeagues, onNavigate, o
   const data = useDashboardData({ user, myLeagues, currentLeague: league })
   const { loadingGames, leagueGames } = data
   const isAdmin = league.admin_id === user?.id || league.role === 'admin'
+  const leagueTz = getLeagueTimezone(league)
 
   const copyInviteLink = () => {
     const link = `${window.location.origin}/gameguru/?join=${league.code}`
@@ -108,8 +110,8 @@ export default function LeagueDashboard({ user, league, myLeagues, onNavigate, o
       />
 
       <PendingActionCard pendingCount={pendingCount} locked={locked} onNavigate={onNavigate} />
-      <CountdownCard deadline={deadline} locked={locked} />
-      <GamesCarousel title={carouselTitle} games={carouselGames} locked={locked} />
+      <CountdownCard deadline={deadline} locked={locked} timeZone={leagueTz} />
+      <GamesCarousel title={carouselTitle} games={carouselGames} locked={locked} timeZone={leagueTz} />
 
       <LeaguesSummary
         myLeagues={myLeagues}
@@ -126,7 +128,7 @@ export default function LeagueDashboard({ user, league, myLeagues, onNavigate, o
       />
 
       <MiniLeaderboard standings={standings} currentUserId={user?.id} onNavigate={onNavigate} />
-      <UpcomingGamesList games={upcomingGames} />
+      <UpcomingGamesList games={upcomingGames} timeZone={leagueTz} />
 
       {isAdmin && (
         <>

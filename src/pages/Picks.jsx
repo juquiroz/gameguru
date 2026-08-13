@@ -4,6 +4,7 @@ import LeagueIdentity from '../components/LeagueIdentity'
 import { NFL_WEEKS } from '../data/nflData'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import { isWeekLocked, isGameLocked } from '../utils/dates'
+import { getLeagueTimezone } from '../domains/league'
 import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
@@ -297,6 +298,7 @@ td:first-child{position:sticky;left:0;background:#0D1525}
                 onPick={selectPick}
                 results={weekData.results}
                 locked={isGameLocked(game, weekData?.games)}
+                timeZone={getLeagueTimezone(league)}
               />
             ))}
           </div>

@@ -39,13 +39,13 @@ export default function PublicPicks({ user, league }) {
 
   // Sync activeWeek when dynamic games load
   useEffect(() => {
-    if (games.length > 0 && league?.simulation) {
+    if (games.length > 0) {
       const weeks = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
       if (weeks.length > 0 && !weeks.includes(activeWeek)) {
         setActiveWeek(Math.max(...weeks))
       }
     }
-  }, [games, league?.simulation])
+  }, [games, activeWeek])
 
   const weekGames = games
     .filter(g => g.active !== false && g.week === activeWeek)
@@ -56,7 +56,7 @@ export default function PublicPicks({ user, league }) {
     })
 
   const weeksWithGames = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
-  const weekList = league?.simulation ? weeksWithGames : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
+  const weekList = weeksWithGames.length > 0 ? weeksWithGames : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
 
   const lockedGames = weekGames.filter(g => isGameLocked(g, weekGames))
   const weeksWithLocked = weekList.filter(w => {

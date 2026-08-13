@@ -16,7 +16,7 @@ import styles from './game-week.module.css'
 
 export default function GameWeekResults() {
   const { t } = useLanguage()
-  const { requiredGames, resultsMap, picks, standings, myUserId } = useGameWeek()
+  const { requiredGames, resultsMap, picks, standings, myUserId, timezone } = useGameWeek()
 
   const rows = buildResultsView(requiredGames)
   const me = standings.find(s => s.userId === myUserId)
@@ -38,7 +38,7 @@ export default function GameWeekResults() {
         <div className={styles.grid}>
           {requiredGames.map(g => (
             <div key={g.id} className={styles.resultWrap}>
-              <GameCard game={g} pick={picks[g.id]} results={resultsMap} locked />
+              <GameCard game={g} pick={picks[g.id]} results={resultsMap} locked timeZone={timezone} />
               {!!g.finished && g.result == null && (
                 <span className={styles.drawTag}>{t('gameWeek.draw')}</span>
               )}

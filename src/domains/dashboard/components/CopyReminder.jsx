@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLanguage } from '../../../i18n/context'
 
-export default function CopyReminder({ league, week, deadline }) {
+export default function CopyReminder({ league, week, deadline, timeZone }) {
   const { t, lang } = useLanguage()
   const [copied, setCopied] = useState(false)
 
@@ -10,7 +10,7 @@ export default function CopyReminder({ league, week, deadline }) {
     const d = new Date(deadline)
     if (isNaN(d)) return ''
     const locale = lang === 'en' ? 'en-US' : 'es-MX'
-    return d.toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone })
   }
 
   const handleCopy = async () => {

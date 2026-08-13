@@ -177,11 +177,18 @@ export default {
     identityWeek: 'Semana {week}',
   },
 
+  modes: {
+    practice: '🎓 Training Camp',
+    preseason: '🏈 Pretemporada',
+    regular: '🏆 Temporada Oficial',
+  },
+
   manager: {
     away: 'Visitante',
     home: 'Local',
     save: 'Guardar',
     cancel: 'Cancelar',
+    manualResultWarning: '⚠️ Modo contingencia: el proveedor oficial está offline, el resultado se guardará manualmente.',
   },
 
   training: {

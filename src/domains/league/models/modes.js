@@ -21,3 +21,7 @@ export const getLeagueMode = (league = {}) => {
 }
 
 export const getLeagueSeason = (league = {}) => league.season || DEFAULT_SEASON
+
+// Fase del calendario maestro que alimenta a un modo de liga (BUILD-PS-001).
+// practice no importa del calendario maestro (Training Camp genera su fixture).
+export const masterPhaseForMode = (mode) => (mode === 'preseason' ? 'preseason' : 'regular')
