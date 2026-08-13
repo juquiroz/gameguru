@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
 import { genInviteCode, NFL_TEAMS } from '../data/nflData'
 import { localTZOffset } from '../utils/dates'
-import { hydrateLeague } from '../domains/league'
+import { hydrateLeague, canJoinLeague, getLeagueSeason, masterPhaseForMode, detectBrowserTimezone } from '../domains/league'
+import { trainingSessionService } from '../domains/training/services/trainingSessionService'
 
 export function useLeague(user) {
   const [myLeagues,      setMyLeagues]      = useState([])
@@ -28,9 +29,15 @@ export function useLeague(user) {
     setLoadingLeagues(false)
   }, [user])
 
-  const createLeague = useCallback(async (name, sport) => {
+  const createLeague = useCallback(async (name, sport, opts = {}) => {
     if (!user) return { error: { message: 'No hay sesión activa.' } }
     const code = genInviteCode()
+
+    // BUILD-PS-001: el modo y la temporada llegan del wizard de experiencias.
+    // Backward-compatible: sin opts se comporta igual que antes (regular/2026).
+    const leagueMode = opts.leagueMode || 'regular'
+    const season = opts.season || getLeagueSeason({})
+    const phase = masterPhaseForMode(leagueMode)
 
     const { data: league, error } = await leaguesApi.create({
       name,
@@ -38,20 +45,23 @@ export function useLeague(user) {
       code,
       admin_id: user.id,
       deadline_mode: 'weekly',
+      league_mode: leagueMode,
+      season,
+      timezone: opts.timezone || detectBrowserTimezone(),
     })
     if (error) return { error }
 
     // Creator joins as admin
     await membersApi.join(league.id, user.id, 'admin')
 
-    // Auto-import master games for this sport/season
-    const { data: masterGames, error: mgErr } = await masterGamesApi.getAll(sport, '2026')
+    // Auto-import master games for this sport/season/phase
+    const { data: masterGames, error: mgErr } = await masterGamesApi.getAll(sport, season, phase)
     if (mgErr) return { error: { message: `Error al leer juegos maestros: ${mgErr.message}` } }
 
     if (!masterGames?.length) {
       const newLeague = { ...league, role: 'admin' }
       setMyLeagues(prev => [newLeague, ...prev])
-      return { data: newLeague, warning: 'No se encontraron juegos en el calendario maestro. Cargalos desde el panel Super Admin.' }
+      return { data: newLeague, warning: `No se encontraron juegos ${phase === 'preseason' ? 'de pretemporada' : ''} en el calendario maestro. Cargalos desde el panel Super Admin.` }
     }
 
     const rows = masterGames.map(g => ({
@@ -89,6 +99,7 @@ export function useLeague(user) {
       admin_id: user.id,
       deadline_mode: 'weekly',
       simulation: true,
+      timezone: detectBrowserTimezone(),
     })
     if (error) return { error }
 
@@ -128,6 +139,21 @@ export function useLeague(user) {
     const { data: league, error: fetchError } = await leaguesApi.getByCode(code.toUpperCase())
     if (fetchError || !league) return { error: { message: 'Código no válido.' } }
 
+    // BUILD-TC-005.4 — Regla central del roster (canJoinLeague, dominio):
+    // una liga cuyo último evento ya superó START (TC activo, Fixture
+    // Generation, Game Week…) NO acepta nuevos jugadores. La validación vive
+    // en la capa de servicio, no solo en la UI; la UI traduce el mensaje por
+    // `error.code` (JoinLeagueModal).
+    const { data: event } = await trainingSessionService.get(league.id)
+    if (!canJoinLeague(event)) {
+      return {
+        error: {
+          code: 'roster_closed',
+          message: 'Esta liga ya comenzó y no acepta nuevos jugadores.',
+        },
+      }
+    }
+
     const { error: joinError } = await membersApi.join(league.id, user.id)
     if (joinError) return { error: joinError }
 
@@ -140,6 +166,39 @@ export function useLeague(user) {
     setCurrentLeague(league)
   }, [])
 
+  // Training Camp (BUILD-TC-001): crea la liga + su evento en un solo paso.
+  // Sin generación de partidos: el fixture llega con el Simulation Engine.
+  const createTrainingCamp = useCallback(async (name, config = {}) => {
+    if (!user) return { error: { message: 'No hay sesión activa.' } }
+    const code = genInviteCode()
+
+    const { data: league, error } = await leaguesApi.create({
+      name,
+      sport: 'NFL',
+      code,
+      admin_id: user.id,
+      deadline_mode: 'weekly',
+      simulation: true,
+      league_mode: 'practice',
+      timezone: detectBrowserTimezone(),
+    })
+    if (error) return { error }
+
+    await membersApi.join(league.id, user.id, 'admin')
+
+    const { data: event, persisted, fallback } = await trainingSessionService.create(league.id, config)
+
+    const newLeague = { ...league, role: 'admin', league_mode: 'practice' }
+    setMyLeagues(prev => [newLeague, ...prev])
+    return { data: newLeague, event, persisted, fallback }
+  }, [user])
+
+  // Configura/crea el evento de una liga ya existente (lobby → botón admin).
+  const configureTrainingCamp = useCallback(async (league, config = {}) => {
+    if (!user || !league?.id) return { error: { message: 'No hay liga activa.' } }
+    return trainingSessionService.create(league.id, config)
+  }, [user])
+
   const leaveCurrentLeague = useCallback(() => {
     setCurrentLeague(null)
   }, [])
@@ -151,6 +210,8 @@ export function useLeague(user) {
     fetchMyLeagues,
     createLeague,
     createSimulationLeague,
+    createTrainingCamp,
+    configureTrainingCamp,
     joinByCode,
     enterLeague,
     leaveCurrentLeague,

@@ -2,7 +2,7 @@ import TeamLogo from './TeamLogo'
 import GameTime from './GameTime'
 import styles from './GameCard.module.css'
 
-export default function GameCard({ game, pick, onPick, results, locked }) {
+export default function GameCard({ game, pick, onPick, results, locked, timeZone }) {
   const result = results?.[game.id]
   const hasScore = game.home_score != null || game.away_score != null
 
@@ -26,7 +26,7 @@ export default function GameCard({ game, pick, onPick, results, locked }) {
 
   return (
     <div className={`${styles.card} ${locked ? styles.locked : ''} ${hasScore ? styles.hasScore : ''}`}>
-      <div className={styles.time}><GameTime when={game.time} /></div>
+      <div className={styles.time}><GameTime when={game.time} timeZone={timeZone} /></div>
 
       <div className={styles.teamsRow}>
         <button

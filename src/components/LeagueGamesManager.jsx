@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { masterGamesApi, leagueGamesApi } from '../supabase'
 import { NFL_TEAMS } from '../data/nflData'
+import { getLeagueMode, getLeagueSeason, isOfficialMode, masterPhaseForMode, getLeagueTimezone } from '../domains/league'
 import { localTZOffset } from '../utils/dates'
 import TeamLogo from './TeamLogo'
 import GameTime from './GameTime'
@@ -27,8 +28,10 @@ export default function LeagueGamesManager({ league }) {
     if (!league) return
     setLoading(true)
     if (!keepMsg) setMsg(null)
+    const mode = getLeagueMode(league)
+    const phase = masterPhaseForMode(mode)
     const [masterRes, leagueRes] = await Promise.all([
-      masterGamesApi.getAll(league.sport, '2026'),
+      masterGamesApi.getAll(league.sport, getLeagueSeason(league), phase),
       leagueGamesApi.getForLeague(league.id),
     ])
     if (!masterRes.error && masterRes.data) setMasterGames(masterRes.data)
@@ -39,6 +42,19 @@ export default function LeagueGamesManager({ league }) {
   useEffect(() => { loadData() }, [loadData])
 
   const leagueGameIds = new Set(leagueGames.map(g => g.game_id))
+
+  const mode = getLeagueMode(league)
+  const isOfficial = isOfficialMode(mode)
+  const leagueTz = getLeagueTimezone(league)
+
+  const masterWeeks = [...new Set(masterGames.map(g => g.week))].sort((a, b) => a - b)
+  const weekList = masterWeeks.length > 0 ? masterWeeks : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
+
+  useEffect(() => {
+    if (weekList.length > 0 && !weekList.includes(activeWeek)) {
+      setActiveWeek(weekList[weekList.length - 1])
+    }
+  }, [weekList.join(','), activeWeek])
 
   const availableMaster = masterGames.filter(g => !leagueGameIds.has(g.game_id) && g.week === activeWeek)
   const leagueWeekGames = leagueGames
@@ -201,7 +217,7 @@ export default function LeagueGamesManager({ league }) {
 
       {/* Week tabs */}
       <div className="week-tabs" style={{ marginBottom: '1rem' }}>
-        {Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1).map(w => (
+        {weekList.map(w => (
           <button
             key={w}
             className={`week-tab ${activeWeek === w ? 'active' : ''}`}
@@ -275,7 +291,7 @@ export default function LeagueGamesManager({ league }) {
                       <span className={styles.vs}>@</span>
                       <TeamLogo abbr={g.home_abbr} className={styles.emoji} size={24} />
                       <span className={styles.abbr}>{g.home_abbr}</span>
-                      <span className={styles.time}><GameTime when={g.game_time} /></span>
+                      <span className={styles.time}><GameTime when={g.game_time} timeZone={leagueTz} /></span>
                     </div>
                   ))
                 )}
@@ -324,7 +340,7 @@ export default function LeagueGamesManager({ league }) {
                   )}
 
                   <div className={editing ? styles.editMeta : styles.rowMeta}>
-                    <span className={styles.time}><GameTime when={g.game_time} /></span>
+                    <span className={styles.time}><GameTime when={g.game_time} timeZone={leagueTz} /></span>
 
                     {!editing && (
                       <button
@@ -351,6 +367,7 @@ export default function LeagueGamesManager({ league }) {
                       initialAwayScore={g.away_score}
                       initialHomeScore={g.home_score}
                       saving={saving}
+                      official={isOfficial}
                       onSave={(away, home) => handleSetScores(g, away, home)}
                       onCancel={() => setResultForm(null)}
                     />
@@ -362,10 +379,11 @@ export default function LeagueGamesManager({ league }) {
         )}
       </div>
 
-      <div className={styles.sectionCard}>
-        <div className={styles.sectionHeader}>
-          <span>➕ Agregar juego manual a Semana {activeWeek}</span>
-        </div>
+      {!isOfficial && (
+        <div className={styles.sectionCard}>
+          <div className={styles.sectionHeader}>
+            <span>➕ Agregar juego manual a Semana {activeWeek}</span>
+          </div>
         <div className={styles.addForm}>
           <div className={styles.teamRow}>
             <select className={styles.teamSelect} value={customAway} onChange={e => setCustomAway(e.target.value)}>
@@ -391,7 +409,8 @@ export default function LeagueGamesManager({ league }) {
               className={styles.addBtn}>+ Agregar</button>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

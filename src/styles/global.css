@@ -44,6 +44,9 @@ a       { color: inherit; text-decoration: none; }
   --accent2:  #FF4B4B;
   --green:    #22C55E;
   --red:      #EF4444;
+  --mode-tc:  #3B82F6;
+  --mode-ps:  #14B8A6;
+  --mode-rs:  #F5A623;
   --r:        12px;
   --r-sm:     8px;
   --r-lg:     16px;
@@ -159,6 +162,43 @@ a       { color: inherit; text-decoration: none; }
   font-size: 0.88rem;
   margin-bottom: 1.75rem;
 }
+
+/* ── League Identity (PLAN-LEAGUE-CONTEXT-01.1) ── */
+.league-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: -0.5rem 0 1.25rem;
+}
+.league-identity-main {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.league-identity-code {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.league-identity-chip {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.league-identity-chip.mode-tc { color: var(--mode-tc); border-color: var(--mode-tc); }
+.league-identity-chip.mode-ps { color: var(--mode-ps); border-color: var(--mode-ps); }
+.league-identity-chip.mode-rs { color: var(--mode-rs); border-color: var(--mode-rs); }
 
 /* ── Section Title ── */
 .sec-title {

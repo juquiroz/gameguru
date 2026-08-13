@@ -3,7 +3,7 @@ import GameTime from '../../../components/GameTime'
 import { useLanguage } from '../../../i18n/context'
 import styles from '../dashboard.module.css'
 
-export default function GamesCarousel({ title, games, locked }) {
+export default function GamesCarousel({ title, games, locked, timeZone }) {
   const { t } = useLanguage()
 
   return (
@@ -28,7 +28,7 @@ export default function GamesCarousel({ title, games, locked }) {
               </div>
               <div className={styles.gameMeta}>
                 <span className={styles.gameTime}>
-                  <GameTime when={g.game_time} />
+                  <GameTime when={g.game_time} timeZone={timeZone} />
                 </span>
                 {g.finished ? (
                   <span className={`${styles.statusTag} ${styles.statusFinal}`}>

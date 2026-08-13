@@ -281,6 +281,7 @@
 }
 .miniBadgeCurrent { background: rgba(34,197,94,.12);   color: #86EFAC; border: 1px solid rgba(34,197,94,.3); }
 .miniBadgeAdmin   { background: rgba(245,166,35,.15);  color: var(--accent); border: 1px solid rgba(245,166,35,.3); }
+.miniBadgeTc      { background: rgba(59,130,246,.15);  color: #93C5FD; border: 1px solid rgba(59,130,246,.4); }
 .leagueMiniDelete {
   background: none;
   border: none;
@@ -445,6 +446,81 @@
   font-size: .85rem;
   font-weight: 500;
   color: var(--accent);
+}
+
+.lobbyBanner {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: .9rem 1.1rem;
+  background:
+    radial-gradient(120% 140% at 10% -10%, rgba(59,130,246,.35), transparent 55%),
+    linear-gradient(135deg, rgba(59,130,246,.15), rgba(7,11,20,.3));
+  border: 1px solid rgba(59,130,246,.45);
+  border-radius: var(--r-lg);
+  color: var(--text);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: .05em;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.lobbyBanner:hover { border-color: var(--mode-tc, #3B82F6); background: rgba(59,130,246,.12); }
+.lobbyBannerIcon { font-size: 1.4rem; }
+.lobbyBannerArrow { margin-left: auto; color: #93C5FD; font-size: 1.3rem; }
+
+/* ─── CTA MAKE YOUR PICKS (BUILD-TC-005.4) ───── */
+.picksCta {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+  background:
+    radial-gradient(120% 140% at 10% -10%, rgba(16,185,129,.35), transparent 55%),
+    linear-gradient(135deg, rgba(16,185,129,.18), rgba(7,11,20,.35));
+  border: 1px solid rgba(16,185,129,.55);
+  border-radius: var(--r-lg);
+  color: var(--text);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: .06em;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.picksCta:hover { border-color: #10B981; background: rgba(16,185,129,.16); }
+.picksCtaIcon { font-size: 1.5rem; }
+.picksCtaLabel { flex: 1; }
+
+/* ─── Roster cerrado (BUILD-TC-005.4) ───────── */
+.rosterClosed {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  background: var(--bg2);
+  border: 1px dashed rgba(250,204,21,.4);
+  border-radius: var(--r-lg);
+  padding: .9rem 1.1rem;
+}
+.rosterClosedIcon { font-size: 1.3rem; }
+.rosterClosedText { display: flex; flex-direction: column; gap: .15rem; }
+.rosterClosedTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: .06em;
+  color: #FACC15;
+}
+.rosterClosedDesc {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .78rem;
+  letter-spacing: .03em;
+  line-height: 1.5;
+  color: var(--text2);
 }
 
 @media (min-width: 480px) {

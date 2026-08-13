@@ -1,5 +1,6 @@
 import { SPORTS } from '../../../data/nflData'
 import { useLanguage } from '../../../i18n/context'
+import { getLeagueMode } from '../../league/models/modes'
 import styles from '../dashboard.module.css'
 
 export default function LeaguesSummary({ myLeagues, currentLeague, memberCounts, user, onEnterLeague, onDeleteLeague }) {
@@ -36,6 +37,9 @@ export default function LeaguesSummary({ myLeagues, currentLeague, memberCounts,
                 </div>
               </div>
               <div className={styles.leagueMiniBadges}>
+                {getLeagueMode(lg) === 'practice' && (
+                  <span className={`${styles.miniBadge} ${styles.miniBadgeTc}`}>{t('training.name')}</span>
+                )}
                 {lg.simulation && (
                   <span className={`${styles.miniBadge} ${styles.miniBadgeAdmin}`}>{t('dashboard.sim')}</span>
                 )}

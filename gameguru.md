@@ -141,16 +141,36 @@ src/
 
 ## Routing (hash-based)
 
+Mini-router en `src/router/` (Fases 1-3 de PLAN-LEAGUE-CONTEXT, BUILD-LEAGUE-CONTEXT-01). `useHashRoute` escucha `hashchange`; `App.jsx` (`AppInner`/`AppShell`) renderiza por ruta.
+
+### Rutas nuevas (`src/router/hashRouter.js` + `routes.js`)
+
+| Hash | Página | Condición |
+|------|--------|-----------|
+| `#/league/:leagueId` | LeaguePage (vista `league`) | Miembro (LeagueRoute, guard READY) |
+| `#/league/:leagueId/picks` | Picks con la liga de la URL | Miembro |
+| `#/league/:leagueId/standings` | Leaderboard con la liga de la URL | Miembro |
+| `#/league/:leagueId/training` | Training Camp (reservada; migración en Fase 6) | — |
+| `#dashboard` | Home (hub: todas las ligas) | Default |
+| `#superadmin` | SuperAdmin | Requiere `isSuperAdmin` |
+
+- **URL explícita manda** sobre `localStorage['gameguru.activeLeagueId']` (solo sugerencia/LAST KNOWN).
+- `LeagueRoute` (`src/league/LeagueRoute.jsx`) guard: miembro→READY, no-miembro→DENIED (0 datos), inexistente→NOT_FOUND (RLS verifica vía `leaguesApi.getById` + `membersApi.getMembership`), carga→LOADING.
+- `LeagueContext` (`src/league/context/LeagueContext.jsx`) expone `{ league, leagueId, membership, loading, error, isMember, setActiveLeague, ...leaguesState, route }`.
+
+### Rutas legacy
+
 | Hash | Página | Condición |
 |------|--------|-----------|
 | `#dashboard` | HomeDashboard (se adapta: bienvenida, mis ligas o dashboard de liga) | Default |
-| `#picks` | Picks | Requiere `currentLeague` |
-| `#board` | Leaderboard | Requiere `currentLeague` |
-| `#publicpicks` | PublicPicks | Requiere `currentLeague` |
-| `#league` | LeaguePage | Requiere `currentLeague` |
+| `#picks` | Picks | Requiere `currentLeague`; **auto-redirige** a `#/league/:leagueId/picks` (vía `resolveForView`) |
+| `#board` | Leaderboard | Requiere `currentLeague`; **auto-redirige** a `#/league/:leagueId/standings` |
+| `#publicpicks` | PublicPicks | Requiere `currentLeague`; **auto-redirige** a `#/league/:leagueId/publicpicks` |
+| `#league` | LeaguePage | Requiere `currentLeague`; **auto-redirige** a `#/league/:leagueId` |
+| `#training` | Training Camp | Requiere `currentLeague`; **SIN auto-redirect** (excluido de `LEGACY_REDIRECTABLE` hasta Fase 6) |
 | `#superadmin` | SuperAdmin | Requiere `isSuperAdmin` |
 
-`App.jsx` sincroniza `activePage` con `window.location.hash` via `useEffect`.
+`LEGACY_REDIRECTABLE = { picks, board, publicpicks, league }`. `App.jsx` sincroniza `activePage` con `window.location.hash` via `useEffect` (flujo legacy, fallback cuando la ruta no es de liga).
 
 ---
 
@@ -319,6 +339,19 @@ Cadena **Provider → Adapter → Repository → Service** (todas las implementa
 
 El contrato permite cambiar de proveedor (ESPN → API-Sports, etc.) **sin tocar el frontend**.
 
+### `src/router/` + `src/league/` — contexto de liga por URL (BUILD-LEAGUE-CONTEXT-01, Fases 1-3)
+
+Routing hash con la **URL como fuente de verdad** del contexto de liga (`#/league/:leagueId/:view`). Módulos puros (testables sin React):
+- `router/hashRouter.js` — `parseHash`/`buildHash`/`normalizeHash`.
+- `router/routes.js` — helpers `leagueRoute`/`leaguePicksRoute`/`leagueStandingsRoute`/`leagueTrainingRoute`, `LEGACY_REDIRECTABLE` (picks/board/publicpicks/league; **`training` excluido** hasta Fase 6), `resolveForView`, `navigate`, `isMemberOf`.
+- `router/useHashRoute.js` — hook `hashchange` (StrictMode-safe).
+- `league/activeLeagueStorage.js` — `localStorage['gameguru.activeLeagueId']` **solo sugerencia**.
+- `league/context/leagueResolution.js` — lógica pura: `computeRouteState` (LOADING/NOT_FOUND/DENIED/READY), `getActiveLeagueId` (URL > persistencia > fallback), `buildContextValue`.
+- `league/context/LeagueContext.jsx` — `LeagueProvider`/`useLeagueContext`: `{ league, leagueId, membership, loading, error, isMember, setActiveLeague, ...leaguesState, route }`. Resolución: myLeagues fast path → `leaguesApi.getById` + `membersApi.getMembership` (distinguen NOT_FOUND de DENIED vía RLS); guard de UUID; guard de cancelación.
+- `league/LeagueRoute.jsx` — guard de render: `LeagueLoading`/`LeagueNotFound`/`LeagueDenied`/children en READY. Estados exportados para smoke.
+
+`App.jsx`: `AppInner` (auth + `useLeague`) envuelve `LeagueProvider`; `AppShell` renderiza por ruta (superadmin por ruta, `#dashboard` → hub, `#/league/:id[/page]` → `LeagueRoute key={leagueId}` con las páginas legacy como children, resto por `activePage` legacy).
+
 ### Estrategia de migración (PLAN-001)
 - **Fase 0** ✅ (BUILD-001): utils compartidos + esqueleto de dominios + Home modularizado.
 - **Fase 1** ✅ (BUILD-002 + BUILD-002.1): nuevo dashboard 100% con datos de Supabase (sin API externa) y unificado con el Home.
@@ -335,8 +368,8 @@ El contrato permite cambiar de proveedor (ESPN → API-Sports, etc.) **sin tocar
 | Módulo | Funciones clave |
 |--------|----------------|
 | `authApi` | `signUp`, `signIn`, `signOut`, `getSession`, `onAuthChange` |
-| `leaguesApi` | `create`, `getByCode`, `getMyLeagues`, `getMembers`, `delete` |
-| `membersApi` | `join` |
+| `leaguesApi` | `create`, `getByCode`, `getMyLeagues`, `getMembers`, `getById` (`.maybeSingle()`, RLS público), `delete` |
+| `membersApi` | `join`, `getMembership` (`.maybeSingle()` con `role`, RLS total) |
 | `picksApi` | `upsert` (onConflict), `getForWeek`, `getLeaderboard`, `getAllForLeague` |
 | `profilesApi` | `get`, `upsert`, `getMany` |
 | `masterGamesApi` | `insertAll`, `getAll`, `getByWeek`, `insert`, `update`, `remove`, `deleteAll`, `getMasterResults`, `setScoresByGameId` |
@@ -506,10 +539,79 @@ Evoluciona `leagues.simulation` (boolean) → 3 experiencias: **🎓 Práctica**
 
 **Decisión de nombre** (BUILD-004.1): se evaluó `experience_mode` (concepto UX, rechazado), `season_mode` (implica por-temporada, rechazado) y `league_mode` (✅ enum de la liga, extensible a múltiples deportes/años). El campo `phase` en `master_games` complementa: una liga = un modo = una fase.
 
-**Script de migración**: `supabase/004.1-season-system.sql` — DDL + backfill idempotente, **manual** (ejecutar en SQL Editor de Supabase). Actualiza `simulation=true→practice`, `simulation=false→regular`. No toca calendarios.
+**Script de migración**: `supabase/004.1-season-system.sql` — DDL + backfill idempotente, **manual** (ejecutar en SQL Editor de Supabase). Actualiza `simulation=true→practice`, `simulation=false→regular`. No toca calendarios. **✅ EJECUTADO (2026-08-07)** vía Management API (BACKFILL TC-005.1): `leagues.league_mode`/`season` + `master_games.phase` + CHECKs + índices; la liga real `16d92451-…` quedó `practice`/`2026`.
 
 **Compatibilidad**: `getLeagueMode(league)` devuelve `league.league_mode` (si existe) o `simulation ? 'practice' : 'regular'` (fallback). `getLeagueSeason(league)` devuelve `league.season || '2026'`. El código funciona correctamente ANTES y DESPUÉS de ejecutar el script; `fetchMyLeagues` ya hidrata cada liga con derivados `mode`/`season` (valores atajos para consumidores).
 
 **Dominio** (`src/domains/league/`): config `LEAGUE_MODES`/`SEASONS` + helpers `getLeagueMode`/`getLeagueSeason`/`isOfficialMode`/`providerAvailable` + servicio `hydrateLeague`. Listo para uso por BUILD-004.2+.
 
 - **Roadmap**: BUILD-004.1 ✅ → 004.2 (badges) → 004.3 (wizard) → 004.4 (gating+aviso) → 004.5 (provider) → 004.6 (resultados automáticos) → 004.7 (multi-deporte/limpieza) → 004.8 (Edge Function/noticias).
+
+---
+
+## 🏈 Preseason Experience — PS-001→PS-004 implementado (MVP, 2026-08-12)
+
+Liga exclusiva de calendario oficial (fase `preseason`, semanas 1–4). Detalle completo en `opencode/plans/preseason.md`.
+
+- **PS-001 ✅**: semanas derivadas de la fase (`Picks`/`PublicPicks`/manager data-driven; sin `TOTAL_WEEKS=18` fijo).
+- **PS-002 ✅ (MVP)**: **SuperAdmin por fase** — selector regular/preseason (`phaseCfg`: prefix `w`/`psw`, `totalWeeks` 18/4), `handleLoadSchedule` escribe `game_id` `${prefix}${RoundNumber}g${idx}` + campo `phase`, deleteAll por fase, guard `activeWeek`. Calendario real en **`src/data/nflPreseason2026.json` (49 juegos)** cargado a `master_games.phase='preseason'` (vía service_role; **anon insert → 401 RLS**).
+- **PS-003 ✅ (MVP)**: `LeagueGamesManager` filtra por fase (`getAll(sport, getLeagueSeason(league), phase)` vía `masterPhaseForMode`), tabs data-driven + clamp `activeWeek`; **"Agregar juego manual" oculto en ligas oficiales** (`{!isOfficial && …}`); `ScoreEditor` con prop `official` → aviso ⚠ `manager.manualResultWarning` (regla de contingencia: provider offline = captura manual permitida con aviso). `useDashboardData` fijado a fase `'regular'`.
+- **PS-004 ✅**: **LeagueIdentity con chip de modo** (🏈 Pretemporada) — clases `mode-tc/ps/rs` + variantes de color en `global.css` (teal `#14B8A6`).
+- **Verificación**: harness **294/294**, QA browser `qa-preseason.mjs` **15/15** (wizard → 49 `league_games` importados con `psw*`, tabs 1–4 en Picks/Manager, chip 🏈, manual-add oculto, aviso ⚠ en ScoreEditor, Standings), `npm run build` ✅. `master_games` = 272 regular + 49 preseason.
+- **Freeze (2026-08-12)**: auditoría Go-Live → **GO**. Preseason MVP **FROZEN** para el inicio de la pretemporada (blockers 0, high 0). Backlog post-preseason documentado en `opencode/plans/preseason.md` (provider real, RLS UPDATE en `master_games`, hardcode season, validación carga por fase, empates).
+- **Pendiente**: provider real (`espnProvider` + `syncSeason` con fase) y resultados automáticos (PS-002-orig/PS-003-orig). Log benigno pre-existente `[useTrainingSession] no se pudo cargar la sesión del evento` en ligas sin evento TC.
+
+---
+
+## Experiencias oficiales (referencias)
+
+GameGuru ofrece 3 experiencias, cada una con su documento de referencia oficial en `opencode/plans/`:
+
+| Experiencia | Modo BD | Documento |
+|---|---|---|
+| 🎓 Training Camp | `practice` | [`opencode/plans/training-camp.md`](opencode/plans/training-camp.md) — evento simulado automáticamente (PLAN-005) |
+| 🏈 Pretemporada | `preseason` | [`opencode/plans/preseason.md`](opencode/plans/preseason.md) — liga exclusiva de calendario oficial |
+| 🏆 Temporada Oficial | `regular` | [`opencode/plans/regular-season.md`](opencode/plans/regular-season.md) — la experiencia completa |
+
+- "Liga" en la UI; "experiencia" solo dentro del wizard.
+- **PRIVACY-001** (picks privados hasta el cierre) aplica a Pretemporada y Temporada; **Training Camp está exento** (objetivo educativo, transparencia en vivo).
+- Roadmaps independientes: **BUILD-TC-\*** (Training Camp), **BUILD-PS-\*** (Pretemporada), **BUILD-RS-\*** (Temporada).
+
+**Identidad visual por experiencia (decisión 2026-08-04)**: cada experiencia tiene identidad visual propia (no solo badge) — color distintivo (tokens `--mode-tc`/`--mode-ps`/`--mode-rs` en `global.css`), ícono propio, banner específico en el header de liga/dashboard y mensajes adaptados (i18n `modes.*`). 🎓 Training Camp azul `#3B82F6` · 🏈 Pretemporada teal `#14B8A6` · 🏆 Temporada Oficial dorado `#F5A623`. Se materializa en BUILD-004.2 y BUILD-TC-001. Paleta final pendiente de validar.
+
+## Contexto de liga por URL — PLAN-LEAGUE-CONTEXT (Fases 1-3 implementadas, BUILD-LEAGUE-CONTEXT-01 2026-08-09)
+
+La **URL hash `#/league/:leagueId/:view` es la fuente de verdad** del contexto de liga (multi-liga por usuario). `localStorage['gameguru.activeLeagueId']` es solo sugerencia. Detalle en `opencode/plans/plan-league-context.md` (Fases 4-8 pendientes).
+
+- **Mini-router**: `src/router/hashRouter.js` (`parseHash`/`buildHash`), `routes.js` (helpers de ruta + `resolveForView` + `navigate` + `LEGACY_REDIRECTABLE`), `useHashRoute.js` (hook `hashchange`). Legacy `#picks/#board/#publicpicks/#league` auto-redirigen; **`#training` NO** (excluido hasta Fase 6 — el lobby del TC no debe remontarse vía LeagueRoute).
+- **LeagueContext**: `src/league/context/LeagueContext.jsx` — `{ league, leagueId, membership, loading, error, isMember, setActiveLeague, ...leaguesState, route }`. Resolución: myLeagues fast path → `getById` + `getMembership` para distinguir **NOT_FOUND** (liga inexistente) de **DENIED** (no miembro, 0 datos) vía RLS (`leagues` SELECT público + `league_members` SELECT total). Guard de UUID y de cancelación StrictMode. Lógica pura en `leagueResolution.js`/`activeLeagueStorage.js` (testable).
+- **LeagueRoute**: guard 4 estados (`LeagueLoading`/`LeagueNotFound`/`LeagueDenied`/children READY); las páginas legacy se renderizan como children con `league` de la URL (contrato de props intacto, sin migrarlas).
+- **App.jsx**: `AppInner` (auth + `useLeague`) → `LeagueProvider` → `AppShell` (render por ruta; `#dashboard` → hub; `#/league/:id[/page]` → `LeagueRoute key={leagueId}`; resto `activePage` legacy).
+- **Verificación**: harness **278/278** (36 tests LC-A..J), QA E2E `qa-tc0063.mjs` **45/45** (TC/Game Week/Picks/Simulation intactos), smoke `qa-league-smoke.mjs` **18/18** (READY/refresh/NOT_FOUND/DENIED/redirect/hub, 0 errores consola-red), `npm run build` ✅.
+
+## Training Camp Experience — PLAN-005 (diseño aprobado · BUILD-TC-001/002/003/004/004.2/005 implementados)
+
+Reemplaza conceptualmente al "Practice Mode". Detalle completo en `opencode/plans/training-camp.md`.
+
+- **Training Camp es un EVENTO, no una liga**: liga `practice` + sesión de entrenamiento (`training_sessions`, entidad independiente 1:N-ready con `session_no`; temporalmente una única sesión por liga) con `start_at`, `game_count` (5/10/15/20), `speed` (demo/normal/fast), `fixture_mode` (auto/manual), `state` (9 estados), `seed` (RNG determinista).
+- **9 estados**: `created → waiting_players → countdown → training_started → picks_open → picks_locked → games_in_progress → simulation_running → finished` (+ `cancelled`). Cada estado es una experiencia distinta para Dashboard, notificaciones y Activity Feed.
+- **Event Director (BUILD-TC-003)**: dominio `src/domains/event/` con el contrato base `EventDirector` (steps + `currentStep`/`lastCompletedStep` + `dispatch`) y `TrainingCampDirector`. El Director **coordina, no genera** (no crea partidos ni resultados): avanza por hora (`waiting→countdown→training_started`), resuelve acciones admin (abrir lobby / comenzar / cancelar) y deja la generación a los motores (Fixture Generator TC-004 / Simulation Engine TC-005). La UI solo conoce el contrato, no el motor.
+- **Fixture Generation (BUILD-TC-004)**: evento `fixture_generation` con `FixtureGenerationDirector` (4 pasos: waiting→generating_fixtures→saving_matches→completed) + `FixtureGeneratorService`/`fixtureCalendar` (sin React; RNG seed, rondas round-robin sobre los 32 equipos NFL). `EVENT_TYPES` identifica el director por `event.event_type`; `EVENT_ACTIONS` se extiende con `START_GENERATION`/`GENERATION_PROGRESS`/`SAVE_COMPLETE`/`COMPLETE_EVENT`. Al **finalizar la sesión TC** el hook crea el evento y orquesta la generación (progreso en `fixture_progress`); el Lobby muestra la barra de progreso (componente `TrainingCampProgress`) y persiste el calendario en `league_games` (`master_game_id: null`, `tc-<sessionNo>-<n>`).
+- **Game Week & Picks (BUILD-TC-005, implementado 2026-08-05; persistencia en modo nube validada 2026-08-07, BUILD-TC-005.1; QA end-to-end 2026-08-08, BUILD-TC-005.3)**: tercer evento `game_week` (TC → FG → Game Week; 1 evento = 1 director). Entidades `game_weeks` (WeekState: `pending→picks_open→picks_locked→games_in_progress→simulation_running→completed`) + `pick_submissions` (confirmación/bloqueo por usuario) + `training_session_id` en `league_games` y `picks` (SQL `005.2-game-week.sql` **aplicado**; Fix A: `picks_session_game_unique` de índice parcial → `UNIQUE CONSTRAINT` para `on_conflict` de PostgREST). Flujo: FG completed → jornada activa → selección de picks → pendientes (x/y) → confirmación → `picks_locked` (deadline `start_at + N` por nivel, todos confirmaron o lock admin). Dominio `src/domains/game-week/`: `GameWeekDirector` + `GameWeekService` + `PicksService` (sin React; `getConfirmedPicks` = punto de integración de TC-006) + `GameWeekContext`/`useGameWeek` + `GameWeekView` (reutiliza `GameCard`). Ventana de picks por nivel (`resolveConfig`: express 5'/standard 10'/advanced 15'/custom editable) propagada por el ciclo; `FixtureGeneratorService` setea `training_session_id`. Fix B: `GameWeekContext` carga la sesión FG (`trainingSessionsApi.list` con `event_type`) para enlazar los partidos generados en modo nube. E2E real 25/25 + regresión 56/56 + build + smoke (detalle en `opencode/plans/gameguru-day-2026-08-07.md`). **BUILD-TC-005.3**: acción admin `ADVANCE_EVENT` (idempotente; completa el TC y dispara FG → GW → Picks), panel admin en el lobby, UX activa del estado START, saneamiento de parches `toCloudPatch` (excluye campos internos/QA sin columna: `__week`/`finished_reason`/`locked_at`/`lock_reason` → 0 PATCH 400) y favicon. QA browser real 43/43 con 0 errores consola/red (detalle en `opencode/plans/gameguru-day-2026-08-08.md`).
+- **Simulation Engine v1 — núcleo** (TC-006.1, implementado 2026-08-08, sin UX): lógica aislada de React en `src/domains/simulation/` (`SimulationDirector` máquina interna + `MatchSimulator` determinista + `StandingsCalculator` puro + `SimulationService` fachada). La máquina pública del evento es `GameWeekDirector` (`picks_locked → games_in_progress → simulation_running → completed`); Edge Functions futuras solo reemplazan el motor. Migración `006.1` **APLICADA en la nube (TC-006.3, vía Management API)** (corrida persistida en la nube). **BUILD-TC-006.2 (2026-08-08)**: orquestación automática en `useTrainingSession` — auto-start en `picks_locked`, batches deterministas por `speed`, resume tras reload (`simulation_progress`, no re-escribe `finished`), guard `simGuardRef` anti-duplicados (StrictMode), finalización `completed` (jornada) + `finished` (sesión); refactor compartido `GameWeekService.listSessionGames`/`sessionGameMatch` + `GameWeekContext.isCompleted` alias `finished` + fix `GameWeekDirector.getCurrentStep`; regresión **187/187** + build ✅. **BUILD-TC-006.3 (2026-08-08): UX en vivo + cierre en la nube** — `GameWeekView` con `SimulationProgress` (simulación en vivo: status + barra + %) y, en `completed`/`finished`, `GameWeekResults` (scores FINAL + "Your picks: correct/total" + draw) + `GameWeekLeaderboard` (rank/player/correct/total/pts) + banner; dominio puro `src/domains/game-week/simulationView.js` (`getSimulationRun`/`buildResultsView`/`sortStandings`/`buildLeaderboard`/`canRevealPicks`/`buildPickFeedback`); `GameWeekContext` expone `isSimulating`/`simRun`/`resultsMap`/`standings`/`allPicks`; picks públicos en vivo con exención PRIVACY-001 para `practice` (policy vía `modes.js`). **Cierre en la nube**: `006.1` aplicada vía Management API (PATCH `game_weeks` → 200, antes 400) + nueva `supabase/006.1b-league-games-update.sql` (política `lg_update`: UPDATE de `league_games` por membresía, no solo admin). Fixes de bugs reales: `SimulationDirector` null-safe (`defaultRun(null)`) y `useTrainingSession.participants` expone `id`. QA browser real **45/45** (0 errores consola/red) + regresión **231/231** + build ✅.
+- **Contrato común `ResultSource`**: Training Engine (genera fixture/resultados, escribe `league_games` con `master_game_id: null`) y Official Provider Engine (lee `master_games`, escribe ambas) → la lectura no distingue el origen.
+- **Exención de PRIVACY-001** solo en TC: leaderboard y picks públicos en vivo (transparencia educativa).
+- **Naming**: "Practice" se abandona en el lenguaje de producto; la BD conserva `'practice'` (sin migración; renombrar el enum a `training_camp` queda como migración formal futura). Internamente **"Training Session"**, visible al usuario **"Training Camp"**.
+- **Roadmap**: BUILD-TC-001 ✅ (renaming + tabla SQL + lobby) → TC-002 ✅ (Experience Picker + intro educativa + **entrada oficial por el wizard**: `Crear Liga → Picker → Intro TC → Configuración → Confirmación → Lobby`) → TC-003 ✅ (**Event Director** + sesión 1:N-ready + confirmación en el wizard + personalidad del Lobby) → TC-004 ✅ (**Fixture Generation** al finalizar la sesión TC: director + service sin React + progreso en el Lobby) → TC-004.2 ✅ (**Estabilización**: `005.1-training-sessions.sql` ejecutado en Supabase, `GET training_sessions` 200 con anon key, hardening defensivo del Lobby/hook/modelos con estado vacío y logs descriptivos) → TC-005 ✅ (**Game Week & Picks**: evento `game_week` + `game_weeks`/`pick_submissions` + jornada/picks/confirmación/bloqueo hasta `picks_locked`) → TC-005.1 ✅ (**Persistencia en modo nube**: `005.2` aplicado/verificado + backfill `004.1` ejecutado + Fix A/B + E2E real 25/25 + regresión 56/56) → **TC-005.2 (✅ hito TC-005 commiteado `7cb799a`, rama `development`, sin push)** → TC-005.3 ✅ (**QA end-to-end desbloqueado**: `ADVANCE_EVENT` admin + panel admin + UX activa del START + `toCloudPatch` + favicon; QA browser real 43/43, 0 errores consola/red) → TC-005.4 ✅ (QA final 48/48 + fix `league_mode: 'practice'`) → TC-006.1 ✅ (**Simulation Engine núcleo sin UX**: dominio `src/domains/simulation/` — SimulationDirector/MatchSimulator determinista/StandingsCalculator/SimulationService; `GameWeekDirector` ampliado `games_in_progress`/`simulation_running`; migración `006.1`; regresión 140/140) → TC-006.2 ✅ (**orquestación automática**: `useTrainingSession` auto-start en `picks_locked`, batches por `speed`, resume, `completed`/`finished`; regresión 187/187) → **TC-006.3 ✅ (UX en vivo + cierre en la nube: SimulationProgress/Results/Leaderboard/picks públicos con exención PRIVACY-001 practice; migraciones `006.1` + `006.1b` aplicadas vía Management API; fixes `defaultRun(null)` y `participants.id`; QA browser 45/45 + regresión 231/231)** → TC-007/TC-008 (Graduación 🏆) → TC-009 futuro (Edge/realtime + fixtures manuales).
+- **Entrada oficial**: el Training Camp no es una opción aislada; se llega por el flujo de creación (wizard con Experience Picker). El CTA "🎓 Training Camp" del Topbar abre el wizard en la intro del TC (o navega al Lobby si la liga actual ya es practice). Embudo de adopción: **Training Camp → Pretemporada → Temporada Oficial**.
+
+## 🕐 Timezone por liga — TZ-001→TZ-005 implementado (2026-08-12)
+
+Cada liga tiene su **zona horaria propia** (`leagues.timezone`); todos los horarios (GameTime, GameCard, GamesCarousel, UpcomingGamesList, CountdownCard, CopyReminder, GameWeekView/Results, Picks/Manager) se renderizan en la zona de la liga, no en la del browser.
+
+- **TZ-001 ✅**: migración `supabase/006.3-league-timezone.sql` **aplicada vía Management API** — `leagues.timezone TEXT NOT NULL DEFAULT 'America/Panama'`; verificada en nube (26 ligas existentes → `America/Panama`).
+- **TZ-002 ✅**: dominio puro `src/domains/league/models/timezone.js` (`DEFAULT_TIMEZONE='America/Panama'`, `isValidTimezone`, `detectBrowserTimezone`, `getLeagueTimezone(league)`) exportado en `src/domains/league/index.js`.
+- **TZ-003 ✅**: prop `timeZone` en `GameTime` (default undefined = tz del browser) y propagada por `GameCard`/`GamesCarousel`/`UpcomingGamesList`/`CountdownCard`/`CopyReminder`/`Picks`/`GameWeekView`/`GameWeekResults`/`LeagueGamesManager` vía `GameWeekContext.timezone`; `HomeDashboard`/`LeagueDashboard` pasan `getLeagueTimezone(currentLeague || contextLeague)`; SuperAdmin fija `UTC`.
+- **TZ-004 ✅**: `ExperienceWizard` detecta `detectBrowserTimezone()` y lo envía en `opts.timezone`; `createLeague` persiste `timezone: opts.timezone || detectBrowserTimezone()`. Bonus: manual-add del SuperAdmin con `datetime-local` + offset local (`localTZOffset`) y validación de campo.
+- **TZ-005 ✅ (QA)**: QA browser `qa-timezone.mjs` **18/18** (signup+dashboard, creación → timezone persistido e IANA válido, Panama browser + liga Panama → 6:00 PM, NY browser + liga Panama → sigue 6:00 PM (liga gana sobre el browser), liga NY → 7:00 PM, `game_time` intacto en UTC, deadline/locking idénticos en ambos timezones). Bug TDZ real resuelto: `leagueTz` se usaba en el `UpcomingGamesList` del estado 1 (sin liga) antes de su declaración.
+- **Verificación**: harness **311/311** (294 + 17 TZ-002), `qa-preseason.mjs` **15/15**, `qa-tc0063.mjs` **45/45**, `qa-league-smoke.mjs` **18/18**, `qa-multileague-picks.mjs` **25/25**, `npm run build` ✅.

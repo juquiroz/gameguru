@@ -9,6 +9,7 @@ export default function ScoreEditor({
   initialAwayScore,
   initialHomeScore,
   saving = false,
+  official = false,
   onSave,
   onCancel,
 }) {
@@ -28,6 +29,11 @@ export default function ScoreEditor({
 
   return (
     <div className={styles.editor}>
+      {official && (
+        <div className={styles.warning} role="alert">
+          {t('manager.manualResultWarning')}
+        </div>
+      )}
       <div className={styles.teams}>
         <div className={styles.team}>
           <span className={styles.side}>{t('manager.away')}</span>

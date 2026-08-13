@@ -1,6 +1,10 @@
 import { leaguesApi } from '../../../supabase'
 import { useLanguage } from '../../../i18n/context'
 import { useDashboardData } from '../hooks/useDashboardData'
+import { getLeagueMode } from '../../league/models/modes'
+import { getLeagueTimezone } from '../../league'
+import { canJoinLeague } from '../../league'
+import { useLeagueEvent } from '../../training/hooks/useLeagueEvent'
 import DashboardHeader from './DashboardHeader'
 import HeroCard from './HeroCard'
 import HowItWorks from './HowItWorks'
@@ -15,7 +19,7 @@ import CopyReminder from './CopyReminder'
 import homeStyles from '../../../pages/Home.module.css'
 import styles from '../dashboard.module.css'
 
-export default function HomeDashboard({ user, myLeagues, currentLeague, onNavigate, onEnterLeague, onCreateNew, onJoinClick, onRefreshLeagues }) {
+export default function HomeDashboard({ user, myLeagues, currentLeague, onNavigate, onEnterLeague, onCreateNew, onJoinClick, onRefreshLeagues, onCreateTrainingCamp }) {
   const { t } = useLanguage()
   const state = useDashboardData({ user, myLeagues, currentLeague })
 
@@ -45,6 +49,12 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
     showLeaderboard,
     showCountdown,
   } = state
+
+  // BUILD-TC-005.4 — Evento más reciente de la liga activa (lectura ligera,
+  // sin orquestación) para el CTA MAKE YOUR PICKS y el estado del roster.
+  const event = useLeagueEvent(hasCurrentLeague ? currentLeague?.id : null)
+  const rosterOpen = !event || canJoinLeague(event)
+  const picksOpen = !!event && event.event_type === 'game_week' && event.state === 'picks_open'
 
   const isAdmin = !!currentLeague && (currentLeague.admin_id === user?.id || currentLeague.role === 'admin')
   const pendingResults = leagueGames ? leagueGames.filter(g => !g.finished).length : 0
@@ -98,9 +108,12 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
           locked={locked}
         />
         <HowItWorks />
-        <UpcomingGamesList games={upcomingGames} />
+      <UpcomingGamesList games={upcomingGames} />
         <button className="btn-primary" style={{ width: '100%', maxWidth: 520 }} onClick={onCreateNew}>
           {t('dashboard.startNow')}
+        </button>
+        <button className="btn-primary" style={{ width: '100%', maxWidth: 520, background: 'var(--mode-tc, #3B82F6)', borderColor: 'var(--mode-tc, #3B82F6)' }} onClick={onCreateTrainingCamp}>
+          {t('training.ctaWelcome')}
         </button>
       </div>
     )
@@ -111,6 +124,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
   const carouselTitle = dayGames.length
     ? t('dashboard.gamesToday')
     : t('dashboard.weekGames', { week: currentWeek ?? 1 })
+  const leagueTz = getLeagueTimezone(currentLeague || contextLeague)
 
   return (
     <div className={homeStyles.wrap}>
@@ -120,6 +134,28 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         leagueCount={myLeagues?.length || 0}
         user={user}
       />
+
+      {hasCurrentLeague && getLeagueMode(currentLeague) === 'practice' && (
+        picksOpen ? (
+          <button
+            className={styles.picksCta}
+            onClick={() => onNavigate('training')}
+          >
+            <span className={styles.picksCtaIcon}>🏈</span>
+            <span className={styles.picksCtaLabel}>{t('training.makePicksCta')}</span>
+            <span className={styles.lobbyBannerArrow}>→</span>
+          </button>
+        ) : (
+          <button
+            className={styles.lobbyBanner}
+            onClick={() => onNavigate('training')}
+          >
+            <span className={styles.lobbyBannerIcon}>🎓</span>
+            <span>{t('training.lobbyBanner')}</span>
+            <span className={styles.lobbyBannerArrow}>→</span>
+          </button>
+        )
+      )}
 
       {isContextAdmin && participation && (
         <div className={styles.participationBar}>
@@ -146,9 +182,9 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         <PendingActionCard pendingCount={pendingCount} locked={locked} onNavigate={onNavigate} />
       )}
 
-      {showCountdown && <CountdownCard deadline={deadline} locked={locked} />}
+      {showCountdown && <CountdownCard deadline={deadline} locked={locked} timeZone={leagueTz} />}
 
-      <GamesCarousel title={carouselTitle} games={carouselGames} locked={locked} />
+      <GamesCarousel title={carouselTitle} games={carouselGames} locked={locked} timeZone={leagueTz} />
 
       {hasCurrentLeague && (
         <LeaguesSummary
@@ -167,17 +203,27 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
         <MiniLeaderboard standings={standings} currentUserId={user?.id} onNavigate={onNavigate} week={lastLockedWeek} />
       )}
 
-      <UpcomingGamesList games={upcomingGames} />
+      <UpcomingGamesList games={upcomingGames} timeZone={leagueTz} />
 
       {isAdmin && (
         <>
-          <div className={homeStyles.inviteBox}>
-            <div className={homeStyles.inviteLabel}>{t('dashboard.inviteLabel')}</div>
-            <div className={homeStyles.inviteCode}>{currentLeague.code}</div>
-            <button className={homeStyles.inviteCopy} onClick={copyInviteLink}>
-              {t('dashboard.copyLink')}
-            </button>
-          </div>
+          {rosterOpen ? (
+            <div className={homeStyles.inviteBox}>
+              <div className={homeStyles.inviteLabel}>{t('dashboard.inviteLabel')}</div>
+              <div className={homeStyles.inviteCode}>{currentLeague.code}</div>
+              <button className={homeStyles.inviteCopy} onClick={copyInviteLink}>
+                {t('dashboard.copyLink')}
+              </button>
+            </div>
+          ) : (
+            <div className={styles.rosterClosed}>
+              <span className={styles.rosterClosedIcon}>🔒</span>
+              <div className={styles.rosterClosedText}>
+                <div className={styles.rosterClosedTitle}>{t('training.rosterClosedTitle')}</div>
+                <div className={styles.rosterClosedDesc}>{t('training.rosterClosedDesc')}</div>
+              </div>
+            </div>
+          )}
 
           <div className={homeStyles.quickActions}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => onNavigate('league')}>
@@ -189,7 +235,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
               </button>
             )}
             {!locked && currentWeek != null && (
-              <CopyReminder league={currentLeague} week={currentWeek} deadline={deadline} />
+              <CopyReminder league={currentLeague} week={currentWeek} deadline={deadline} timeZone={leagueTz} />
             )}
           </div>
         </>
