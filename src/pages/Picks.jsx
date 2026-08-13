@@ -288,6 +288,24 @@ td:first-child{position:sticky;left:0;background:#0D1525}
             </div>
           )}
 
+          {/* Week state actions — visible without scrolling, before the games list */}
+          {weekLocked && (
+            <div className={styles.weekActions}>
+              <button
+                className="btn-secondary"
+                onClick={exportLeagueAudit}
+              >
+                📥 Exportar auditoría
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => onNavigate('publicpicks')}
+              >
+                👁️ Ver Picks Públicos
+              </button>
+            </div>
+          )}
+
           {/* Games grid */}
           <div className={styles.grid}>
             {weekData.games.map(game => (
@@ -329,25 +347,6 @@ td:first-child{position:sticky;left:0;background:#0D1525}
           )}
           {weekData.finished && (
             <div className="lock-notice">🔒 Esta semana ya finalizó — los picks están bloqueados</div>
-          )}
-
-          {weekLocked && (
-            <div style={{ display: 'flex', gap: '.5rem', marginTop: '1rem' }}>
-              <button
-                className="btn-secondary"
-                style={{ flex: 1 }}
-                onClick={exportLeagueAudit}
-              >
-                📥 Exportar auditoría
-              </button>
-              <button
-                className="btn-secondary"
-                style={{ flex: 1 }}
-                onClick={() => onNavigate('publicpicks')}
-              >
-                👁️ Ver Picks Públicos
-              </button>
-            </div>
           )}
         </>
       )}
