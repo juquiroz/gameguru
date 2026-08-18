@@ -1,15 +1,23 @@
 import { SPORTS } from '../../../data/nflData'
 import { useLanguage } from '../../../i18n/context'
 import { getLeagueMode } from '../../league/models/modes'
+import { canManageLeague } from '../../platform'
 import styles from '../dashboard.module.css'
 
-export default function LeaguesSummary({ myLeagues, currentLeague, memberCounts, user, onEnterLeague, onDeleteLeague }) {
+export default function LeaguesSummary({ myLeagues, currentLeague, memberCounts, user, onEnterLeague, onDeleteLeague, onJoinClick }) {
   const { t } = useLanguage()
   if (!myLeagues?.length) return null
 
   return (
     <div className={styles.section}>
-      <div className={styles.sectionTitle}>{t('dashboard.myLeagues')}</div>
+      <div className={styles.sectionHeader}>
+        <div className={styles.sectionTitle}>{t('dashboard.myLeagues')}</div>
+        {onJoinClick && (
+          <button className="btn-secondary" onClick={onJoinClick}>
+            {t('home.joinLeague')}
+          </button>
+        )}
+      </div>
       <div className={styles.leagueMini}>
         {myLeagues.map(lg => {
           const isCurrent = currentLeague?.id === lg.id
@@ -17,7 +25,7 @@ export default function LeaguesSummary({ myLeagues, currentLeague, memberCounts,
           const members = memberCounts[lg.id]
           const canDelete = onDeleteLeague &&
             !isCurrent &&
-            (lg.role === 'admin' || lg.admin_id === user?.id)
+            canManageLeague(lg, user)
 
           return (
             <div

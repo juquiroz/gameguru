@@ -1,5 +1,6 @@
 import { SPORTS } from '../../../data/nflData'
 import { leaguesApi } from '../../../supabase'
+import { canManageLeague } from '../../platform'
 import styles from '../../../pages/Home.module.css'
 
 export default function LeaguesOverview({ myLeagues, user, onEnterLeague, onRefreshLeagues, onCreateNew, onJoinClick }) {
@@ -27,7 +28,7 @@ export default function LeaguesOverview({ myLeagues, user, onEnterLeague, onRefr
       <div className={styles.leagueGrid}>
         {myLeagues.map(lg => {
           const sportIcon = SPORTS.find(s => s.id === lg.sport)?.icon || '🏆'
-          const isAdmin = lg.role === 'admin' || lg.admin_id === user?.id
+          const isAdmin = canManageLeague(lg, user)
 
           return (
             <div

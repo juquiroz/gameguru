@@ -18,6 +18,7 @@ import { picksService, PICK_STATUS } from './PicksService'
 import { buildResultsMap } from '../simulation/StandingsCalculator'
 import { getSimulationRun, buildLeaderboard } from './simulationView'
 import { getLeagueTimezone } from '../league/models/timezone'
+import { canManageLeague } from '../platform'
 
 const GameWeekContext = createContext(null)
 
@@ -173,7 +174,7 @@ export function GameWeekProvider({ event, league, user, participants = [], onTra
     : (pickCount > 0 ? PICK_STATUS.DRAFT : PICK_STATUS.OPEN)
 
   const deadlineMs = week?.deadline_at ? new Date(week.deadline_at) - now : null
-  const isAdmin = !!league && (league.admin_id === user?.id || league.role === 'admin')
+  const isAdmin = canManageLeague(league, user)
 
   // BUILD-TC-006.3 — Estado derivado de la simulación (proyecciones puras,
   // sin recalcular en React): run interno, mapa de resultados por partido

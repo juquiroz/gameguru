@@ -4,6 +4,7 @@ import { useDashboardData } from '../hooks/useDashboardData'
 import { getLeagueMode } from '../../league/models/modes'
 import { getLeagueTimezone } from '../../league'
 import { canJoinLeague } from '../../league'
+import { canManageLeague } from '../../platform'
 import { useLeagueEvent } from '../../training/hooks/useLeagueEvent'
 import DashboardHeader from './DashboardHeader'
 import HeroCard from './HeroCard'
@@ -56,7 +57,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
   const rosterOpen = !event || canJoinLeague(event)
   const picksOpen = !!event && event.event_type === 'game_week' && event.state === 'picks_open'
 
-  const isAdmin = !!currentLeague && (currentLeague.admin_id === user?.id || currentLeague.role === 'admin')
+  const isAdmin = canManageLeague(currentLeague, user)
   const pendingResults = leagueGames ? leagueGames.filter(g => !g.finished).length : 0
 
   const copyInviteLink = () => {
@@ -175,6 +176,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
           user={user}
           onEnterLeague={onEnterLeague}
           onDeleteLeague={handleDeleteLeague}
+          onJoinClick={onJoinClick}
         />
       )}
 
@@ -194,6 +196,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
           user={user}
           onEnterLeague={onEnterLeague}
           onDeleteLeague={handleDeleteLeague}
+          onJoinClick={onJoinClick}
         />
       )}
 

@@ -3,6 +3,7 @@ import { leaguesApi, masterGamesApi, picksApi, profilesApi } from '../../../supa
 import { useLeagueData } from './useLeagueData'
 import { getCurrentWeek, getWeekDeadline, isWeekLocked } from '../../../utils/dates'
 import { calcStandings } from '../../../utils/standings'
+import { canManageLeague } from '../../platform'
 
 const SEASON = '2026'
 const SPORT = 'NFL'
@@ -80,8 +81,7 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
   const deadline = useMemo(() => getWeekDeadline(weekGames), [weekGames])
   const locked = useMemo(() => isWeekLocked(weekGames), [weekGames])
 
-  const isContextAdmin = !!contextLeague &&
-    (contextLeague.admin_id === user?.id || contextLeague.role === 'admin')
+  const isContextAdmin = canManageLeague(contextLeague, user)
 
   // Picks propios de la semana abierta (para PendingAction/QuickStats)
   useEffect(() => {

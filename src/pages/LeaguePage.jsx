@@ -3,6 +3,7 @@ import { SPORTS } from '../data/nflData'
 import { leaguesApi } from '../supabase'
 import InviteModal from '../components/InviteModal'
 import LeagueGamesManager from '../components/LeagueGamesManager'
+import { canManageLeague } from '../domains/platform'
 
 export default function LeaguePage({ user, league, onChangeLeague }) {
   const [showModal, setShowModal] = useState(false)
@@ -21,7 +22,7 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
     )
   }
 
-  const isAdmin    = league.admin_id === user?.id || league.role === 'admin'
+  const isAdmin    = canManageLeague(league, user)
   const sportIcon  = SPORTS.find(s => s.id === league.sport)?.icon || '🏆'
   const inviteLink = `${window.location.origin}${window.location.pathname}?join=${league.code}`
 

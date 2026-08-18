@@ -4,6 +4,7 @@ import { trainingSessionService } from '../services/trainingSessionService'
 import { getDerivedPhase } from '../models/states'
 import { decorateParticipants, presenceAvailability } from '../models/presence'
 import { resolveConfig } from '../models/levels'
+import { canManageLeague } from '../../platform'
 import {
   trainingCampDirector,
   fixtureGenerationDirector,
@@ -378,7 +379,7 @@ export function useTrainingSession({ leagueId, userId, league }) {
       })
   }, [event?.state, event?.event_type, leagueId, applyPatch])
 
-  const isAdmin = !!league && (league.admin_id === userId || league.role === 'admin')
+  const isAdmin = canManageLeague(league, { id: userId })
 
   const director = directorFor(event)
   const currentStep = event ? director.getCurrentStep(event, now) : null

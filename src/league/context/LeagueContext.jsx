@@ -27,8 +27,9 @@ export function LeagueProvider({ user, leaguesState, children }) {
   const myLeagues = leaguesState?.myLeagues || []
   const userId = user?.id || null
 
-  // Sugerencia persistida (LAST KNOWN). Se lee una sola vez al montar.
-  const persistedId = useMemo(() => loadActiveLeagueId(), [])
+  // Sugerencia persistida (LAST KNOWN). También se mantiene en memoria para
+  // que las rutas legacy usen la liga recién seleccionada sin esperar reload.
+  const [persistedId, setPersistedId] = useState(() => loadActiveLeagueId())
 
   // Liga objetivo: id de la URL si la ruta es de liga; si no, ninguna.
   const targetId = route && route.type === 'league' ? route.leagueId || null : null
@@ -63,6 +64,7 @@ export function LeagueProvider({ user, leaguesState, children }) {
       const membership = member.role || 'member'
       setResolved({ league: member, membership, loading: false })
       saveActiveLeagueId(targetId)
+      setPersistedId(targetId)
       return () => { active = false }
     }
 
@@ -88,7 +90,10 @@ export function LeagueProvider({ user, leaguesState, children }) {
       const membership = (ms && ms.data && ms.data.role) || null
       setResolved({ league, membership, loading: false })
       setError(membership ? null : 'denied')
-      if (membership) saveActiveLeagueId(targetId)
+      if (membership) {
+        saveActiveLeagueId(targetId)
+        setPersistedId(targetId)
+      }
     })()
 
     return () => { active = false }
@@ -96,6 +101,8 @@ export function LeagueProvider({ user, leaguesState, children }) {
 
   // Navegación: entrar a una liga (URL + sugerencia persistida al resolver).
   const setActiveLeague = useCallback((leagueId, page = 'league') => {
+    saveActiveLeagueId(leagueId)
+    setPersistedId(leagueId)
     navigate({ type: 'league', leagueId, page })
   }, [])
 

@@ -29,6 +29,13 @@ export const leagueRoute = (leagueId) => ({ type: 'league', leagueId, page: 'lea
 export const leaguePicksRoute = (leagueId) => ({ type: 'league', leagueId, page: 'picks' })
 export const leagueStandingsRoute = (leagueId) => ({ type: 'league', leagueId, page: 'standings' })
 export const leagueTrainingRoute = (leagueId) => ({ type: 'league', leagueId, page: 'training' })
+export const platformRoute = () => ({ type: 'platform' })
+// BUILD-SUP-002 — Platform League Management (read-only).
+export const platformLeaguesRoute = () => ({ type: 'platformLeagues' })
+export const platformLeagueRoute = (leagueId) => ({ type: 'platformLeague', leagueId })
+// BUILD-SUP-003 — Platform User Management (read-only).
+export const platformUsersRoute = () => ({ type: 'platformUsers' })
+export const platformUserRoute = (userId) => ({ type: 'platformUser', userId })
 
 // ¿el usuario es miembro de la liga? `myLeagues` viene de league_members
 // (fuente de datos en Supabase, RLS SELECT por membresía).

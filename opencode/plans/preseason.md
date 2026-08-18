@@ -65,6 +65,17 @@ Veredicto de auditoría: **GO**. Decisión de producto: **CONGELAR Preseason MVP
 - Data: 49 preseason (weeks 1–4) + 272 regular, sin duplicados, JSON↔BD exacto.
 - Riesgos Medium/Low NO ocultos — ver Backlog.
 
+## BUILD-SCORE-001 (2026-08-13) — Actualizaciones parciales de marcador
+
+Corrección de confiabilidad operacional del flujo existente (no es una feature nueva de Preseason; Preseason mantiene **GO / FROZEN**).
+
+- **Root cause**: `ScoreEditor` inicializaba el estado con números de PostgREST (`useState(initialAwayScore ?? '')` → `7`). Los handlers de submit llamaban `.trim()` incondicionalmente → `(7).trim()` → `TypeError` antes de `onSave`, fuera del try/catch de `handleSetScores` → SAVE fallaba en silencio salvo que se reescribieran AMBOS scores (los dos pasaban a string). Casos: A solo home → falla, B solo away → falla, C ambos → funciona, D reabrir sin editar → falla.
+- **Fix**: `src/utils/scores.js` (nuevo) `normalizeScoreInput(v) = String(v ?? '').trim()`; `ScoreEditor` inicializa con `normalizeScoreInput(initialX)`. Los inputs siguen controlled strings; `.trim()` es seguro; `Number(...)` ocurre al persistir.
+- **Master sync eliminado del flujo League Admin**: se quitó `masterGamesApi.setScoresByGameId(...)` de `LeagueGamesManager.handleSetScores` (el League Admin no tiene permiso UPDATE sobre `master_games` por RLS — policy solo `is_platform_superadmin()` desde SUP-000; el error se tragaba con `console.error`). **`league_games` es la source of truth de la captura manual** para las vistas de la liga. La reconciliación `Provider → master_games → league_games` queda para SUP-004 / Provider Results Control. NO tocar `master_games` RLS.
+- **Tie display fix**: `hasResult = g.finished && (g.result || (g.home_score != null && g.away_score != null))` → `10-10 FINAL` (result null) se muestra como resultado válido. La calificación de empates en Picks/Standings sigue en backlog (no implementada).
+- **LIVE-001 NO implementado** (live/quarters/clock/provisional standings/provider/ESPN siguen futuros).
+- **Verificación**: harness **369/369** (7 tests nuevos `normalizeScoreInput`), `npm run build` ✅, QA browser nuevo `qa-scoreeditor.mjs` **27/27** (A entrada inicial 10-7 → B solo home → 17-7 → C solo away → 17-14 → D ambos → 24-21 → E reabrir sin editar intacto → F 10-10 empate mostrado como resultado → G 0-0 con 0 válido; 0 errores de consola, 0 requests fallidos, 0 HTTP 4xx, 0 writes a `master_games`). Regresión completa verde: preseason 15/15, tc0063 45/45, smoke 18/18, multileague 25/25, timezone 18/18, weekactions 27/27.
+
 ## Backlog post-Preseason
 
 Sin bloquear el MVP. Orden recomendado:
@@ -72,8 +83,8 @@ Sin bloquear el MVP. Orden recomendado:
 1. **Provider real** (`espnProvider` + adapter + `syncSeason` con fase) — PS-002-orig.
 2. **Sincronización automática de resultados** — PS-003-orig (propagación a `league_games`).
 3. **Reconciliación manuales vs provider** (regla: el provider manda; manual solo en contingencia).
-4. **RLS UPDATE en `master_games`** (solo superadmin): hoy no existe policy de UPDATE → `setScoresByGameId` falla en silencio (afecta a Regular igual que a Preseason; sin impacto visible porque las vistas de liga leen `league_games`).
-5. **Eliminar hardcode de season `'2026'`** en `LeagueGamesManager.jsx:137` (usar `getLeagueSeason(league)`).
+4. **Reconciliación con `master_games`** (Provider → master → league_games, SUP-004): desde SUP-000 existe policy UPDATE solo `is_platform_superadmin()`, y desde BUILD-SCORE-001 el League Admin ya NO escribe `master_games` (se eliminó `setScoresByGameId` del flujo) — `league_games` es la source of truth de la captura manual.
+5. ~~Hardcode season `'2026'` en `LeagueGamesManager.jsx:137`~~ → **RESUELTO por BUILD-SCORE-001**: la única referencia era la llamada a `setScoresByGameId` eliminada del flujo. `masterGamesApi.setScoresByGameId` queda definido (sin caller en `src/`) para la reconciliación futura de SUP-004.
 6. **Validar carga por fase con JWT real** (botón "Cargar {fase}" del SuperAdmin; policy INSERT superadmin existe; la carga real ya se hizo vía service_role).
 7. **Limpieza por fase de `league_games`** huérfanas al borrar el calendario maestro (`deleteAll` solo borra master).
 8. **Decisión de producto para empates** (resultado nulo = nadie acierta; pre-existente).

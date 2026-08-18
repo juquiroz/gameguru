@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { assembleUserIndex, computeUserList } from './domains/platform/models/users'
 
 const supabaseUrl  = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey  = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -391,4 +392,232 @@ export const pickSubmissionsApi = {
 
   removeByWeek: (gameWeekId) =>
     supabase.from('pick_submissions').delete().eq('game_week_id', gameWeekId),
+}
+
+// ─── Platform Overview helpers (BUILD-SUP-000 / SUP-001, read-only) ──────────
+// Consola de plataforma. Lee con el cliente autenticado + claim JWT de platform
+// admin (nunca service_role en el navegador); las policies SELECT de platform
+// admins (007.3) + las públicas existentes cubren todo el Overview.
+export const platformApi = {
+  overview: async () => {
+    const [leagues, profiles, leagueMembers, pickSubmissions, trainingSessions, gameWeeks, leagueGames, masterGames] =
+      await       Promise.all([
+        supabase.from('leagues').select('id, name, sport, season, league_mode, simulation, admin_id, timezone'),
+        supabase.from('profiles').select('id, username, platform_role, is_superadmin, created_at'),
+        supabase.from('league_members').select('user_id, league_id, role'),
+        supabase.from('pick_submissions').select('user_id, league_id'),
+        supabase.from('training_sessions').select('league_id'),
+        supabase.from('game_weeks').select('league_id'),
+        supabase.from('league_games').select('league_id, game_time, finished'),
+        supabase.from('master_games').select('id, game_time'),
+      ])
+    const error =
+      leagues.error || profiles.error || leagueMembers.error || pickSubmissions.error ||
+      trainingSessions.error || gameWeeks.error || leagueGames.error || masterGames.error
+    return {
+      data: {
+        leagues: leagues.data || [],
+        profiles: profiles.data || [],
+        leagueMembers: leagueMembers.data || [],
+        pickSubmissions: pickSubmissions.data || [],
+        trainingSessions: trainingSessions.data || [],
+        gameWeeks: gameWeeks.data || [],
+        leagueGames: leagueGames.data || [],
+        masterGames: masterGames.data || [],
+      },
+      error,
+    }
+  },
+
+  // BUILD-SUP-002 — Listado global de ligas (read-only, paginado).
+  // Patrones nuevos en el repo (documentados en superadmin.md):
+  //   - counts embebidos: league_members(count)/league_games(count)/picks(count)
+  //   - count: 'exact' + range(from, to) para paginación
+  //   - ilike para búsqueda case-insensitive por nombre
+  // Owner se resuelve con profiles (una sola query, mapa admin_id → username);
+  // el filtro de owner convierte el username en admin_ids y filtra por
+  // admin_id (paginación server-side correcta).
+  leaguesList: async ({ filters = {}, search = '', page = 1, pageSize = 10 } = {}) => {
+    const profilesRes = await supabase.from('profiles').select('id, username')
+    if (profilesRes.error) return { data: null, error: profilesRes.error }
+    const ownerProfiles = profilesRes.data || []
+
+    const ownerQuery = String(filters.ownerQuery || '').trim().toLowerCase()
+    const adminIds = ownerQuery
+      ? ownerProfiles
+          .filter((p) => String(p.username || '').toLowerCase().includes(ownerQuery))
+          .map((p) => p.id)
+      : null
+    if (ownerQuery && adminIds.length === 0) {
+      return { data: { items: [], count: 0, ownerMap: ownerProfiles }, error: null }
+    }
+
+    let q = supabase
+      .from('leagues')
+      .select(
+        'id, name, sport, season, league_mode, simulation, deadline_mode, timezone, admin_id, created_at, ' +
+          'league_members(count), league_games(count), picks(count)',
+        { count: 'exact' },
+      )
+    if (filters.sport) q = q.eq('sport', filters.sport)
+    if (filters.season) q = q.eq('season', filters.season)
+    if (filters.league_mode) q = q.eq('league_mode', filters.league_mode)
+    if (filters.simulation !== undefined && filters.simulation !== null && filters.simulation !== '') {
+      q = q.eq('simulation', filters.simulation)
+    }
+    if (filters.timezone) q = q.eq('timezone', filters.timezone)
+    if (ownerQuery && adminIds.length > 0) q = q.in('admin_id', adminIds)
+    const s = String(search || '').trim()
+    if (s) q = q.ilike('name', `%${s}%`)
+    const from = (page - 1) * pageSize
+    q = q.order('created_at', { ascending: false }).range(from, from + pageSize - 1)
+
+    const res = await q
+    return {
+      data: { items: res.data || [], count: res.count || 0, ownerMap: ownerProfiles },
+      error: res.error,
+    }
+  },
+
+  // Opciones de filtro reales (columnas mínimas, sin counts) para los
+  // dropdowns del listado. No construye la tabla.
+  leagueFilterOptions: async () => {
+    const res = await supabase.from('leagues').select('sport, season, league_mode, simulation, timezone')
+    return { data: res.data || [], error: res.error }
+  },
+
+  // BUILD-SUP-002 — Detalle global read-only de una liga. Consulta por id
+  // directo (sin exigir membresía). Selects paralelos: liga → admin/members
+  // (+ profiles) + league_games + picks + game_weeks/training_sessions (health).
+  leagueDetail: async (leagueId) => {
+    const leagueRes = await supabase.from('leagues').select('*').eq('id', leagueId).maybeSingle()
+    if (leagueRes.error || !leagueRes.data) {
+      return { data: null, error: leagueRes.error || { message: 'not_found' } }
+    }
+    const league = leagueRes.data
+    const [membersRes, gamesRes, picksRes, weeksRes, sessionsRes] = await Promise.all([
+      supabase
+        .from('league_members')
+        .select('user_id, role, joined_at')
+        .eq('league_id', leagueId)
+        .order('joined_at', { ascending: true }),
+      supabase
+        .from('league_games')
+        .select('id, game_id, week, home_team, away_team, home_abbr, away_abbr, game_time, result, finished, home_score, away_score')
+        .eq('league_id', leagueId)
+        .order('week', { ascending: true }),
+      supabase.from('picks').select('user_id, week, game_id, pick, submitted_at').eq('league_id', leagueId),
+      supabase.from('game_weeks').select('id').eq('league_id', leagueId),
+      supabase.from('training_sessions').select('id').eq('league_id', leagueId),
+    ])
+    const uniqueIds = [...new Set([
+      league.admin_id,
+      ...(membersRes.data || []).map((m) => m.user_id),
+    ].filter(Boolean))]
+    let profilesRes = { data: [] }
+    if (uniqueIds.length > 0) {
+      profilesRes = await supabase.from('profiles').select('id, username').in('id', uniqueIds)
+    }
+    const error =
+      membersRes.error || gamesRes.error || picksRes.error ||
+      weeksRes.error || sessionsRes.error || profilesRes.error
+    return {
+      data: {
+        league,
+        members: membersRes.data || [],
+        games: gamesRes.data || [],
+        picks: picksRes.data || [],
+        gameWeeks: weeksRes.data || [],
+        trainingSessions: sessionsRes.data || [],
+        profiles: profilesRes.data || [],
+      },
+      error,
+    }
+  },
+
+  // BUILD-SUP-003 — Listado global de usuarios (read-only, paginado).
+  // La BD viva NO tiene FK profiles→league_members ni profiles→picks (los
+  // embeds/counts anidados desde profiles fallan con PGRST200), así que el
+  // listado se arma client-side: 4 reads planos (profiles, league_members,
+  // leagues, picks — todas con policies de lectura públicas/de plataforma) y
+  // el ensamblado + filtros + búsqueda + orden + paginación viven en el
+  // dominio puro (assembleUserIndex/computeUserList), determinista y testable.
+  // NUNCA toca auth.users (0 grants al navegador) — la fecha de registro sale
+  // de profiles.created_at (migración 008.0).
+  usersList: async ({ filters = {}, search = '', page = 1, pageSize = 10 } = {}) => {
+    const [profilesRes, membersRes, leaguesRes, picksRes] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, username, platform_role, is_superadmin, created_at')
+        .order('created_at', { ascending: false, nullsFirst: false }),
+      supabase.from('league_members').select('user_id, league_id, role, joined_at'),
+      supabase
+        .from('leagues')
+        .select('id, admin_id, created_at, league_mode, simulation'),
+      supabase.from('picks').select('user_id, created_at, submitted_at'),
+    ])
+    const error =
+      profilesRes.error || membersRes.error || leaguesRes.error || picksRes.error
+    if (error) return { data: null, error }
+
+    const entries = assembleUserIndex({
+      profiles: profilesRes.data || [],
+      leagueMembers: membersRes.data || [],
+      leagues: leaguesRes.data || [],
+      picks: picksRes.data || [],
+    })
+    return {
+      data: computeUserList(entries, filters, search, { page, pageSize }),
+      error: null,
+    }
+  },
+
+  // Opciones reales para los dropdowns de participación (desde leagues).
+  // platformRoles y leagueRoles son estáticos (roles.js / MVP).
+  userFilterOptions: async () => {
+    const res = await supabase.from('leagues').select('league_mode, simulation')
+    const modes = [...new Set((res.data || []).map((l) => l.league_mode).filter(Boolean))]
+    const simulations = [...new Set((res.data || []).map((l) => String(l.simulation)).filter((v) => v !== 'undefined'))]
+    return { data: { participationModes: modes, simulations }, error: res.error }
+  },
+
+  // BUILD-SUP-003 — Detalle global read-only de un usuario. Consulta por id
+  // directo (sin exigir membresía). Selects paralelos: profile → ligas que
+  // administra (admin_id), membresías (league_members + leagues embebidas),
+  // picks (solo timestamps para actividad). Email/auth status FUERA del MVP.
+  userDetail: async (userId) => {
+    const profileRes = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+    if (profileRes.error || !profileRes.data) {
+      return { data: null, error: profileRes.error || { message: 'not_found' } }
+    }
+    const profile = profileRes.data
+    const [ownedRes, membersRes, picksRes] = await Promise.all([
+      supabase
+        .from('leagues')
+        .select('id, name, code, league_mode, sport, season, simulation, timezone, created_at')
+        .eq('admin_id', userId),
+      supabase
+        .from('league_members')
+        .select(
+          'role, joined_at, ' +
+            'leagues(id, name, code, league_mode, sport, season, simulation, timezone)',
+        )
+        .eq('user_id', userId),
+      supabase
+        .from('picks')
+        .select('league_id, created_at, submitted_at')
+        .eq('user_id', userId),
+    ])
+    const error =
+      ownedRes.error || membersRes.error || picksRes.error
+    return {
+      data: {
+        profile,
+        ownedLeagues: ownedRes.data || [],
+        memberships: membersRes.data || [],
+        picks: picksRes.data || [],
+      },
+      error,
+    }
+  },
 }

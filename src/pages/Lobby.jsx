@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { SPORTS } from '../data/nflData'
 import { leaguesApi } from '../supabase'
 import InviteModal from '../components/InviteModal'
+import { canManageLeague } from '../domains/platform'
 import styles from './Lobby.module.css'
 
 export default function Lobby({ user, myLeagues, loadingLeagues, onCreateLeague, onJoinLeague, onEnterLeague, onRefreshLeagues }) {
@@ -124,7 +125,7 @@ export default function Lobby({ user, myLeagues, loadingLeagues, onCreateLeague,
                         <div className={styles.leagueName}>{lg.name}</div>
                         <div className={styles.leagueMeta}>{lg.sport} · {lg.code}</div>
                       </div>
-                      {(lg.role === 'admin' || lg.admin_id === user?.id) && (
+                      {canManageLeague(lg, user) && (
                         <>
                           <span className={styles.adminBadge}>Admin</span>
                           <button

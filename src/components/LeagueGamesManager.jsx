@@ -132,16 +132,9 @@ export default function LeagueGamesManager({ league }) {
         setMsg({ type: 'error', text: `Error al guardar resultado: ${lgErr.message}` })
         return
       }
-      // For real leagues, also persist to master_games (canonical source)
-      if (!league.simulation) {
-        const { error: mgErr } = await masterGamesApi.setScoresByGameId(
-          game.game_id, league.sport, '2026', hs, as,
-          game.home_abbr, game.away_abbr
-        )
-        if (mgErr) {
-          console.error('Error masterGamesApi.setScoresByGameId:', mgErr)
-        }
-      }
+      // BUILD-SCORE-001: league_games es la source of truth para las vistas de
+      // la liga durante la captura manual. El sync a master_games se eliminó
+      // (League Admin no tiene permiso UPDATE por RLS; ver superadmin.md).
       await loadData(true)
       setSaving(false)
       setResultForm(null)
@@ -314,7 +307,10 @@ export default function LeagueGamesManager({ league }) {
         ) : (
           <div className={styles.gamesList}>
             {leagueWeekGames.map(g => {
-              const hasResult = g.finished && g.result
+              const hasResult = g.finished && (
+                g.result ||
+                (g.home_score != null && g.away_score != null)
+              )
               const editing = resultForm === g.id
               return (
                 <div
