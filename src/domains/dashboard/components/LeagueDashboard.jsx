@@ -2,6 +2,7 @@ import { SPORTS } from '../../../data/nflData'
 import { useLanguage } from '../../../i18n/context'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { getLeagueTimezone } from '../../league'
+import { canManageLeague } from '../../platform'
 import DashboardHeader from './DashboardHeader'
 import PendingActionCard from './PendingActionCard'
 import CountdownCard from './CountdownCard'
@@ -17,7 +18,7 @@ export default function LeagueDashboard({ user, league, myLeagues, onNavigate, o
   const { t } = useLanguage()
   const data = useDashboardData({ user, myLeagues, currentLeague: league })
   const { loadingGames, leagueGames } = data
-  const isAdmin = league.admin_id === user?.id || league.role === 'admin'
+  const isAdmin = canManageLeague(league, user)
   const leagueTz = getLeagueTimezone(league)
 
   const copyInviteLink = () => {

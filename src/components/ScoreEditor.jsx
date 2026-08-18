@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLanguage } from '../i18n/context'
+import { normalizeScoreInput } from '../utils/scores'
 import TeamLogo from './TeamLogo'
 import styles from './ScoreEditor.module.css'
 
@@ -14,8 +15,8 @@ export default function ScoreEditor({
   onCancel,
 }) {
   const { t } = useLanguage()
-  const [awayScore, setAwayScore] = useState(initialAwayScore ?? '')
-  const [homeScore, setHomeScore] = useState(initialHomeScore ?? '')
+  const [awayScore, setAwayScore] = useState(normalizeScoreInput(initialAwayScore))
+  const [homeScore, setHomeScore] = useState(normalizeScoreInput(initialHomeScore))
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {

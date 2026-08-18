@@ -5,6 +5,7 @@ import { NFL_WEEKS } from '../data/nflData'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import { isWeekLocked, isGameLocked } from '../utils/dates'
 import { getLeagueTimezone } from '../domains/league'
+import { canManageLeague } from '../domains/platform'
 import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
@@ -232,7 +233,7 @@ td:first-child{position:sticky;left:0;background:#0D1525}
 
       {!loadingGames && !useDynamic && !weekData && (
         <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
-          ⚠️ No se encontraron juegos en esta liga. {league?.admin_id === user?.id
+          ⚠️ No se encontraron juegos en esta liga. {canManageLeague(league, user)
             ? 'Ve a Mi Liga &gt; Gestión de Partidos para importarlos.'
             : 'El admin de la liga debe importar los juegos.'}
         </div>
@@ -261,7 +262,7 @@ td:first-child{position:sticky;left:0;background:#0D1525}
         <div className="empty-state">
           <div className="big">📭</div>
           No hay partidos para la Semana {activeWeek}.
-          {league && (league.admin_id === user?.id || league.role === 'admin') && (
+          {canManageLeague(league, user) && (
             <><br /><span style={{ fontSize: '.82rem', color: 'var(--text3)' }}>
               Ve a Mi Liga &gt; Gestión de Partidos para importar juegos.
             </span></>

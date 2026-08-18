@@ -153,6 +153,7 @@ Mini-router en `src/router/` (Fases 1-3 de PLAN-LEAGUE-CONTEXT, BUILD-LEAGUE-CON
 | `#/league/:leagueId/training` | Training Camp (reservada; migración en Fase 6) | — |
 | `#dashboard` | Home (hub: todas las ligas) | Default |
 | `#superadmin` | SuperAdmin | Requiere `isSuperAdmin` |
+| `#platform` | Consola de Plataforma (SUP-001) | Requiere claim JWT `platform_role` (superadmin/admin); deny explícito |
 
 - **URL explícita manda** sobre `localStorage['gameguru.activeLeagueId']` (solo sugerencia/LAST KNOWN).
 - `LeagueRoute` (`src/league/LeagueRoute.jsx`) guard: miembro→READY, no-miembro→DENIED (0 datos), inexistente→NOT_FOUND (RLS verifica vía `leaguesApi.getById` + `membersApi.getMembership`), carga→LOADING.
@@ -181,7 +182,8 @@ Mini-router en `src/router/` (Fases 1-3 de PLAN-LEAGUE-CONTEXT, BUILD-LEAGUE-CON
 |---------|------|
 | `id` | UUID PK (ref auth.users) |
 | `username` | text |
-| `is_superadmin` | boolean |
+| `is_superadmin` | boolean (legacy/deprecated) |
+| `platform_role` | text ('user' \| 'platform_admin' \| 'platform_superadmin') — SUP-000, default 'user' |
 
 ### `leagues`
 | Columna | Tipo |
@@ -279,6 +281,8 @@ const { picks, submitted, saving, selectPick, submitPicks, loadPicks } = usePick
 ```js
 const { isSuperAdmin, checking } = useSuperAdmin(user)
 ```
+- Fuente primaria: claim JWT `app_metadata.platform_role` (sync desde `profiles.platform_role` por trigger 007.0). Fallback legacy: `profiles.is_superadmin` solo si el claim no aporta rol.
+- La autorización real de datos vive en RLS (SUP-000); este hook solo controla UI.
 
 ---
 
@@ -623,3 +627,54 @@ Reubicación UX de `📥 Exportar auditoría` y `👁️ Ver Picks Públicos` en
 - **Cambio**: solo `src/pages/Picks.jsx` (bloque `weekLocked` reubicado antes del `styles.grid`) + clase responsive nueva `styles.weekActions` en `Picks.module.css` (`flex-wrap: wrap` + `flex: 1 1 170px` → fila en desktop, columna/wrap en mobile sin overflow).
 - **Lógica intacta**: las acciones siguen condicionadas exclusivamente a `weekLocked` (idénticas condiciones); `Guardar Picks` permanece abajo (submit bar); textos i18n/hardcoded sin cambios; sin refactor de Picks/GameCard/GameTime/timezone/locking.
 - **Verificación**: harness **311/311**, `npm run build` ✅, QA browser nuevo `qa-weekactions.mjs` **26/26** (week 1 bloqueada → acciones arriba antes de la grilla, 1 sola instancia, sin Guardar Picks; week 2 abierta → acciones ausentes + Guardar Picks presente; week 2 forzada a 16 juegos bloqueada → visibles sin scroll; Ver Picks Públicos navega a `publicpicks`; Exportar auditoría descarga HTML; mobile 375px sin overflow/solape, botones habilitados; 0 errores consola/red), regresión `qa-preseason.mjs` **15/15** + `qa-multileague-picks.mjs` **25/25**.
+
+## 🛡️ Plataforma — roles, RLS y consola (SUP-000/SUP-001, implementado 2026-08-13)
+
+Rol de plataforma con RLS a nivel de BD + auditoría + consola read-only `#/platform`. Detalle completo en `opencode/plans/superadmin.md`.
+
+- **Regla crítica**: nunca `if (isSuperAdmin)` como única autorización; RLS confía en el claim JWT `app_metadata.platform_role` (no en lookups a `profiles` ni en el frontend).
+- **SUP-000 ✅** (migraciones `supabase/007.0`–`007.3` aplicadas vía Management API, idempotentes):
+  - `profiles.platform_role` + backfill (solo `is_superadmin=true` → `platform_superadmin`; el resto queda `user` — los League Admins NO se convierten en `platform_admin`) + trigger `trg_sync_platform_role_to_jwt` (SECURITY DEFINER) que sincroniza `auth.users.raw_app_meta_data.platform_role`.
+  - **Separación League Admin ≠ Platform Admin** (verificado BUILD-SUP-DOC-001): **League Admin** = `platform_role='user'`, administra su liga por `league_members.role='admin'` (RLS + `canManageLeague`); **Platform Admin** = `platform_role='platform_admin'`, tier declarado pero **dormante (0 asignados)**, requiere asignación explícita y NO se deriva de ser League Admin; **Platform SuperAdmin** = `platform_role='platform_superadmin'` (1 asignado: `bambino29`). `platform_role` controla capacidades de plataforma; `league_members.role` controla administración de una liga.
+  - Helpers RLS `public.is_platform_superadmin()` / `public.is_platform_admin()` (leen `auth.jwt()`, fail-closed).
+  - `master_games`: INSERT/UPDATE/DELETE solo superadmin (antes sin policy UPDATE → ruta rota), SELECT público.
+  - `profiles`: policy UPDATE con guarda de columnas (anti auto-escalamiento), INSERT restringido a `platform_role='user'`; sin policies legacy `is_superadmin`.
+  - `admin_audit_log` + `log_admin_action(...)` SECURITY DEFINER; sin policy INSERT (writes futuros Edge Functions/service_role, SUP-004); SELECT solo platform admins.
+  - `picks`/`league_games`: SELECT global adicional para platform admins (consola; nunca service_role en navegador).
+- **SUP-001 ✅**: dominio puro `src/domains/platform/` (`models/roles.js`, `models/overview.js`, `services/platformService.js` con `canManageLeague`), `useSuperAdmin` con claim JWT + fallback legacy, `platformApi.overview()` (8 selects), `src/pages/PlatformOverview.jsx`, `PlatformDenied.jsx`, ruta `#/platform` con guard de deny explícito. Refactor `canManageLeague` aplicado en 9 inline + 2 mensajes (Picks/Leaderboard).
+- **Verificación**: probes RLS en BD viva (claim superadmin → true; user auto-promueve → 42501; user edita username → OK; user inserta master_games → ERROR; superadmin UPDATE → OK; platform_admin lee global → OK), `qa-platform.mjs` **32/32**, harness **362/362**, `npm run build` ✅, regresión E2E full verde (preseason 15/15, tc0063 45/45, smoke 18/18, multileague 25/25, timezone 18/18, weekactions 27/27).
+- **Único superadmin**: `bambino29` (claim JWT `platform_superadmin` ya sincronizado).
+- **Backlog**: SUP-004/005/006/007 (writes Edge Functions, Audit UI, user.timezone, live scores/ESPN) + SUP-002 y SUP-003 implementados arriba; gaps S1/S2 de FASE 0. Seguridad opcional (no implementada): revocar grants `anon` sobre `admin_audit_log` — defense-in-depth (RLS ya bloquea a anon; limpieza sin cambio de comportamiento).
+
+## 🛡️ Platform League Management — SUP-002 (2026-08-13, read-only)
+
+Consola de plataforma con listado, búsqueda/filtros/paginación y detalle **read-only** de todas las ligas, exclusiva para `platform_superadmin`. Detalle completo en `opencode/plans/superadmin.md`.
+
+- **Rutas** (hash): `#/platform/leagues` (`platformLeaguesRoute()`) y `#/platform/leagues/:id` (`platformLeagueRoute(id)`) en `src/router/routes.js`; parse/build en `src/router/hashRouter.js`. Gate en `App.jsx` con **deny explícito**: League Admin (`platform_role='user'` con `league_members.role='admin'`) y usuario normal → `PlatformDenied`.
+- **Listado `PlatformLeagues.jsx`**: tabla (League/Sport/Season/Mode/Sim/Owner/Members/Games/Picks/Timezone/Created), 6 filtros + búsqueda por nombre y owner (`ilike`), paginación server-side size 10, estados loading/empty/no-results/error seguro.
+- **Detalle `PlatformLeagueDetail.jsx`**: statsBar (Miembros/Juegos/Picks/Partidos hoy) + 8 cards (Overview, Owner/Admin, Timezone, Health, Partidos de hoy, Miembros, Juegos, Standings, Picks resumen). Todo **read-only**: 0 writes a tablas de negocio verificado en QA.
+- **Modelo/dominio** en `src/domains/platform/models/leagues.js` (lógica pura): `buildOwnerMap`/`ownerName`, `applyLeagueFilters`, `searchLeagues` (`ilike`), `paginate`, `buildFilterOptions`, `computeLeagueMetrics`, `computeLeagueHealth` (Saludable/Con advertencias/Con errores), `buildStandingsForLeague` (reusa `StandingsCalculator.computeStandings`), `summarizePicks`, `formatInTimezone`.
+- **`platformApi.leaguesList`** en `src/supabase.js`: nested counts `league_members(count)`, `league_games(count)`, `picks(count)` + `count: 'exact'` + `.range()`; **fix QA**: `simulation=eq.` vacío al limpiar el filtro → PostgREST 400 `22P02`; guard `filters.simulation !== ''`.
+- **Verificación**: harness **435/435** (~66 tests SUP-002), `npm run build` ✅ (673.46 kB js, 199 modules), **`qa-platform-leagues.mjs` 31/31** (superadmin QA creado vía SQL en `auth.users`, claim JWT sincronizado con 2 PATCH a `profiles.platform_role`, count exact UI=33 BD=33, filtros/búsqueda/paginación server-side, detalle con contenido real 7 miembros/49 juegos/128 picks, mobile sin overflow, 0 errores consola/red/4xx/writes, usuario normal → PlatformDenied, cleanup con superadmin real intacto). Regresión full verde (platform 32/32, scoreeditor 27/27, preseason 15/15, tc0063 45/45, smoke 18/18, multileague 25/25, timezone 18/18, weekactions 27/27).
+
+## 🛡️ Platform User Management — SUP-003 (2026-08-13, read-only)
+
+Consola de plataforma con listado, filtros/búsqueda/paginación y detalle **read-only** de todos los usuarios, exclusiva para `platform_superadmin`. Detalle completo en `opencode/plans/superadmin.md`.
+
+- **Rutas** (hash): `#/platform/users` (`platformUsersRoute()`) y `#/platform/users/:id` (`platformUserRoute(id)`) en `src/router/routes.js`; parse/build en `src/router/hashRouter.js`. Gate en `App.jsx` con **deny explícito**: usuario normal y League Admin → `PlatformDenied` (mismo gate que SUP-001/002, ahora 6 tipos de ruta).
+- **Listado `PlatformUsers.jsx`**: tabla (Username/Platform Role/Registered/Leagues/Administers/Picks/Last Activity), 6 filtros (rol de plataforma, ligas, picks, rol en liga, modo de participación, simulación) + búsqueda por nombre o UUID, paginación size 10, estados loading/empty/no-results/error seguro. Clic en fila → detalle.
+- **Detalle `PlatformUserDetail.jsx`**: statsBar (Ligas/Administra/Picks/Activo) + 4 cards (Overview con user_id, Platform Role, Actividad derivada con último pick, Health con warnings de consistencia) + tabla de participación en ligas (con links al detalle de liga). Todo **read-only**: 0 writes a tablas de negocio verificado en QA.
+- **Modelo/dominio** en `src/domains/platform/models/users.js` (lógica pura): `applyUserFilters` (normaliza/whitelist), `searchUsers`/`applyUserSearch` (UUID exacto o `ilike` de username), `assembleUserIndex` (une profiles + league_members + leagues + picks), `matchUserFilters` (predicado), `computeUserList` (filtros + búsqueda + orden `created_at` desc + paginación), `computeLastActivity`/`isActiveUser` (definición derivada aprobada: ≥1 pick O ≥1 liga administrada O ≥1 membresía; Last Activity = GREATEST de picks/ligas/membresías), `computeUserMetrics`, `computeUserHealth`, `buildLeagueParticipation`, `computeUserOverview` (card "👥 Usuarios" del Overview con total/conLigas/sinLigas/conPicks/superadmins).
+- **`platformApi.usersList`** en `src/supabase.js`: **decisión por esquema real** — la BD viva NO tiene FK `profiles→league_members` ni `profiles→picks` (embeds/counts anidados fallan con PostgREST `PGRST200`), solo `league_members→leagues` y `pick_submissions→profiles`. Por eso el listado se ensambla **client-side** con 4 reads planos (profiles, league_members, leagues, picks — todos con policies de lectura públicas/de plataforma) y filtros/orden/paginación viven en el dominio puro (determinista y testeable, escala al MVP con ~207 perfiles). `userDetail` consulta por id sin membresía (profile + ligas que administra + membresías con `leagues(...)` embebido por FK real + picks timestamps). **Privacidad**: email/last_login/auth status FUERA del MVP (`auth.users` con 0 grants al navegador → backlog RPC/Edge Function); la fecha de registro sale de `profiles.created_at` (migración `supabase/008.0` aplicada, 207/207, 0 NULLs, índices `profiles_created_at_idx` + `league_members_user_id_idx` verificados).
+- **Verificación**: harness **533/533** (nuevos helpers SUP-003 + regresión completa), `npm run build` ✅, **`qa-platform-users.mjs` 36/36** (superadmin QA temporal vía SQL + claim JWT sincronizado; count exact UI=BD (207 reales), filtros **contra BD REAL** comparados 1:1 con service role (has_leagues=49, has_picks=22, league_role=admin=35, participation_mode=practice=27, simulation=true=37), búsqueda por nombre y UUID, detalle de usuario vacío y de usuario con 48 picks, mobile 390px sin overflow, 0 errores consola/red/4xx/writes, usuario normal → PlatformDenied en listado y detalle, cleanup con superadmin real intacto). El QA detectó y se corrigió un bug de filtro: `parseSimulation` booleanizaba `simulation` y el filtro se descartaba. Regresión full verde: platform **32/32**, platform-leagues **31/31**, scoreeditor 27/27, preseason 15/15, tc0063 45/45, smoke 18/18, multileague 25/25, timezone 18/18, weekactions 27/27.
+
+## 🎯 Actualizaciones parciales de marcador — BUILD-SCORE-001 (2026-08-13)
+
+El ScoreEditor permitía guardar un marcador solo si se reescribían AMBOS scores. Detalle completo en `opencode/plans/preseason.md` (sección BUILD-SCORE-001).
+
+- **Root cause**: estado inicial con números de PostgREST (`useState(initialAwayScore ?? '')` → `7`) + `.trim()` incondicional en submit → `(7).trim()` → `TypeError` antes de `onSave`, fuera del try/catch → SAVE en silencio.
+- **Fix**: `src/utils/scores.js` → `normalizeScoreInput(v) = String(v ?? '').trim()`; `ScoreEditor` inicializa con él. Ahora `10-7` → editar solo home → `17-7` (away se conserva), y reabrir sin editar no falla.
+- **`league_games` = source of truth** de la captura manual: se eliminó `masterGamesApi.setScoresByGameId(...)` del flujo League Admin (RLS solo `is_platform_superadmin()`; el error era silencioso). Reconciliación `Provider → master_games → league_games` → SUP-004. El método queda definido sin caller.
+- **Tie display fix**: `hasResult = g.finished && (g.result || (g.home_score != null && g.away_score != null))` → `10-10 FINAL` se muestra como resultado válido. Calificación de empates en Picks/Standings sigue en backlog.
+- **LIVE-001 NO implementado** (live/quarters/clock/provisional standings/provider/ESPN futuros).
+- **Verificación**: harness **369/369** (7 tests `normalizeScoreInput`), `npm run build` ✅, QA nuevo `qa-scoreeditor.mjs` **27/27** (A 10-7 inicial → B solo home 17-7 → C solo away 17-14 → D ambos 24-21 → E reabrir sin editar intacto → F 10-10 empate mostrado → G 0-0 válido; 0 errores consola/red, 0 writes a `master_games`), regresión full verde (preseason 15/15, tc0063 45/45, smoke 18/18, multileague 25/25, timezone 18/18, weekactions 27/27).

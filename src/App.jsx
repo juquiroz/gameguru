@@ -11,6 +11,12 @@ import LeagueStandings from './pages/LeagueStandings'
 import PublicPicks from './pages/PublicPicks'
 import LeaguePage  from './pages/LeaguePage'
 import SuperAdmin  from './pages/SuperAdmin'
+import PlatformOverview from './pages/PlatformOverview'
+import PlatformLeagues from './pages/PlatformLeagues'
+import PlatformLeagueDetail from './pages/PlatformLeagueDetail'
+import PlatformUsers from './pages/PlatformUsers'
+import PlatformUserDetail from './pages/PlatformUserDetail'
+import PlatformDenied from './components/PlatformDenied'
 import TrainingCamp from './pages/TrainingCamp'
 import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
@@ -152,6 +158,11 @@ function AppShell({
     league: 'topbar.league',
     training: 'training.name',
     superadmin: 'superadmin.title',
+    platform: 'Consola de Plataforma',
+    platformLeagues: 'Ligas de Plataforma',
+    platformLeague: 'Detalle de Liga',
+    platformUsers: 'Usuarios de Plataforma',
+    platformUser: 'Detalle de Usuario',
   }
 
   // Sync URL with active page (flujo legacy: #picks, #board, ...)
@@ -237,13 +248,35 @@ function AppShell({
         onNavigate={handleNavigate}
         onCreateNew={() => openWizard()}
         onJoinClick={() => setShowJoin(true)}
-        onEnterLeague={(lg) => { enterLeague(lg); handleNavigate('dashboard') }}
+         onEnterLeague={(lg) => {
+           enterLeague(lg)
+           setActiveLeague(lg.id, 'league')
+         }}
         onRefreshLeagues={fetchMyLeagues}
         onCreateTrainingCamp={() => openWizard('practice')}
       />
     )
 
-    if (route && route.type === 'superadmin' && isSuperAdmin) return <SuperAdmin />
+    // BUILD-SUP-000/002/003: rutas de plataforma con deny explícito (nada de
+    // drops silenciosos). Gate por isSuperAdmin (claim JWT, fallback legacy).
+    // League Admin / usuario normal → PlatformDenied. platform_admin queda
+    // dormante (0 usuarios): no se amplía el gate.
+    if (route && (
+      route.type === 'superadmin' ||
+      route.type === 'platform' ||
+      route.type === 'platformLeagues' ||
+      route.type === 'platformLeague' ||
+      route.type === 'platformUsers' ||
+      route.type === 'platformUser'
+    )) {
+      if (!isSuperAdmin) return <PlatformDenied onNavigate={handleNavigate} />
+      if (route.type === 'superadmin') return <SuperAdmin />
+      if (route.type === 'platform') return <PlatformOverview />
+      if (route.type === 'platformLeague') return <PlatformLeagueDetail leagueId={route.leagueId} />
+      if (route.type === 'platformUser') return <PlatformUserDetail userId={route.userId} />
+      if (route.type === 'platformUsers') return <PlatformUsers />
+      return <PlatformLeagues />
+    }
 
     // Hub: el dashboard muestra TODAS las ligas (fuente de verdad = ruta).
     if (route && route.type === 'dashboard') return home

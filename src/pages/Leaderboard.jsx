@@ -5,6 +5,7 @@ import { isWeekLocked } from '../utils/dates'
 import { calcStandings } from '../utils/standings'
 import LeaderboardTable from '../components/LeaderboardTable'
 import LeagueIdentity from '../components/LeagueIdentity'
+import { canManageLeague } from '../domains/platform'
 
 export default function Leaderboard({ user, league, onNavigate }) {
   const [activeWeek, setActiveWeek] = useState(() => {
@@ -160,7 +161,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
         <div className="empty-state">
           <div className="big">📭</div>
           Esta liga aún no tiene partidos importados.
-          {league?.admin_id === user?.id && (
+          {canManageLeague(league, user) && (
             <><br /><span style={{ fontSize: '.82rem', color: 'var(--text3)' }}>
               Ve a Mi Liga &gt; Gestión de Partidos para importarlos.
             </span></>
