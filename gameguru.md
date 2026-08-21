@@ -678,3 +678,22 @@ El ScoreEditor permitía guardar un marcador solo si se reescribían AMBOS score
 - **Tie display fix**: `hasResult = g.finished && (g.result || (g.home_score != null && g.away_score != null))` → `10-10 FINAL` se muestra como resultado válido. Calificación de empates en Picks/Standings sigue en backlog.
 - **LIVE-001 NO implementado** (live/quarters/clock/provisional standings/provider/ESPN futuros).
 - **Verificación**: harness **369/369** (7 tests `normalizeScoreInput`), `npm run build` ✅, QA nuevo `qa-scoreeditor.mjs` **27/27** (A 10-7 inicial → B solo home 17-7 → C solo away 17-14 → D ambos 24-21 → E reabrir sin editar intacto → F 10-10 empate mostrado → G 0-0 válido; 0 errores consola/red, 0 writes a `master_games`), regresión full verde (preseason 15/15, tc0063 45/45, smoke 18/18, multileague 25/25, timezone 18/18, weekactions 27/27).
+
+## 🧭 Navegación multi-liga — Fix UX (2026-08-14)
+
+Corrección de 3 bugs en la navegación multi-liga detectados en QA manual. Detalle en `opencode/plans/gameguru-day-2026-08-13.md` (Sesión 11).
+
+- **Bug 1 — Botón "Unirse" invisible con ligas**: `HeroCard` (con el CTA "Unirse") solo se renderizaba cuando el usuario no tenía ninguna liga. `LeaguesSummary` no recibía `onJoinClick`.
+  - **Fix**: `LeaguesSummary` acepta `onJoinClick`; encabezado con `.sectionHeader` (título + botón "Unirse" en ambos estados 2 y 3 del dashboard). `HomeDashboard` pasa `onJoinClick` a ambas instancias.
+- **Bug 2 — Contexto de liga no persistido en memoria**: `persistedId` en `LeagueContext` se leía con `useMemo` una sola vez al montar. Al seleccionar otra liga, las rutas legacy (`#picks`, `#board`) seguían resolviendo la liga anterior.
+  - **Fix**: `persistedId` cambia a `useState` + `setPersistedId`. Se actualiza al resolver una liga desde la URL y al llamar `setActiveLeague`. Las rutas legacy ahora resuelven la liga recién seleccionada sin reload.
+- **Bug 3 — Entrada a liga desde dashboard no actualizaba URL**: `onEnterLeague` solo cambiaba `currentLeague` (legacy) y volvía a `#dashboard`, sin escribir la URL de la liga seleccionada.
+  - **Fix**: `onEnterLeague` en `App.jsx` ahora llama `setActiveLeague(lg.id, 'league')` además de `enterLeague(lg)`, escribiendo `#/league/:id`.
+- **Bug 4 — Selector de liga inestable en Topbar**: el `<select>` iteraba `myLeagues` en orden original (más reciente primero) y el valor dependía de `league.id`, que en repaints intermedios podía no actualizarse.
+  - **Fix**: lista ordenada alfabéticamente (`sortedLeagues`). Valor derivado de `route.leagueId` (URL) o `league.id`. Nuevo prop `route` en `Topbar`.
+
+### Verificación
+- `npm run build` ✅ (693.69 kB js, 204 modules).
+- `git diff --check` sin errores.
+- Round-trip de rutas `#/league/:id/picks` y `#/league/:id/standings` verificado.
+- Cambios previos del working tree preservados.

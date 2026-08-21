@@ -333,6 +333,7 @@ function AppShell({
         onCreateNew={() => openWizard()}
         onCreateSimulation={() => setShowSimulation(true)}
         onCreateTrainingCamp={() => openWizard('practice')}
+        route={route}
       />
 
       <main style={{ flex: 1, paddingBottom: '64px' }}>

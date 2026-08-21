@@ -2,7 +2,7 @@ import { useLanguage } from '../i18n/context'
 import LanguageSwitch from './LanguageSwitch'
 import styles from './Topbar.module.css'
 
-export default function Topbar({ user, league, myLeagues, onChangeLeague, onSelectLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation, onCreateTrainingCamp }) {
+export default function Topbar({ user, league, myLeagues, onChangeLeague, onSelectLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation, onCreateTrainingCamp, route }) {
   const { t } = useLanguage()
   const isPractice = league && (league.league_mode === 'practice' || league.simulation)
 
@@ -13,6 +13,19 @@ export default function Topbar({ user, league, myLeagues, onChangeLeague, onSele
     { id: 'league',      label: t('topbar.league') },
     ...(isPractice ? [{ id: 'training', label: '🎓 Training Camp' }] : []),
   ]
+
+  // Selector estable: ordena alfabético de la lista mostrada para que el
+  // índice en `<select>` no cambie entre renders, y deriva el valor
+  // seleccionado del leagueId de la URL (si existe) o del objeto liga.
+  const sortedLeagues = (myLeagues || [])
+    .filter(Boolean)
+    .slice()
+    .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'en', { sensitivity: 'base' }))
+  const selectedLeagueId = (() => {
+    if (league && league.id) return league.id
+    if (route && route.leagueId) return route.leagueId
+    return ''
+  })()
 
   // PLAN-LEAGUE-CONTEXT-01.1 §5: LeagueSelector mínimo. Cambia de liga
   // preservando la vista activa (el callback decide el `page` del URL).
@@ -56,11 +69,11 @@ export default function Topbar({ user, league, myLeagues, onChangeLeague, onSele
           <>
             <select
               className={styles.leagueSelect}
-              value={league.id}
+              value={selectedLeagueId}
               onChange={handleLeagueChange}
               title={t('topbar.switchLeague')}
             >
-              {(myLeagues || []).map(l => (
+              {sortedLeagues.map(l => (
                 <option key={l.id} value={l.id}>{l.name}</option>
               ))}
             </select>
