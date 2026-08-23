@@ -108,7 +108,7 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
           borderRadius: 'var(--r-xl)',
           padding: '1.5rem',
         }}>
-          <LeagueGamesManager league={league} />
+          <LeagueGamesManager league={league} user={user} />
         </div>
       )}
 
