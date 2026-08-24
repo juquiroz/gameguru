@@ -1,5 +1,6 @@
 import { useLanguage } from '../i18n/context'
 import LanguageSwitch from './LanguageSwitch'
+import { navigate, platformReconciliationRoute } from '../router/routes'
 import styles from './Topbar.module.css'
 
 export default function Topbar({ user, league, myLeagues, onChangeLeague, onSelectLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation, onCreateTrainingCamp, route }) {
@@ -60,6 +61,14 @@ export default function Topbar({ user, league, myLeagues, onChangeLeague, onSele
             onClick={() => onNavigate('superadmin')}
           >
             ⚙️ {t('topbar.admin')}
+          </button>
+        )}
+        {isSuperAdmin && (
+          <button
+            className={`${styles.navBtn} ${styles.adminNav} ${activePage === 'platformReconciliation' ? styles.active : ''}`}
+            onClick={() => navigate(platformReconciliationRoute())}
+          >
+            🔄 Reconciliation
           </button>
         )}
       </nav>

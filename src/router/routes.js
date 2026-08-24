@@ -36,6 +36,8 @@ export const platformLeagueRoute = (leagueId) => ({ type: 'platformLeague', leag
 // BUILD-SUP-003 — Platform User Management (read-only).
 export const platformUsersRoute = () => ({ type: 'platformUsers' })
 export const platformUserRoute = (userId) => ({ type: 'platformUser', userId })
+// BUILD-SUP-004 — Provider Reconciliation (dry run / apply).
+export const platformReconciliationRoute = () => ({ type: 'platformReconciliation' })
 
 // ¿el usuario es miembro de la liga? `myLeagues` viene de league_members
 // (fuente de datos en Supabase, RLS SELECT por membresía).
