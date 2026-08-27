@@ -272,7 +272,7 @@ td:first-child{position:sticky;left:0;background:#0D1525}
         <>
           {!weekLocked && (
             <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
-              📅 Todos los picks se bloquean 1h antes del primer partido
+              📅 Todos los picks se bloquean 5 min antes del primer partido
             </div>
           )}
 
