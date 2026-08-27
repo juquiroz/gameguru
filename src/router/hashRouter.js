@@ -24,6 +24,7 @@ export function normalizeHash(hash) {
 //   '#/platform/leagues/ID' → { type: 'platformLeague', leagueId: 'ID' } (SUP-002)
 //   '#/platform/users'      → { type: 'platformUsers' } (SUP-003)
 //   '#/platform/users/ID'   → { type: 'platformUser', userId: 'ID' } (SUP-003)
+//   '#/platform/reconciliation' → { type: 'platformReconciliation' } (SUP-004)
 //   '#picks' (legacy)       → { type: 'legacy', page: 'picks' }
 //   '#/league'              → { type: 'league', leagueId: null, page: 'dashboard' }
 //   '#/league/ABC123'       → { type: 'league', leagueId: 'ABC123', page: 'league' }
@@ -42,6 +43,7 @@ export function parseHash(hash) {
     if (parts[1] === 'users') return { type: 'platformUsers' }
     if (parts[1] === 'leagues' && parts[2]) return { type: 'platformLeague', leagueId: parts[2] }
     if (parts[1] === 'leagues') return { type: 'platformLeagues' }
+    if (parts[1] === 'reconciliation') return { type: 'platformReconciliation' }
     return { type: 'platform' }
   }
   if (parts[0] === 'league') {
@@ -62,6 +64,7 @@ export function buildHash(route) {
   if (route.type === 'platformLeague') return `#/platform/leagues/${route.leagueId}`
   if (route.type === 'platformUsers') return '#/platform/users'
   if (route.type === 'platformUser') return `#/platform/users/${route.userId}`
+  if (route.type === 'platformReconciliation') return '#/platform/reconciliation'
   if (route.type === 'legacy') return `#${route.page}`
   if (route.type === 'league') {
     if (!route.leagueId) return '#/league'

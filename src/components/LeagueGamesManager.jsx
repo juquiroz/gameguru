@@ -6,11 +6,12 @@ import { localTZOffset } from '../utils/dates'
 import TeamLogo from './TeamLogo'
 import GameTime from './GameTime'
 import ScoreEditor from './ScoreEditor'
+import SyncStatus from './SyncStatus'
 import styles from './LeagueGamesManager.module.css'
 
 const TOTAL_WEEKS = 18
 
-export default function LeagueGamesManager({ league }) {
+export default function LeagueGamesManager({ league, user }) {
   const [activeWeek, setActiveWeek] = useState(1)
   const [masterGames, setMasterGames] = useState([])
   const [leagueGames, setLeagueGames] = useState([])
@@ -207,6 +208,8 @@ export default function LeagueGamesManager({ league }) {
           >✕</button>
         </div>
       )}
+
+      {isOfficial && <SyncStatus league={league} user={user} onSyncComplete={() => loadData(true)} />}
 
       {/* Week tabs */}
       <div className="week-tabs" style={{ marginBottom: '1rem' }}>

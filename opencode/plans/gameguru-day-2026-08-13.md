@@ -97,3 +97,97 @@ Antes: `profiles.is_superadmin` + policy UPDATE de `profiles` con guarda solo de
 
 ### Pendientes
 - Ejecutar BUILD-SUP-003 cuando el usuario lo apruebe (migración + dominio + UI + API + harness + QA + docs).
+
+## Sesión 10e — 📋 BUILD-SUP-003 (Platform User Management, implementado)
+
+**Estado**: implementado y verificado. Detalle completo en `opencode/plans/superadmin.md` (sección SUP-003). **Sin commitear.**
+
+### Migración
+- **`supabase/008.0-profiles-created-at.sql`** aplicada vía Management API: `profiles.created_at timestamptz NOT NULL DEFAULT now()` + backfill desde `auth.users.created_at` (antes de `SET NOT NULL`) + índices `profiles_created_at_idx` y `league_members_user_id_idx`. Verificada: 207/207 profiles con `created_at`, 0 NULLs.
+
+### Dominio
+- **`src/domains/platform/models/users.js`** (lógica pura): `applyUserFilters`, `searchUsers`/`applyUserSearch` (UUID exacto o `ilike`), `assembleUserIndex` (4 reads planos client-side, sin embeds PostgREST porque la BD no tiene FK `profiles→league_members` ni `profiles→picks`), `matchUserFilters`, `computeUserList`, `computeLastActivity`/`isActiveUser`, `computeUserMetrics`, `computeUserHealth`, `buildLeagueParticipation`, `computeUserOverview`.
+
+### Rutas y gate
+- `platformUsersRoute()` → `#/platform/users`; `platformUserRoute(userId)` → `#/platform/users/:id` en `routes.js` + parse/build en `hashRouter.js`. Gate en `App.jsx` ampliado a 6 tipos de ruta plataforma con `isSuperAdmin` → `PlatformDenied`.
+
+### Páginas
+- **`src/pages/PlatformUsers.jsx`**: tabla Username/Platform Role/Registered/Leagues/Administers/Picks/Last Activity, 6 filtros + búsqueda por nombre o UUID, paginación size 10, clic en fila → detalle.
+- **`src/pages/PlatformUserDetail.jsx`**: statsBar (Ligas/Administra/Picks/Activo) + 4 cards (Overview, Platform Role, Actividad derivada, Health) + tabla de participación en ligas con links a `#/platform/leagues/:id`.
+- `PlatformOverview.jsx`: card "👥 Usuarios" con métricas + botones "Usuarios →".
+
+### API
+- **`platformApi.usersList`** en `src/supabase.js`: 4 reads planos (`Promise.all`) + ensamblado client-side. **Bug real**: `parseSimulation` booleanizaba `simulation` y el filtro se descartaba; fix: guardar el string crudo.
+- `userDetail`: profile por id + ligas que administra + membresías con `leagues(...)` embebido + picks timestamps.
+
+### QA
+- **Harness `regression.mjs` 533/533** (~98 tests SUP-003), `npm run build` ✅.
+- **`qa-platform-users.mjs` 36/36**: superadmin QA vía SQL + claim JWT; count exact UI=BD; filtros contra BD REAL 1:1 con service role; búsqueda por nombre y UUID; detalle vacío y con picks; mobile sin overflow; 0 errores consola/red/4xx/writes; usuario normal → PlatformDenied; cleanup con superadmin real intacto.
+- **Regresión E2E full verde**: platform 32/32, platform-leagues 31/31, scoreeditor 27/27, preseason 15/15, tc0063 45/45, smoke 18/18, multileague 25/25, timezone 18/18, weekactions 27/27.
+
+### Pendientes
+- Backlog plataforma restante (SUP-004/005/006/007) y gaps S1/S2.
+- Git a cargo del usuario.
+
+## Sesión 11 — 🧭 Fix UX multi-liga (14-ago)
+
+**Estado**: implementado y verificado. **Sin commitear.**
+
+### Contexto
+Se reportaron 3 bugs en la navegación multi-liga:
+1. El botón "Unirse" no aparecía cuando el usuario ya tenía ligas.
+2. Al seleccionar una liga nueva desde el dashboard, las vistas (Picks, Standings) seguían mostrando datos de la liga anterior.
+3. El selector de liga del Topbar no actualizaba correctamente al cambiar entre ligas.
+
+### Fix 1 — Botón "Unirse" visible con ligas
+- **`src/domains/dashboard/components/LeaguesSummary.jsx`**: nuevo prop `onJoinClick`; encabezado con `sectionHeader` (título + botón "Unirse").
+- **`src/domains/dashboard/components/HomeDashboard.jsx`**: pasa `onJoinClick` a ambas instancias de `LeaguesSummary`.
+- **`src/domains/dashboard/dashboard.module.css`**: nuevo `.sectionHeader` (flex, space-between).
+
+### Fix 2 — Contexto de liga persistido en memoria
+- **`src/league/context/LeagueContext.jsx`**: `persistedId` cambia de `useMemo` (read-only al montar) a `useState` + `setPersistedId`. Se actualiza al resolver una liga desde la URL y al llamar `setActiveLeague`. Esto hace que las rutas legacy (`#picks`, `#board`) resuelvan la liga recién seleccionada sin esperar reload.
+
+### Fix 3 — Entrada a liga desde dashboard actualiza URL
+- **`src/App.jsx`**: `onEnterLeague` en el `Home` ahora llama `setActiveLeague(lg.id, 'league')` además de `enterLeague(lg)`, escribiendo la URL `#/league/:id`.
+
+### Fix 4 — Selector de liga estable en Topbar
+- **`src/components/Topbar.jsx`**: nuevo prop `route`. Lista ordenada alfabéticamente (`sortedLeagues`). Valor del `<select>` derivado de `route.leagueId` (URL) o `league.id`, no del orden de `myLeagues`.
+- **`src/App.jsx`**: pasa `route` al `Topbar`.
+
+### QA
+- `npm run build` ✅ (693.69 kB js, 204 modules).
+- `git diff --check` sin errores.
+- Round-trip de rutas `#/league/:id/picks` y `#/league/:id/standings` verificado.
+- Cambios previos del working tree preservados.
+
+### Pendientes
+- QA manual en navegador con 2+ ligas reales (admin en ambas).
+- Git a cargo del usuario.
+
+---
+
+## Estado actual del proyecto (fin de sesión 14-ago)
+
+### Completado
+- Training Camp hasta BUILD-TC-006.3 (HOLD).
+- Preseason PS-001→PS-004 (GO/FROZEN).
+- Timezone por liga TZ-001→TZ-005.
+- Acciones de semana en Picks.
+- Roles de plataforma y RLS JWT (SUP-000/001).
+- Consola read-only de ligas (SUP-002).
+- Consola read-only de usuarios (SUP-003).
+- Fix ScoreEditor partial updates (BUILD-SCORE-001).
+- Fix UX multi-liga (join visible, contexto persistido, selector estable).
+
+### Pendiente inmediato
+- **SUP-004**: reconciliación Provider → `master_games` → `league_games`. Plan aprobado en sesión, requiere decisiones de PO/Arquitecto antes de BUILD (precedencia provider/manual, autorización de `platform_admin`, política de override, S1/S2, dependencia ESPN). **CRÍTICO** → BUILD con `gpt-5.6-luna` `high`.
+- **Backlog post-preseason**: provider real ESPN, sincronización automática de resultados, reconciliación manual vs provider, calificación de empates, LIVE-001.
+- **Backlog plataforma**: SUP-005 (Audit UI), SUP-006 (user.timezone), SUP-007 (live scores/ESPN).
+- **Gaps de seguridad**: S1 (tablas públicas `training_sessions`/`game_weeks`/`pick_submissions`), S2 (`league_roster_open` no aplicada), revocación de grants `anon` sobre `admin_audit_log`.
+- **Training Camp**: HOLD en BUILD-TC-006.3.
+
+### Working tree
+- Rama: `development`.
+- Último commit: `98e17b9` (12-ago).
+- Cambios sin commitear: SUP-000/001/002/003 + BUILD-SCORE-001 + fix UX multi-liga + migración 008.0 + docs.
+- Git a cargo del usuario.

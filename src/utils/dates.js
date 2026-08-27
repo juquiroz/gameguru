@@ -7,7 +7,7 @@ export const getWeekDeadline = (games) => {
     .filter(d => !isNaN(d))
     .sort((a, b) => a - b)
   if (times.length === 0) return null
-  return new Date(times[0].getTime() - 60 * 60 * 1000)
+  return new Date(times[0].getTime() - 5 * 60 * 1000)
 }
 
 export const getCurrentWeek = (games) => {

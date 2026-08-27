@@ -16,6 +16,7 @@ import PlatformLeagues from './pages/PlatformLeagues'
 import PlatformLeagueDetail from './pages/PlatformLeagueDetail'
 import PlatformUsers from './pages/PlatformUsers'
 import PlatformUserDetail from './pages/PlatformUserDetail'
+import PlatformReconciliation from './pages/PlatformReconciliation'
 import PlatformDenied from './components/PlatformDenied'
 import TrainingCamp from './pages/TrainingCamp'
 import Topbar      from './components/Topbar'
@@ -163,6 +164,7 @@ function AppShell({
     platformLeague: 'Detalle de Liga',
     platformUsers: 'Usuarios de Plataforma',
     platformUser: 'Detalle de Usuario',
+    platformReconciliation: 'Provider Reconciliation',
   }
 
   // Sync URL with active page (flujo legacy: #picks, #board, ...)
@@ -267,7 +269,8 @@ function AppShell({
       route.type === 'platformLeagues' ||
       route.type === 'platformLeague' ||
       route.type === 'platformUsers' ||
-      route.type === 'platformUser'
+      route.type === 'platformUser' ||
+      route.type === 'platformReconciliation'
     )) {
       if (!isSuperAdmin) return <PlatformDenied onNavigate={handleNavigate} />
       if (route.type === 'superadmin') return <SuperAdmin />
@@ -275,6 +278,7 @@ function AppShell({
       if (route.type === 'platformLeague') return <PlatformLeagueDetail leagueId={route.leagueId} />
       if (route.type === 'platformUser') return <PlatformUserDetail userId={route.userId} />
       if (route.type === 'platformUsers') return <PlatformUsers />
+      if (route.type === 'platformReconciliation') return <PlatformReconciliation />
       return <PlatformLeagues />
     }
 
@@ -333,6 +337,7 @@ function AppShell({
         onCreateNew={() => openWizard()}
         onCreateSimulation={() => setShowSimulation(true)}
         onCreateTrainingCamp={() => openWizard('practice')}
+        route={route}
       />
 
       <main style={{ flex: 1, paddingBottom: '64px' }}>
