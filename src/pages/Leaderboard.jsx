@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
 import { NFL_WEEKS } from '../data/nflData'
-import { isWeekLocked } from '../utils/dates'
+import { isWeekLocked, getCurrentWeek } from '../utils/dates'
 import { calcStandings } from '../utils/standings'
 import LeaderboardTable from '../components/LeaderboardTable'
 import LeagueIdentity from '../components/LeagueIdentity'
@@ -13,6 +13,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
     return w.length > 0 ? Math.max(...w) : 1
   })
   const [weeks, setWeeks] = useState([])
+  const [allGames, setAllGames] = useState([])
   const [rows, setRows] = useState([])
   const [members, setMembers] = useState([])
   const [weekFinished, setWeekFinished] = useState(false)
@@ -21,10 +22,11 @@ export default function Leaderboard({ user, league, onNavigate }) {
   const [msg, setMsg] = useState(null)
   const isGeneral = activeWeek === 'all'
 
-  // Sync activeWeek when weeks load
+  // Sync activeWeek to current week when data loads
   useEffect(() => {
     if (weeks.length > 0 && !weeks.includes(activeWeek)) {
-      setActiveWeek(Math.max(...weeks))
+      const current = getCurrentWeek(allGames)
+      setActiveWeek(current || Math.max(...weeks))
     }
   }, [weeks])
 
@@ -72,6 +74,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
     // Build week list
     const uniqueWeeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b)
     setWeeks(uniqueWeeks)
+    setAllGames(games)
 
     // Compute which weeks have locked games
     const locked = uniqueWeeks.filter(w => {

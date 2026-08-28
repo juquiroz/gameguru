@@ -3,7 +3,7 @@ import GameCard from '../components/GameCard'
 import LeagueIdentity from '../components/LeagueIdentity'
 import { NFL_WEEKS } from '../data/nflData'
 import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
-import { isWeekLocked, isGameLocked } from '../utils/dates'
+import { isWeekLocked, isGameLocked, getCurrentWeek } from '../utils/dates'
 import { getLeagueTimezone } from '../domains/league'
 import { canManageLeague } from '../domains/platform'
 import { usePicks } from '../hooks/usePicks'
@@ -85,12 +85,13 @@ export default function Picks({ user, league, onNavigate }) {
     ? [...new Set(leagueGames.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
     : Object.keys(NFL_WEEKS).map(Number)
 
-  // When dynamic games load, sync to latest available week
+  // When dynamic games load, sync to current week
   useEffect(() => {
     if (useDynamic && weeks.length > 0) {
       setActiveWeek(prev => {
-        if (!weeks.includes(prev)) return Math.max(...weeks)
-        return prev
+        if (weeks.includes(prev)) return prev
+        const current = getCurrentWeek(leagueGames)
+        return current || Math.max(...weeks)
       })
     }
   }, [loadingGames])

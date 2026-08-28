@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { leagueGamesApi, picksApi, profilesApi } from '../supabase'
 import { leaguesApi } from '../supabase'
-import { isGameLocked } from '../utils/dates'
+import { isGameLocked, getCurrentWeek } from '../utils/dates'
 import TeamLogo from '../components/TeamLogo'
 
 const TOTAL_WEEKS = 18
@@ -37,12 +37,13 @@ export default function PublicPicks({ user, league }) {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Sync activeWeek when dynamic games load
+  // Sync activeWeek to current week when games load
   useEffect(() => {
     if (games.length > 0) {
       const weeks = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
       if (weeks.length > 0 && !weeks.includes(activeWeek)) {
-        setActiveWeek(Math.max(...weeks))
+        const current = getCurrentWeek(games)
+        setActiveWeek(current || Math.max(...weeks))
       }
     }
   }, [games, activeWeek])
