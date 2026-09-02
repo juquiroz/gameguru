@@ -392,8 +392,9 @@ export function useTrainingSession({ leagueId, userId, league }) {
   const remainingMs = event?.start_at ? new Date(event.start_at) - now : null
 
   const profileMap = {}
-  profiles.forEach(p => { profileMap[p.id] = p.username || p.id.slice(0, 8) })
-  // BUILD-AUTH-NICK-001: el nickname POR LIGA manda sobre profiles.username.
+  // BUILD-AUTH-NICK-001: en pantallas de liga el nickname POR LIGA es la
+  // única identidad pública; el username global puede ser el prefijo de un
+  // email y NUNCA debe mostrarse a otros jugadores.
   members.forEach(m => {
     if (m.nickname && String(m.nickname).trim()) profileMap[m.user_id] = m.nickname.trim()
   })
@@ -404,7 +405,7 @@ export function useTrainingSession({ leagueId, userId, league }) {
   const participants = decorateParticipants(members, {}).map(m => ({
     ...m,
     id: m.user_id,
-    username: profileMap[m.user_id] || m.user_id.slice(0, 8),
+    username: profileMap[m.user_id] || 'Jugador',
   }))
 
   const openLobby = async () => {

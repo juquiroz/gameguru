@@ -39,7 +39,7 @@ export default function Auth({ onAuth }) {
 
     const { error, data } = tab === 'login'
       ? await onAuth.signIn(email, password)
-      : await onAuth.signUp(email, password, realName || email.split('@')[0])
+      : await onAuth.signUp(email, password, realName)
 
     setLoading(false)
 
@@ -122,6 +122,7 @@ export default function Auth({ onAuth }) {
               onKeyDown={handleKey}
               autoComplete="name"
             />
+            <div className={styles.hint}>{t('auth.realNameHint')}</div>
           </div>
         )}
 

@@ -23,18 +23,20 @@ export function useAuth() {
   }, [])
 
   const signUp = useCallback(async (email, password, realName) => {
-    const { data, error } = await authApi.signUp(email, password, {
-      realName: realName || email.split('@')[0],
-    })
+    // real_name SOLO si el usuario lo escribió explícitamente: nunca se
+    // deriva del email (un email guardado como nombre se mostraría a todos
+    // los jugadores al revelar la liga).
+    const meta = realName ? { real_name: realName } : {}
+    const { data, error } = await authApi.signUp(email, password, meta)
     if (error) return { error }
 
     // Fallback defensivo idempotente: el trigger handle_new_user crea el
     // perfil con real_name/avatar; este upsert solo refuerza por si el trigger
     // no corre en el entorno. No setea nickname: es por liga.
-    if (data.user) {
+    if (data.user && realName) {
       await profilesApi.upsert({
         id: data.user.id,
-        real_name: realName || email.split('@')[0],
+        real_name: realName,
       })
     }
     return { data }

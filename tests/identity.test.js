@@ -2,6 +2,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import {
   IDENTITY_FALLBACK,
+  isEmailLike,
   isNicknameUnique,
   resolveDisplayName,
   buildLeagueIdentityMap,
@@ -16,10 +17,16 @@ describe('Identity — nickname POR LIGA + reveal', () => {
     )
   })
 
-  it('sin nickname cae al username global como fallback', () => {
+  it('sin nickname en una liga usa el fallback (nunca cae al username global)', () => {
     assert.strictEqual(
       resolveDisplayName({ nickname: null, username: 'bruce', revealed: false }),
-      'bruce'
+      IDENTITY_FALLBACK
+    )
+    // el username global puede ser el prefijo de un email: nunca debe usarse
+    // como identidad pública en pantallas de liga.
+    assert.strictEqual(
+      resolveDisplayName({ nickname: null, username: 'jquiroz', revealed: false }),
+      IDENTITY_FALLBACK
     )
   })
 
@@ -41,6 +48,31 @@ describe('Identity — nickname POR LIGA + reveal', () => {
     )
   })
 
+  it('NUNCA muestra un email como identidad: reveal con real_name tipo email usa solo el nick', () => {
+    assert.strictEqual(
+      resolveDisplayName({ nickname: 'ElCrack99', realName: 'juan@example.com', revealed: true }),
+      'ElCrack99'
+    )
+    assert.strictEqual(
+      resolveDisplayName({ nickname: null, realName: 'juan@example.com', revealed: true }),
+      IDENTITY_FALLBACK
+    )
+    assert.strictEqual(
+      resolveDisplayName({ nickname: null, realName: 'juan@example.com', revealed: false }),
+      IDENTITY_FALLBACK
+    )
+  })
+
+  it('isEmailLike detecta correos válidos y no confunde nombres', () => {
+    assert.strictEqual(isEmailLike('juan@example.com'), true)
+    assert.strictEqual(isEmailLike('a.b_c-d@sub.example.co'), true)
+    assert.strictEqual(isEmailLike('   juan@example.com '), true)
+    assert.strictEqual(isEmailLike('José Quiroz'), false)
+    assert.strictEqual(isEmailLike('jquiroz'), false)
+    assert.strictEqual(isEmailLike(''), false)
+    assert.strictEqual(isEmailLike(null), false)
+  })
+
   it('buildLeagueIdentityMap arma display por userId', () => {
     const members = [
       { user_id: 'u1', nickname: 'hulk' },
@@ -52,12 +84,19 @@ describe('Identity — nickname POR LIGA + reveal', () => {
     }
     const notRevealed = buildLeagueIdentityMap(members, profiles, { revealed: false })
     assert.strictEqual(notRevealed.u1.display, 'hulk')
-    assert.strictEqual(notRevealed.u2.display, 'taskmaster')
+    assert.strictEqual(notRevealed.u2.display, IDENTITY_FALLBACK)
     assert.strictEqual(notRevealed.u1.realName, 'Hulk Hogan')
 
     const revealed = buildLeagueIdentityMap(members, profiles, { revealed: true })
     assert.strictEqual(revealed.u1.display, 'Hulk Hogan (hulk)')
-    assert.strictEqual(revealed.u2.display, 'taskmaster')
+    assert.strictEqual(revealed.u2.display, IDENTITY_FALLBACK)
+  })
+
+  it('buildLeagueIdentityMap niega el real_name tipo email incluso revelado', () => {
+    const members = [{ user_id: 'u1', nickname: 'hulk' }]
+    const profiles = { u1: { username: 'jquiroz', real_name: 'jquiroz@example.com' } }
+    const revealed = buildLeagueIdentityMap(members, profiles, { revealed: true })
+    assert.strictEqual(revealed.u1.display, 'hulk')
   })
 
   it('isNicknameUnique: vacío → required; repetido en la liga → taken; libre → ok', () => {

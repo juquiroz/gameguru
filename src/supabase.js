@@ -12,11 +12,11 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ─── Auth helpers ───────────────────────────────────────────────────────────
 export const authApi = {
-  signUp: (email, password, { username, realName } = {}) =>
+  signUp: (email, password, meta = {}) =>
     supabase.auth.signUp({
       email,
       password,
-      options: { data: { username, realName } },
+      options: { data: meta },
     }),
 
   signIn: (email, password) =>

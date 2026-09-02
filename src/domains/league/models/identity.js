@@ -1,5 +1,10 @@
 export const IDENTITY_FALLBACK = 'Jugador'
 
+export const isEmailLike = (value) => {
+  if (!value) return false
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim())
+}
+
 export const isNicknameUnique = (members, nickname, userId) => {
   if (!nickname || !String(nickname).trim()) return { unique: false, error: 'nickname_required' }
   const normalized = String(nickname).trim().toLowerCase()
@@ -11,18 +16,23 @@ export const isNicknameUnique = (members, nickname, userId) => {
   return clash ? { unique: false, error: 'nickname_taken' } : { unique: true, error: null }
 }
 
-export const resolveDisplayName = ({ nickname, realName, username, revealed = false }) => {
+export const resolveDisplayName = ({ nickname, realName, revealed = false }) => {
   const nick = nickname && String(nickname).trim() ? String(nickname).trim() : null
-  const user = username && String(username).trim() ? String(username).trim() : null
-  const real = realName && String(realName).trim() ? String(realName).trim() : null
+  // real_name NUNCA se muestra si parece un email: un correo es contacto,
+  // no identidad, y quedaría expuesto a todos al revelar la liga.
+  const real = !isEmailLike(realName) && String(realName || '').trim()
+    ? String(realName).trim()
+    : null
 
   if (revealed) {
     if (real && nick) return `${real} (${nick})`
     if (real) return real
     if (nick) return nick
-    return user || IDENTITY_FALLBACK
+    return IDENTITY_FALLBACK
   }
-  return nick || user || IDENTITY_FALLBACK
+  // En pantallas de liga el display es el nick de esa liga; nunca se cae a
+  // username global (que para signups por email puede ser el prefijo del correo).
+  return nick || IDENTITY_FALLBACK
 }
 
 export const buildLeagueIdentityMap = (members = [], profilesById = {}, { revealed = false } = {}) => {
@@ -36,7 +46,6 @@ export const buildLeagueIdentityMap = (members = [], profilesById = {}, { reveal
       display: resolveDisplayName({
         nickname: m.nickname,
         realName: profile.real_name,
-        username: profile.username,
         revealed,
       }),
     }

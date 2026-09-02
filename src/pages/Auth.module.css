@@ -104,3 +104,10 @@
   height: 1px;
   background: var(--border);
 }
+
+.hint {
+  margin-top: 6px;
+  font-size: .72rem;
+  line-height: 1.35;
+  color: var(--text3);
+}

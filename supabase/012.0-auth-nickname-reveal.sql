@@ -17,9 +17,15 @@
 --   4) `leagues.finished` / `leagues.revealed` → ciclo de revelación admin:
 --      "Finalizar liga" (finished=true) habilita "Revelar nombres"
 --      (revealed=true, irreversible; solo si finished=true).
---   5) `handle_new_user` reescrito: en signup email usa el email como
---      `real_name` de respaldo; en Google toma `name`/`full_name`/`avatar_url`
---      de `raw_user_meta_data`.
+--   5) `handle_new_user` reescrito: la identidad real (`real_name`) se toma
+--      SOLO de meta explícita (`real_name`/`realName`/`name`/`full_name`),
+--      NUNCA del email (un correo como nombre real quedaría visible a todos
+--      los jugadores tras el reveal); en Google usa name/full_name/avatar_url
+--      de `raw_user_meta_data`. El username global solo se guarda si el
+--      usuario lo escribió (nunca el prefijo del email).
+--   6) Backfill de limpieza: se anulan real_name con apariencia de email y
+--      usernames que repitan el prefijo del email (datos creados por el
+--      fallback viejo).
 --
 -- Sin cambios en: scores, game_time, locking, picks, RLS de platform.
 -- ============================================================================
@@ -95,7 +101,7 @@ CREATE TRIGGER trg_protect_league_reveal_lifecycle
   BEFORE UPDATE OF finished, revealed ON public.leagues
   FOR EACH ROW EXECUTE FUNCTION public.protect_league_reveal_lifecycle();
 
--- ── 4) handle_new_user: identidad real desde email o Google ─────────────────
+-- ── 5) handle_new_user: identidad real explícita (NUNCA email) ──────────────
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -108,21 +114,25 @@ DECLARE
   v_avatar    text := NULL;
   v_username  text := NULL;
 BEGIN
-  -- Google OAuth pone name/full_name/picture en raw_user_meta_data.
+  -- Identidad real global SOLO desde datos explícitos del usuario. Nunca se
+  -- deriva de NEW.email: un correo es contacto, no identidad, y quedaría
+  -- expuesto a todos los jugadores cuando el admin revela la liga.
   v_real_name := COALESCE(
+    NULLIF(v_meta ->> 'real_name', ''),
+    NULLIF(v_meta ->> 'realName', ''),
     NULLIF(v_meta ->> 'name', ''),
-    NULLIF(v_meta ->> 'full_name', ''),
-    NEW.email
+    NULLIF(v_meta ->> 'full_name', '')
   );
+  -- Neutralización defensiva: cualquier real_name con forma de email se anula.
+  IF v_real_name IS NOT NULL AND v_real_name LIKE '%@%' THEN
+    v_real_name := NULL;
+  END IF;
+
   v_avatar := NULLIF(v_meta ->> 'avatar_url', NULLIF(v_meta ->> 'picture', ''));
 
-  -- username global = nick solicitado explícitamente, o el nombre de Google
-  -- como respaldo humanizado; nunca la identidad real como nick de liga.
-  v_username := COALESCE(
-    NULLIF(v_meta ->> 'username', ''),
-    NULLIF(v_meta ->> 'name', ''),
-    split_part(NEW.email, '@', 1)
-  );
+  -- username global = SOLO si el usuario lo escribió explícitamente; nunca el
+  -- prefijo de un email como identidad pública.
+  v_username := NULLIF(v_meta ->> 'username', '');
 
   INSERT INTO public.profiles (id, username, real_name, avatar_url)
   VALUES (NEW.id, v_username, v_real_name, v_avatar)
@@ -132,3 +142,17 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- ── 6) Backfill: limpieza de identidades tipo email ─────────────────────────
+-- Datos creados por el fallback viejo (real_name = email, username = prefijo).
+-- Un email jamás debe quedar como identidad; se anula para que nunca se
+-- muestre a otros jugadores (ni en lists ni tras el reveal).
+UPDATE public.profiles
+   SET real_name = NULL
+ WHERE real_name LIKE '%@%';
+
+UPDATE public.profiles p
+   SET username = NULL
+  FROM auth.users u
+ WHERE u.id = p.id
+   AND p.username = split_part(u.email, '@', 1);

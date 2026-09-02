@@ -17,6 +17,7 @@ export {
 } from './models/timezone'
 export {
   IDENTITY_FALLBACK,
+  isEmailLike,
   isNicknameUnique,
   resolveDisplayName,
   buildLeagueIdentityMap,
