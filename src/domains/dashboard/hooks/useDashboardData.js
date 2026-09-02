@@ -4,6 +4,7 @@ import { useLeagueData } from './useLeagueData'
 import { getCurrentWeek, getWeekDeadline, isWeekLocked } from '../../../utils/dates'
 import { calcStandings } from '../../../utils/standings'
 import { canManageLeague } from '../../platform'
+import { buildLeagueIdentityMap } from '../../league/models/identity'
 
 const SEASON = '2026'
 const SPORT = 'NFL'
@@ -98,22 +99,31 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
     if (!contextLeague?.id || lastLockedWeek == null) return
     let active = true
     ;(async () => {
-      const lbRes = await picksApi.getLeaderboard(contextLeague.id, lastLockedWeek)
+      const [lbRes, membersRes] = await Promise.all([
+        picksApi.getLeaderboard(contextLeague.id, lastLockedWeek),
+        leaguesApi.getMembers(contextLeague.id),
+      ])
       const allPicks = lbRes.error ? null : lbRes.data
-      let profileMap = {}
+      let displayMap = {}
       const userIds = allPicks ? [...new Set(allPicks.map(p => p.user_id))] : []
       if (userIds.length) {
         const { data } = await profilesApi.getMany(userIds)
-        ;(data || []).forEach(p => { profileMap[p.id] = p.username })
+        const profilesById = {}
+        ;(data || []).forEach(p => { profilesById[p.id] = p })
+        const identityMap = buildLeagueIdentityMap(membersRes.data || [], profilesById, {
+          revealed: !!(contextLeague && contextLeague.revealed),
+        })
+        displayMap = {}
+        for (const uid of Object.keys(identityMap)) displayMap[uid] = identityMap[uid].display
       }
       const scored = (sourceGames || [])
         .filter(g => g.week === lastLockedWeek && g.finished && g.result)
       if (active) {
-        setStandings(allPicks && scored.length ? calcStandings(allPicks, scored, profileMap) : [])
+        setStandings(allPicks && scored.length ? calcStandings(allPicks, scored, displayMap) : [])
       }
     })()
     return () => { active = false }
-  }, [contextLeague?.id, lastLockedWeek, sourceGames])
+  }, [contextLeague?.id, lastLockedWeek, sourceGames, contextLeague?.revealed])
 
   // PRIVACY-001: contador ANÓNIMO de participación (solo admin, semana abierta).
   // Muestra "n de total" sin identidades. Visible aunque nadie haya enviado aún.

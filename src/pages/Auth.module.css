@@ -64,3 +64,43 @@
   transition: all .2s;
 }
 .tabBtn.active { background: var(--surface2); color: var(--accent); }
+
+.googleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  width: 100%;
+  padding: .7rem 1rem;
+  margin-bottom: .5rem;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: var(--r-sm);
+  font-family: 'Barlow', sans-serif;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.googleBtn:hover { border-color: var(--accent); color: var(--accent); }
+.googleBtn:disabled { opacity: .6; cursor: default; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: .25rem 0 1.25rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .75rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}

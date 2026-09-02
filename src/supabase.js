@@ -12,11 +12,21 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ─── Auth helpers ───────────────────────────────────────────────────────────
 export const authApi = {
-  signUp: (email, password) =>
-    supabase.auth.signUp({ email, password }),
+  signUp: (email, password, { username, realName } = {}) =>
+    supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username, realName } },
+    }),
 
   signIn: (email, password) =>
     supabase.auth.signInWithPassword({ email, password }),
+
+  signInWithGoogle: (redirectTo) =>
+    supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: redirectTo || window.location.origin + window.location.pathname },
+    }),
 
   signOut: () =>
     supabase.auth.signOut(),
@@ -51,8 +61,23 @@ export const leaguesApi = {
   getMembers: (leagueId) =>
     supabase
       .from('league_members')
-      .select('user_id, role')
+      .select('user_id, role, nickname')
       .eq('league_id', leagueId),
+
+  getLeadLifecycle: (leagueId) =>
+    supabase
+      .from('leagues')
+      .select('finished, revealed')
+      .eq('id', leagueId)
+      .maybeSingle(),
+
+  updateLeadLifecycle: (leagueId, patch) =>
+    supabase
+      .from('leagues')
+      .update(patch)
+      .eq('id', leagueId)
+      .select('finished, revealed')
+      .maybeSingle(),
 
   delete: async (leagueId) => {
     console.log('leagues.delete – inicio, leagueId:', leagueId)
@@ -83,10 +108,10 @@ export const leaguesApi = {
 
 // ─── League Members helpers ─────────────────────────────────────────────────
 export const membersApi = {
-  join: (leagueId, userId, role = 'member') =>
+  join: (leagueId, userId, role = 'member', nickname) =>
     supabase
       .from('league_members')
-      .upsert({ league_id: leagueId, user_id: userId, role })
+      .upsert({ league_id: leagueId, user_id: userId, role, nickname })
       .select()
       .single(),
 
@@ -99,6 +124,28 @@ export const membersApi = {
       .select('role')
       .eq('league_id', leagueId)
       .eq('user_id', userId)
+      .maybeSingle(),
+
+  // BUILD-AUTH-NICK-001: membership con el nickname del usuario (para la
+  // captura única al primer acceso de la liga).
+  getMyMembership: (leagueId, userId) =>
+    supabase
+      .from('league_members')
+      .select('role, nickname')
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .maybeSingle(),
+
+  // BUILD-AUTH-NICK-001: fija el nickname del usuario en una liga (captura
+  // única). Solo se permite cuando el nickname actual es NULL (legacy o
+  // recién creado); una vez fijado, el trigger de BD lo vuelve inmutable.
+  setNickname: (leagueId, userId, nickname) =>
+    supabase
+      .from('league_members')
+      .update({ nickname })
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .select('role, nickname')
       .maybeSingle(),
 }
 
@@ -169,7 +216,7 @@ export const profilesApi = {
   getMany: (userIds) =>
     supabase
       .from('profiles')
-      .select('id, username')
+      .select('id, username, real_name, avatar_url')
       .in('id', userIds),
 }
 

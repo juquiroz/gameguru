@@ -27,6 +27,7 @@ import TrainingCampSetupModal from './domains/training/components/TrainingCampSe
 
 import { LeagueProvider, useLeagueContext } from './league/context/LeagueContext'
 import { LeagueRoute } from './league/LeagueRoute'
+import NicknameModal from './league/components/NicknameModal'
 import { resolveForView, navigate, LEGACY_REDIRECTABLE } from './router/routes'
 
 export default function App() {
@@ -48,7 +49,7 @@ function AppInner() {
   const [lobbyVersion, setLobbyVersion] = useState(0)
   const { t } = useLanguage()
 
-  const { user, loading, signIn, signUp, signOut } = useAuth()
+  const { user, loading, signIn, signUp, signInWithGoogle, signOut } = useAuth()
   const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
   const leaguesState = useLeague(user)
 
@@ -82,7 +83,7 @@ function AppInner() {
   }
 
   if (!user) {
-    return <Auth onAuth={{ signIn, signUp }} />
+    return <Auth onAuth={{ signIn, signUp, signInWithGoogle }} />
   }
 
   return (
@@ -342,6 +343,23 @@ function AppShell({
 
       <main style={{ flex: 1, paddingBottom: '64px' }}>
         {renderPage()}
+        {/* BUILD-AUTH-NICK-001: captura única del nickname al entrar a una liga.
+            El modal se auto-oculta si el usuario ya tiene nickname o la liga
+            está finalizada. Solo aplica a rutas de liga (URL o legacy). */}
+        {route && route.type === 'league' && route.leagueId && (
+          <NicknameModal
+            key={route.leagueId}
+            league={routeLeague || { id: route.leagueId }}
+            userId={user.id}
+          />
+        )}
+        {!route && currentLeague && activePage !== 'dashboard' && (
+          <NicknameModal
+            key={`${currentLeague.id}-${activePage}`}
+            league={currentLeague}
+            userId={user.id}
+          />
+        )}
       </main>
 
       <BottomNav

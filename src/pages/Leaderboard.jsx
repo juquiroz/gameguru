@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
+import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
 import { NFL_WEEKS } from '../data/nflData'
 import { isWeekLocked, getCurrentWeek } from '../utils/dates'
 import { calcStandings } from '../utils/standings'
 import LeaderboardTable from '../components/LeaderboardTable'
 import LeagueIdentity from '../components/LeagueIdentity'
 import { canManageLeague } from '../domains/platform'
+import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
 
 export default function Leaderboard({ user, league, onNavigate }) {
   const [activeWeek, setActiveWeek] = useState(() => {
@@ -16,11 +17,13 @@ export default function Leaderboard({ user, league, onNavigate }) {
   const [allGames, setAllGames] = useState([])
   const [rows, setRows] = useState([])
   const [members, setMembers] = useState([])
+  const [memberUserIds, setMemberUserIds] = useState([])
   const [weekFinished, setWeekFinished] = useState(false)
   const [lockedWeeks, setLockedWeeks] = useState([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
   const isGeneral = activeWeek === 'all'
+  const { displayMap } = useLeagueIdentity(league, memberUserIds)
 
   // Sync activeWeek to current week when data loads
   useEffect(() => {
@@ -29,14 +32,6 @@ export default function Leaderboard({ user, league, onNavigate }) {
       setActiveWeek(current || Math.max(...weeks))
     }
   }, [weeks])
-
-  const loadProfiles = useCallback(async (userIds) => {
-    if (!userIds.length) return {}
-    const { data } = await profilesApi.getMany(userIds)
-    const map = {}
-    if (data) data.forEach(p => { map[p.id] = p.username })
-    return map
-  }, [])
 
   const loadStandings = useCallback(async () => {
     if (!league) return
@@ -47,13 +42,14 @@ export default function Leaderboard({ user, league, onNavigate }) {
     const { data: memberData } = await leaguesApi.getMembers(league.id)
     if (memberData) {
       const userIds = [...new Set(memberData.map(m => m.user_id))]
-      const profileMap = await loadProfiles(userIds)
+      setMemberUserIds(userIds)
       setMembers(memberData.map(m => ({
         userId: m.user_id,
-        username: profileMap[m.user_id] || m.user_id.slice(0, 8),
+        username: displayMap[m.user_id] || m.user_id.slice(0, 8),
         role: m.role,
       })))
     } else {
+      setMemberUserIds([])
       setMembers([])
     }
 
@@ -108,8 +104,8 @@ export default function Leaderboard({ user, league, onNavigate }) {
 
       const finishedGames = games.filter(g => g.finished && g.result)
       const pickUserIds = [...new Set(allPicks.map(p => p.user_id))]
-      const profileMap = await loadProfiles(pickUserIds)
-      const sorted = calcStandings(allPicks, finishedGames, profileMap)
+      setMemberUserIds(prev => [...new Set([...prev, ...pickUserIds])])
+      const sorted = calcStandings(allPicks, finishedGames, displayMap)
       setRows(sorted)
       setWeekFinished(allWeeksFinished)
       setLoading(false)
@@ -133,11 +129,11 @@ export default function Leaderboard({ user, league, onNavigate }) {
     }
 
     const pickUserIds = [...new Set(picks.map(p => p.user_id))]
-    const profileMap = await loadProfiles(pickUserIds)
-    const sorted = calcStandings(picks, scoredGames, profileMap)
+    setMemberUserIds(prev => [...new Set([...prev, ...pickUserIds])])
+    const sorted = calcStandings(picks, scoredGames, displayMap)
     setRows(sorted)
     setLoading(false)
-  }, [league, activeWeek, loadProfiles])
+  }, [league, activeWeek, displayMap])
 
   useEffect(() => { loadStandings() }, [loadStandings])
 

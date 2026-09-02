@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { leagueGamesApi, picksApi, profilesApi } from '../supabase'
+import { leagueGamesApi, picksApi } from '../supabase'
 import { leaguesApi } from '../supabase'
 import { isGameLocked, getCurrentWeek } from '../utils/dates'
 import TeamLogo from '../components/TeamLogo'
+import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
 
 const TOTAL_WEEKS = 18
 
@@ -11,8 +12,9 @@ export default function PublicPicks({ user, league }) {
   const [games, setGames] = useState([])
   const [picks, setPicks] = useState([])
   const [members, setMembers] = useState([])
-  const [profileMap, setProfileMap] = useState({})
   const [loading, setLoading] = useState(true)
+  const memberUserIds = members.map(m => m.user_id)
+  const { displayMap } = useLeagueIdentity(league, memberUserIds)
 
   const loadData = useCallback(async () => {
     if (!league) return
@@ -24,14 +26,7 @@ export default function PublicPicks({ user, league }) {
     ])
     if (gamesRes.data) setGames(gamesRes.data)
     if (picksRes.data) setPicks(picksRes.data)
-    if (membersRes.data) {
-      setMembers(membersRes.data)
-      const userIds = [...new Set(membersRes.data.map(m => m.user_id))]
-      const { data: profiles } = await profilesApi.getMany(userIds)
-      const map = {}
-      if (profiles) profiles.forEach(p => { map[p.id] = p.username || p.id.slice(0, 8) })
-      setProfileMap(map)
-    }
+    if (membersRes.data) setMembers(membersRes.data)
     setLoading(false)
   }, [league])
 
@@ -159,7 +154,7 @@ export default function PublicPicks({ user, league }) {
                 </thead>
                 <tbody>
                   {sortedMembers.map(m => {
-                    const username = profileMap[m.user_id] || m.user_id.slice(0, 8)
+                    const username = displayMap[m.user_id] || m.user_id.slice(0, 8)
                     const row = buildRow(m.user_id)
                     return (
                       <tr key={m.user_id} style={{ borderBottom: '1px solid var(--bg3)' }}>

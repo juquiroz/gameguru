@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import GameCard from '../components/GameCard'
 import LeagueIdentity from '../components/LeagueIdentity'
 import { NFL_WEEKS } from '../data/nflData'
-import { leagueGamesApi, picksApi, leaguesApi, profilesApi } from '../supabase'
+import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
 import { isWeekLocked, isGameLocked, getCurrentWeek } from '../utils/dates'
 import { getLeagueTimezone } from '../domains/league'
 import { canManageLeague } from '../domains/platform'
+import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
 import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
@@ -16,6 +17,8 @@ export default function Picks({ user, league, onNavigate }) {
   })
   const [leagueGames, setLeagueGames] = useState(null)
   const [loadingGames, setLoadingGames] = useState(false)
+  const [memberUserIds, setMemberUserIds] = useState([])
+  const { displayMap } = useLeagueIdentity(league, memberUserIds)
 
   const { picks, submitted, saving, selectPick, submitPicks } = usePicks(user, league, activeWeek)
 
@@ -122,9 +125,8 @@ export default function Picks({ user, league, onNavigate }) {
     const weekPicks = picksRes.data || []
 
     const userIds = [...new Set(memberList.map(m => m.user_id))]
-    const { data: profiles } = await profilesApi.getMany(userIds)
-    const profileMap = {}
-    if (profiles) profiles.forEach(p => { profileMap[p.id] = p.username || p.id.slice(0, 8) })
+    setMemberUserIds(prev => [...new Set([...prev, ...userIds])])
+    const identityMap = displayMap
 
     const teamEmoji = (abbr) => {
       const map = { KC: '🏈', BAL: '🦅', DAL: '⭐', PHI: '🦅', SF: '🔴', SEA: '🌊', BUF: '🐃', NYJ: '✈️', MIA: '🐬', NE: '⚓', GB: '🧀', CHI: '🐻', LAR: '🐏', DET: '🦁', CIN: '🐯', PIT: '🔨', MIN: '⚔️', NYG: '🏈', TB: '🏴‍☠️', ATL: '🦅', CAR: '🐈', NO: '⚜️', ARI: '🏜️', LAC: '⚡', LV: '☠️', DEN: '🐴', HOU: '🤠', IND: '🐎', JAX: '🐆', TEN: '⚡', CLE: '🐶', WAS: '🦅' }
@@ -166,7 +168,7 @@ export default function Picks({ user, league, onNavigate }) {
 
     let memberRows = ''
     for (const s of scores) {
-      const username = profileMap[s.member.user_id] || s.member.user_id.slice(0, 8)
+      const username = identityMap[s.member.user_id] || s.member.user_id.slice(0, 8)
       const isWinner = weekFinished && s.correct === maxCorrect && maxCorrect > 0
       const isAdmin = s.member.role === 'admin'
       const rowStyle = isWinner ? `border-bottom:1px solid rgba(255,215,0,.3);background:linear-gradient(90deg,rgba(255,215,0,.06),transparent)` : trStyle
