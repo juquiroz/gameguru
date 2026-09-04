@@ -22,7 +22,7 @@ export default function LeagueDashboard({ user, league, myLeagues, onNavigate, o
   const leagueTz = getLeagueTimezone(league)
 
   const copyInviteLink = () => {
-    const link = `${window.location.origin}/gameguru/?join=${league.code}`
+    const link = `${window.location.origin}/?join=${league.code}`
     navigator.clipboard.writeText(link)
     alert(t('dashboard.copied'))
   }

@@ -19,6 +19,7 @@ import PlatformUserDetail from './pages/PlatformUserDetail'
 import PlatformReconciliation from './pages/PlatformReconciliation'
 import PlatformDenied from './components/PlatformDenied'
 import TrainingCamp from './pages/TrainingCamp'
+import AuditSnapshotPage from './domains/training-camp/components/AuditSnapshotPage'
 import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
 import CreateSimulationModal from './components/CreateSimulationModal'
@@ -282,6 +283,10 @@ function AppShell({
       if (route.type === 'platformReconciliation') return <PlatformReconciliation />
       return <PlatformLeagues />
     }
+
+    // Audit público del Training Camp (BUILD-TC-V2): URL de auditoría de picks
+    // congelados. No requiere membership (snapshot PÚBLICO por diseño).
+    if (route && route.type === 'audit') return <AuditSnapshotPage hash={route.hash} />
 
     // Hub: el dashboard muestra TODAS las ligas (fuente de verdad = ruta).
     if (route && route.type === 'dashboard') return home

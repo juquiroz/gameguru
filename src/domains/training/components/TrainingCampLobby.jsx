@@ -45,7 +45,7 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
   const rosterOpen = !event || canJoinLeague(event)
 
   const copyInvite = () => {
-    const link = `${window.location.origin}/gameguru/?join=${league.code}`
+    const link = `${window.location.origin}/?join=${league.code}`
     navigator.clipboard.writeText(link)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)

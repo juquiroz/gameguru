@@ -185,7 +185,7 @@ export default function ExperienceWizard({ initialExperience, onClose, onCreateL
           <p className={styles.modalSub}>{t('lobby.inviteDesc', { code: invite.code })}</p>
           <input
             readOnly
-            value={`${window.location.origin}/gameguru/?join=${invite.code}`}
+            value={`${window.location.origin}/?join=${invite.code}`}
             className={styles.inviteInput}
             onClick={e => e.target.select()}
           />
