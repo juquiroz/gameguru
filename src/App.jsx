@@ -341,7 +341,7 @@ function AppShell({
         onLogout={signOut}
         isSuperAdmin={isSuperAdmin}
         onCreateNew={() => openWizard()}
-        onCreateSimulation={() => setShowSimulation(true)}
+        onCreateSimulation={() => openWizard('practice')}
         onCreateTrainingCamp={() => openWizard('practice')}
         route={route}
       />
