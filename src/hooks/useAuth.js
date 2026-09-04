@@ -22,13 +22,22 @@ export function useAuth() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  const signUp = useCallback(async (email, password, username) => {
-    const { data, error } = await authApi.signUp(email, password)
+  const signUp = useCallback(async (email, password, realName) => {
+    // real_name SOLO si el usuario lo escribió explícitamente: nunca se
+    // deriva del email (un email guardado como nombre se mostraría a todos
+    // los jugadores al revelar la liga).
+    const meta = realName ? { real_name: realName } : {}
+    const { data, error } = await authApi.signUp(email, password, meta)
     if (error) return { error }
 
-    // Create profile
-    if (data.user) {
-      await profilesApi.upsert({ id: data.user.id, username: username || email.split('@')[0] })
+    // Fallback defensivo idempotente: el trigger handle_new_user crea el
+    // perfil con real_name/avatar; este upsert solo refuerza por si el trigger
+    // no corre en el entorno. No setea nickname: es por liga.
+    if (data.user && realName) {
+      await profilesApi.upsert({
+        id: data.user.id,
+        real_name: realName,
+      })
     }
     return { data }
   }, [])
@@ -39,11 +48,17 @@ export function useAuth() {
     return { data }
   }, [])
 
+  const signInWithGoogle = useCallback(async () => {
+    const { data, error } = await authApi.signInWithGoogle()
+    if (error) return { error }
+    return { data }
+  }, [])
+
   const signOut = useCallback(async () => {
     await authApi.signOut()
     setUser(null)
     setSession(null)
   }, [])
 
-  return { user, session, loading, signUp, signIn, signOut }
+  return { user, session, loading, signUp, signIn, signInWithGoogle, signOut }
 }

@@ -19,6 +19,7 @@ import PlatformUserDetail from './pages/PlatformUserDetail'
 import PlatformReconciliation from './pages/PlatformReconciliation'
 import PlatformDenied from './components/PlatformDenied'
 import TrainingCamp from './pages/TrainingCamp'
+import AuditSnapshotPage from './domains/training-camp/components/AuditSnapshotPage'
 import Topbar      from './components/Topbar'
 import BottomNav   from './components/BottomNav'
 import CreateSimulationModal from './components/CreateSimulationModal'
@@ -27,6 +28,7 @@ import TrainingCampSetupModal from './domains/training/components/TrainingCampSe
 
 import { LeagueProvider, useLeagueContext } from './league/context/LeagueContext'
 import { LeagueRoute } from './league/LeagueRoute'
+import NicknameModal from './league/components/NicknameModal'
 import { resolveForView, navigate, LEGACY_REDIRECTABLE } from './router/routes'
 
 export default function App() {
@@ -48,7 +50,7 @@ function AppInner() {
   const [lobbyVersion, setLobbyVersion] = useState(0)
   const { t } = useLanguage()
 
-  const { user, loading, signIn, signUp, signOut } = useAuth()
+  const { user, loading, signIn, signUp, signInWithGoogle, signOut } = useAuth()
   const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
   const leaguesState = useLeague(user)
 
@@ -82,7 +84,7 @@ function AppInner() {
   }
 
   if (!user) {
-    return <Auth onAuth={{ signIn, signUp }} />
+    return <Auth onAuth={{ signIn, signUp, signInWithGoogle }} />
   }
 
   return (
@@ -282,6 +284,10 @@ function AppShell({
       return <PlatformLeagues />
     }
 
+    // Audit público del Training Camp (BUILD-TC-V2): URL de auditoría de picks
+    // congelados. No requiere membership (snapshot PÚBLICO por diseño).
+    if (route && route.type === 'audit') return <AuditSnapshotPage hash={route.hash} />
+
     // Hub: el dashboard muestra TODAS las ligas (fuente de verdad = ruta).
     if (route && route.type === 'dashboard') return home
 
@@ -342,6 +348,23 @@ function AppShell({
 
       <main style={{ flex: 1, paddingBottom: '64px' }}>
         {renderPage()}
+        {/* BUILD-AUTH-NICK-001: captura única del nickname al entrar a una liga.
+            El modal se auto-oculta si el usuario ya tiene nickname o la liga
+            está finalizada. Solo aplica a rutas de liga (URL o legacy). */}
+        {route && route.type === 'league' && route.leagueId && (
+          <NicknameModal
+            key={route.leagueId}
+            league={routeLeague || { id: route.leagueId }}
+            userId={user.id}
+          />
+        )}
+        {!route && currentLeague && activePage !== 'dashboard' && (
+          <NicknameModal
+            key={`${currentLeague.id}-${activePage}`}
+            league={currentLeague}
+            userId={user.id}
+          />
+        )}
       </main>
 
       <BottomNav

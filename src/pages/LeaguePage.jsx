@@ -1,15 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SPORTS } from '../data/nflData'
 import { leaguesApi } from '../supabase'
 import InviteModal from '../components/InviteModal'
 import LeagueGamesManager from '../components/LeagueGamesManager'
 import { canManageLeague } from '../domains/platform'
+import { useLanguage } from '../i18n/context'
 
 export default function LeaguePage({ user, league, onChangeLeague }) {
+  const { t } = useLanguage()
   const [showModal, setShowModal] = useState(false)
   const [copied,    setCopied]    = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [lifecycle, setLifecycle] = useState({ finished: false, revealed: false })
+  const [lifecycleBusy, setLifecycleBusy] = useState(false)
+  const [confirmFinish, setConfirmFinish] = useState(false)
 
   if (!league) {
     return (
@@ -35,6 +40,46 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
       setCopied(false)
     }
   }
+
+  // BUILD-AUTH-NICK-001: ciclo de revelación admin (Finalizar → Revelar).
+  // Carga el estado persistido; localmente se sincroniza con league si viene.
+  useEffect(() => {
+    if (!league?.id) return
+    let active = true
+    leaguesApi.getLeadLifecycle(league.id).then(({ data }) => {
+      if (!active || !data) return
+      setLifecycle({ finished: !!data.finished, revealed: !!data.revealed })
+    })
+    return () => { active = false }
+  }, [league?.id])
+
+  useEffect(() => {
+    if (league && typeof league.finished === 'boolean') {
+      setLifecycle(prev => ({ ...prev, finished: !!league.finished }))
+    }
+    if (league && typeof league.revealed === 'boolean') {
+      setLifecycle(prev => ({ ...prev, revealed: !!league.revealed }))
+    }
+  }, [league?.finished, league?.revealed])
+
+  const finishLeague = async () => {
+    setLifecycleBusy(true)
+    const { error } = await leaguesApi.updateLeadLifecycle(league.id, { finished: true })
+    setLifecycleBusy(false)
+    if (error) return alert('Error al finalizar la liga: ' + error.message)
+    setLifecycle(prev => ({ ...prev, finished: true }))
+    setConfirmFinish(false)
+  }
+
+  const revealNames = async () => {
+    setLifecycleBusy(true)
+    const { error } = await leaguesApi.updateLeadLifecycle(league.id, { revealed: true })
+    setLifecycleBusy(false)
+    if (error) return alert('Error al revelar nombres: ' + error.message)
+    setLifecycle(prev => ({ ...prev, revealed: true }))
+  }
+
+  const canReveal = lifecycle.finished && !lifecycle.revealed
 
   return (
     <div className="page">
@@ -99,6 +144,63 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
           league={league}
           onClose={() => setShowModal(false)}
         />
+      )}
+
+      {/* BUILD-AUTH-NICK-001: ciclo de revelación admin (Finalizar → Revelar) */}
+      {isAdmin && (
+        <div style={{
+          background: 'var(--bg2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)',
+          padding: '1.5rem',
+          marginBottom: '1rem',
+        }}>
+          {lifecycle.revealed ? (
+            <div style={{ color: 'var(--green)', fontSize: '.9rem', fontWeight: 600 }}>
+              {t('league.namesRevealed')}
+            </div>
+          ) : (
+            <>
+              {lifecycle.finished ? (
+                <div className="msg info">{t('league.finishedBadge')}</div>
+              ) : (
+                <p style={{ fontSize: '.85rem', color: 'var(--text2)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  {t('league.finishHint')}
+                </p>
+              )}
+
+              {!lifecycle.finished ? (
+                confirmFinish ? (
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ color: 'var(--accent)', fontSize: '.85rem' }}>{t('league.finishConfirm')}</span>
+                    <button
+                      className="btn-primary"
+                      style={{ flexShrink: 0 }}
+                      onClick={finishLeague}
+                      disabled={lifecycleBusy}
+                    >
+                      {lifecycleBusy ? t('auth.loading') : t('league.finish')}
+                    </button>
+                    <button className="btn-secondary" onClick={() => setConfirmFinish(false)}>Cancelar</button>
+                  </div>
+                ) : (
+                  <button className="btn-secondary" style={{ width: '100%' }} onClick={() => setConfirmFinish(true)}>
+                    {t('league.finish')}
+                  </button>
+                )
+              ) : (
+                <button
+                  className="btn-primary"
+                  style={{ width: '100%' }}
+                  onClick={revealNames}
+                  disabled={lifecycleBusy}
+                >
+                  {t('league.reveal')}
+                </button>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       {isAdmin && (

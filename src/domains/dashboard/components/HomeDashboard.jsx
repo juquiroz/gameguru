@@ -62,7 +62,7 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
 
   const copyInviteLink = () => {
     if (!currentLeague) return
-    const link = `${window.location.origin}/gameguru/?join=${currentLeague.code}`
+    const link = `${window.location.origin}/?join=${currentLeague.code}`
     navigator.clipboard.writeText(link)
     alert(t('dashboard.copied'))
   }

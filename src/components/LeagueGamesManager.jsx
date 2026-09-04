@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { masterGamesApi, leagueGamesApi } from '../supabase'
 import { NFL_TEAMS } from '../data/nflData'
 import { getLeagueMode, getLeagueSeason, isOfficialMode, masterPhaseForMode, getLeagueTimezone } from '../domains/league'
-import { localTZOffset } from '../utils/dates'
+import { localTZOffset, getCurrentWeek } from '../utils/dates'
 import TeamLogo from './TeamLogo'
 import GameTime from './GameTime'
 import ScoreEditor from './ScoreEditor'
@@ -53,7 +53,8 @@ export default function LeagueGamesManager({ league, user }) {
 
   useEffect(() => {
     if (weekList.length > 0 && !weekList.includes(activeWeek)) {
-      setActiveWeek(weekList[weekList.length - 1])
+      const current = getCurrentWeek(masterGames)
+      setActiveWeek(current || weekList[weekList.length - 1])
     }
   }, [weekList.join(','), activeWeek])
 

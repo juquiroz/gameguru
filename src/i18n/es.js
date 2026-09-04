@@ -16,6 +16,18 @@ export default {
     hasAccount: '¿Ya tienes cuenta?',
     loggingIn: 'Entrando...',
     registering: 'Creando cuenta...',
+    google: 'Continuar con Google',
+    or: 'o',
+    realName: 'Nombre real',
+    realNameOptional: 'Nombre real (opcional)',
+    realNameHint: 'Privado: solo se revela a los demás jugadores cuando el admin finaliza y revela la liga.',
+    emailLabel: 'Correo electrónico',
+    emailPlaceholder: 'tu@email.com',
+    passwordPlaceholder: '••••••••',
+    registerSuccess: '✅ ¡Registro exitoso! Redirigiendo al inicio de sesión...',
+    completeFields: 'Completa todos los campos.',
+    passwordTooShort: 'La contraseña debe tener al menos 6 caracteres.',
+    loading: 'Cargando...',
   },
 
   topbar: {
@@ -175,6 +187,22 @@ export default {
     identityCode: '{code}',
     identityTC: '🎓 Training Camp #{no}',
     identityWeek: 'Semana {week}',
+    finishedBadge: '🏁 Liga finalizada',
+    finish: '🏁 Finalizar liga',
+    finishConfirm: '¿Finalizar la liga? Esto habilita la revelación de nombres. No se puede deshacer.',
+    finishHint: 'Al terminar la temporada, finaliza la liga para habilitar la revelación de los nicknames.',
+    reveal: '👁️ Revelar nombres',
+    revealConfirm: '¿Revelar los nombres reales de todos los jugadores? Esta acción es irreversible.',
+    revealDisabled: 'Finaliza la liga para habilitar la revelación de nombres.',
+    namesRevealed: '🔓 Nombres revelados',
+  },
+
+  nickname: {
+    prompt: 'Elige tu nickname en esta liga',
+    promptHint: 'Con este nickname se te verá durante TODA la liga. Es permanente y no se puede cambiar.',
+    required: 'El nickname es obligatorio.',
+    taken: 'Ese nickname ya está en uso en esta liga. Elige otro.',
+    save: 'Guardar nickname',
   },
 
   modes: {

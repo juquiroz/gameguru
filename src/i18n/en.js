@@ -16,6 +16,18 @@ export default {
     hasAccount: 'Already have an account?',
     loggingIn: 'Signing in...',
     registering: 'Creating account...',
+    google: 'Continue with Google',
+    or: 'or',
+    realName: 'Real name',
+    realNameOptional: 'Real name (optional)',
+    realNameHint: 'Private: only revealed to other players once the admin finishes and reveals the league.',
+    emailLabel: 'Email address',
+    emailPlaceholder: 'you@email.com',
+    passwordPlaceholder: '••••••••',
+    registerSuccess: '✅ Account created! Redirecting to login...',
+    completeFields: 'Complete all fields.',
+    passwordTooShort: 'Password must be at least 6 characters.',
+    loading: 'Loading...',
   },
 
   topbar: {
@@ -175,6 +187,22 @@ export default {
     identityCode: '{code}',
     identityTC: '🎓 Training Camp #{no}',
     identityWeek: 'Week {week}',
+    finishedBadge: '🏁 League finished',
+    finish: '🏁 Finish league',
+    finishConfirm: 'Finish this league? This enables name reveal. This cannot be undone.',
+    finishHint: 'When the season ends, finish the league to enable revealing nicknames.',
+    reveal: '👁️ Reveal names',
+    revealConfirm: 'Reveal the real names of all players? This action is irreversible.',
+    revealDisabled: 'Finish the league to enable name reveal.',
+    namesRevealed: '🔓 Names revealed',
+  },
+
+  nickname: {
+    prompt: 'Choose your nickname in this league',
+    promptHint: 'You will be seen by this nickname for the WHOLE league. It is permanent and cannot be changed.',
+    required: 'A nickname is required.',
+    taken: 'That nickname is already used in this league. Choose another.',
+    save: 'Save nickname',
   },
 
   modes: {

@@ -26,7 +26,7 @@ export default function LeaderboardTable({ rows, currentUserId, showWinner }) {
         const { icon, cls } = rankMedal(i)
         const isMe = row.userId === currentUserId
         const isWinner = showWinner && row.correct === maxCorrect && maxCorrect > 0
-        const initials = (row.username || row.email || '??').slice(0, 2).toUpperCase()
+        const initials = (row.username || '??').slice(0, 2).toUpperCase()
 
         return (
           <div key={row.userId} className={`lb-row ${isMe ? 'is-me' : ''} ${isWinner ? 'is-winner' : ''}`}>
@@ -35,7 +35,7 @@ export default function LeaderboardTable({ rows, currentUserId, showWinner }) {
               <div className="lb-avatar">{initials}</div>
               <div>
                 <div className="lb-uname">
-                  <span className="lb-name">{row.username || row.email?.split('@')[0] || 'Jugador'}</span>
+                  <span className="lb-name">{row.username || 'Jugador'}</span>
                   <span className="lb-score-inline">{row.correct}/{row.total} aciertos</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>

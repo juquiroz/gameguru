@@ -64,7 +64,7 @@ export default function CreateSimulationModal({ onClose, onCreateSimulation, onE
           </p>
           <input
             readOnly
-            value={`${window.location.origin}/gameguru/?join=${inviteLeague.code}`}
+            value={`${window.location.origin}/?join=${inviteLeague.code}`}
             className={styles.input}
             style={{ width: '100%', marginBottom: '1rem', fontSize: '.78rem' }}
             onClick={e => e.target.select()}

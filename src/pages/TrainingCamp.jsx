@@ -1,7 +1,7 @@
 import { useLanguage } from '../i18n/context'
-import TrainingCampLobby from '../domains/training/components/TrainingCampLobby'
+import TrainingCampPage from '../domains/training-camp/components/TrainingCampPage'
 
-export default function TrainingCamp({ user, league, onConfigure }) {
+export default function TrainingCamp({ user, league }) {
   const { t } = useLanguage()
 
   if (!league) {
@@ -16,5 +16,5 @@ export default function TrainingCamp({ user, league, onConfigure }) {
     )
   }
 
-  return <TrainingCampLobby user={user} league={league} onConfigure={onConfigure} />
+  return <TrainingCampPage user={user} league={league} />
 }

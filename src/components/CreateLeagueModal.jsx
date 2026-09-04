@@ -49,7 +49,7 @@ export default function CreateLeagueModal({ onClose, onCreateLeague, onEnterLeag
             </p>
             <input
               readOnly
-              value={`${window.location.origin}/gameguru/?join=${inviteLeague.code}`}
+              value={`${window.location.origin}/?join=${inviteLeague.code}`}
               style={{
                 width: '100%', padding: '.6rem .8rem',
                 background: 'var(--bg3)', border: '1px solid var(--border)',
