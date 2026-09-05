@@ -1,29 +1,10 @@
 import { useState } from 'react'
 import { SPORTS } from '../../../data/nflData'
 import { useLanguage } from '../../../i18n/context'
-import TrainingCampSetupForm from '../../training/components/TrainingCampSetupForm'
-import { getTrainingLevel, resolveConfig } from '../../training/models/levels'
-import ExperiencePicker from './ExperiencePicker'
-import TrainingCampIntro from './TrainingCampIntro'
 import { detectBrowserTimezone } from '../../league/models/timezone'
+import SimulationCampWizard from '../../training-camp/components/SimulationCampWizard'
+import ExperiencePicker from './ExperiencePicker'
 import styles from '../experience.module.css'
-
-const levelLabelKey = (id) => `training.level${id.charAt(0).toUpperCase()}${id.slice(1)}`
-
-const fmtDateTime = (iso) =>
-  new Intl.DateTimeFormat(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(iso))
-
-// ISO → valor local para <input type="datetime-local">
-const fmtInput = (iso) => {
-  const d = new Date(iso)
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-}
 
 // Wizard oficial de creación (BUILD-TC-002).
 // Flujo: Experience Picker → [Training Camp Intro] → Configuración → Confirmación → Lobby/liga.
@@ -32,7 +13,7 @@ export default function ExperienceWizard({ initialExperience, onClose, onCreateL
   const { t } = useLanguage()
 
   const [experience, setExperience] = useState(initialExperience || null)
-  const [step, setStep] = useState(initialExperience === 'practice' ? 'intro' : 'picker')
+  const [step, setStep] = useState(initialExperience === 'practice' ? 'sim-camp' : 'picker')
 
   // Configuración de liga (Preseason/Regular)
   const [name, setName] = useState('')
@@ -41,30 +22,20 @@ export default function ExperienceWizard({ initialExperience, onClose, onCreateL
   const [msg, setMsg] = useState(null)
   const [invite, setInvite] = useState(null)
 
-  // Borrador del Training Camp (config → confirmación → creación)
-  const [draft, setDraft] = useState(null)
-
   const goPicker = () => { setStep('picker') }
 
   const handlePick = (id) => {
     setExperience(id)
-    if (id === 'practice') setStep('intro')
+    if (id === 'practice') setStep('sim-camp')
     else setStep('league-config')
   }
 
-  // Paso de configuración: solo guarda el borrador y avanza a la confirmación.
-  const handleTcConfigSubmit = async (cfg) => {
-    setDraft(cfg)
-    setStep('tc-review')
-    return { data: { draft: true } }
-  }
-
-  // Paso de confirmación: crea la liga + sesión y entra al Lobby.
-  const handleCreateEvent = async () => {
-    if (!draft) return
+  // Paso de creación: crea la liga + sesión + juegos y entra al Campamento.
+  const handleCreateEvent = async (campDraft) => {
+    if (!campDraft) return
     setMsg(null)
     setBusy(true)
-    const result = await onCreateTrainingCamp(draft)
+    const result = await onCreateTrainingCamp(campDraft)
     setBusy(false)
     if (result?.error) { setMsg({ type: 'error', text: result.error.message }); return }
     onEnterLeague(result.data, 'practice')
@@ -95,82 +66,19 @@ export default function ExperienceWizard({ initialExperience, onClose, onCreateL
       )
     }
 
-    if (step === 'intro') {
+    if (step === 'sim-camp') {
       return (
         <>
           <div className={styles.modalHeader}>
-            <div className={styles.modalTitle}>🎓 {t('training.name')}</div>
+            <div className={styles.modalTitle}>🎯 {t('training.name')}</div>
             <button className={styles.modalClose} onClick={onClose}>✕</button>
           </div>
-          <TrainingCampIntro onBack={goPicker} onContinue={() => setStep('tc-config')} />
-        </>
-      )
-    }
-
-    if (step === 'tc-config') {
-      return (
-        <>
-          <div className={styles.modalHeader}>
-            <div className={styles.modalTitle}>{t('training.createTitle')}</div>
-            <button className={styles.modalClose} onClick={onClose}>✕</button>
-          </div>
-          <p className={styles.modalSub}>{t('training.createSub')}</p>
-          <TrainingCampSetupForm
-            submitLabel={t('training.create')}
-            busyLabel={t('training.creating')}
-            initialName={draft?.name || ''}
-            initialStart={draft?.startAt ? fmtInput(draft.startAt) : undefined}
-            initialLevel={draft?.level}
-            initialGameCount={draft?.gameCount}
-            initialSpeed={draft?.speed}
-            onSubmit={handleTcConfigSubmit}
-          />
-        </>
-      )
-    }
-
-    if (step === 'tc-review') {
-      const resolved = resolveConfig({
-        level: draft?.level,
-        gameCount: draft?.gameCount,
-        speed: draft?.speed,
-      })
-      const level = getTrainingLevel(resolved.level)
-      return (
-        <>
-          <div className={styles.modalHeader}>
-            <div className={styles.modalTitle}>{t('training.reviewTitle')}</div>
-            <button className={styles.modalClose} onClick={onClose}>✕</button>
-          </div>
-          <p className={styles.modalSub}>{t('training.reviewSub')}</p>
-
-          <div className={styles.reviewCard}>
-            <div className={styles.reviewRow}>
-              <span className={styles.reviewLabel}>{t('training.reviewName')}</span>
-              <span className={styles.reviewValue}>{draft?.name}</span>
-            </div>
-            <div className={styles.reviewRow}>
-              <span className={styles.reviewLabel}>{t('training.reviewStart')}</span>
-              <span className={styles.reviewValue}>{draft?.startAt ? fmtDateTime(draft.startAt) : '—'}</span>
-            </div>
-            <div className={styles.reviewRow}>
-              <span className={styles.reviewLabel}>{t('training.reviewLevel')}</span>
-              <span className={styles.reviewValue}>{level.icon} {t(levelLabelKey(level.id))}</span>
-            </div>
-            <div className={styles.reviewRow}>
-              <span className={styles.reviewLabel}>{t('training.reviewGames')}</span>
-              <span className={styles.reviewValue}>{t('training.reviewGamesCount', { count: resolved.gameCount })}</span>
-            </div>
-          </div>
-
           {msg && <div className={`msg ${msg.type}`} style={{ marginTop: '0.75rem' }}>{msg.text}</div>}
-
-          <div className={styles.introActions}>
-            <button className={styles.btnGhost} onClick={() => setStep('tc-config')}>{t('wizard.back')}</button>
-            <button className={styles.btnPrimaryTc} onClick={handleCreateEvent} disabled={busy}>
-              {busy ? t('training.creating') : t('training.reviewCreate')}
-            </button>
-          </div>
+          <SimulationCampWizard
+            busy={busy}
+            onClose={onClose}
+            onSubmit={handleCreateEvent}
+          />
         </>
       )
     }

@@ -32,20 +32,29 @@ export default function NicknameModal({ league, userId, onSaved }) {
     if (!value || !String(value).trim()) return setError(t('nickname.required'))
     setSaving(true)
     setError(null)
+    try {
+      const { data: members } = await membersApi.getMembers(league.id)
+      const check = isNicknameUnique(members || [], value, userId)
+      if (!check.unique) {
+        setError(t('nickname.taken'))
+        return
+      }
 
-    const { data: members } = await membersApi.getMembers(league.id)
-    const check = isNicknameUnique(members || [], value, userId)
-    if (!check.unique) {
+      const { error: saveErr } = await membersApi.setNickname(league.id, userId, value.trim())
+      if (saveErr) {
+        console.error('[nickname] no se pudo guardar:', saveErr)
+        setError(t('nickname.taken'))
+        return
+      }
+
+      setShow(false)
+      if (onSaved) onSaved({ leagueId: league.id, nickname: value.trim() })
+    } catch (ex) {
+      console.error('[nickname] excepción al guardar:', ex)
+      setError(t('nickname.taken'))
+    } finally {
       setSaving(false)
-      return setError(t('nickname.taken'))
     }
-
-    const { error: saveErr } = await membersApi.setNickname(league.id, userId, value.trim())
-    setSaving(false)
-    if (saveErr) return setError(t('nickname.taken'))
-
-    setShow(false)
-    if (onSaved) onSaved({ leagueId: league.id, nickname: value.trim() })
   }
 
   return (
