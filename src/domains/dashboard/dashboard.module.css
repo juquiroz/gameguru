@@ -1,0 +1,539 @@
+/* ══════════════════════════════════════════════════════
+   DASHBOARD (BUILD-002)
+   Mobile-first módulos del nuevo Home Dashboard
+══════════════════════════════════════════════════════ */
+
+/* ─── Header ──────────────────────────── */
+.header {
+  width: 100%;
+  max-width: 520px;
+}
+.greeting {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  letter-spacing: .04em;
+  line-height: 1.1;
+}
+.greetingSub {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: .82rem;
+  color: var(--text2);
+}
+.weekBadge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .7rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* ─── Sections ────────────────────────── */
+.section {
+  width: 100%;
+  max-width: 520px;
+}
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .6rem;
+}
+.sectionHeader .sectionTitle {
+  margin-bottom: 0;
+}
+.sectionTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: .04em;
+  margin-bottom: .6rem;
+}
+
+/* ─── Hero Card (bienvenida) ──────────── */
+.heroCard {
+  width: 100%;
+  max-width: 520px;
+  background: linear-gradient(135deg, rgba(245,166,35,.14), rgba(255,75,75,.05));
+  border: 1px solid rgba(245,166,35,.28);
+  border-radius: var(--r-lg);
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+}
+.heroCardTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+  letter-spacing: .05em;
+  line-height: 1.1;
+}
+.heroCardDesc {
+  font-size: .88rem;
+  color: var(--text2);
+  line-height: 1.6;
+  margin: .6rem auto 0;
+  max-width: 400px;
+}
+.heroCardActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 1.25rem;
+}
+.heroCardActions .btn-primary { flex: 1; }
+.heroCardActions .btn-secondary { flex: 1; }
+
+/* ─── How it works ────────────────────── */
+.features {
+  display: flex;
+  gap: .75rem;
+  width: 100%;
+}
+.feature {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1rem .75rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+}
+.featureIcon { font-size: 1.6rem; }
+.featureTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .9rem;
+  letter-spacing: .04em;
+  color: var(--text);
+}
+.featureDesc {
+  font-size: .72rem;
+  color: var(--text2);
+  line-height: 1.4;
+}
+
+/* ─── Pending Action Card ─────────────── */
+.actionCard {
+  background: linear-gradient(135deg, rgba(245,166,35,.12), rgba(255,75,75,.06));
+  border: 1px solid rgba(245,166,35,.28);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  width: 100%;
+  max-width: 520px;
+}
+.actionDone {
+  background: rgba(34,197,94,.08);
+  border-color: rgba(34,197,94,.25);
+}
+.actionIcon { font-size: 1.6rem; flex-shrink: 0; }
+.actionBody { flex: 1; min-width: 0; }
+.actionTitle { font-size: .95rem; font-weight: 600; }
+.actionDone .actionTitle { color: var(--green); }
+.actionDesc {
+  font-size: .78rem;
+  color: var(--text2);
+  margin-top: 2px;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .03em;
+}
+.actionBtn {
+  flex-shrink: 0;
+  padding: .5rem 1rem;
+  background: var(--accent);
+  color: #0D0D0D;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .95rem;
+  letter-spacing: .07em;
+  border-radius: var(--r-sm);
+  transition: opacity .2s, transform .1s;
+}
+.actionBtn:hover { opacity: .88; }
+.actionBtn:active { transform: scale(.98); }
+
+/* ─── Games Carousel ──────────────────── */
+.carousel {
+  display: flex;
+  gap: .75rem;
+  overflow-x: auto;
+  margin: 0 -1rem;
+  padding: .15rem 1rem .45rem;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+.carousel::-webkit-scrollbar { height: 4px; }
+.carousel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.gameCard {
+  flex: 0 0 232px;
+  scroll-snap-align: start;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .9rem .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+}
+.gameTeams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .4rem;
+}
+.gameTeam {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex: 1;
+  min-width: 0;
+}
+.gameTeamRight { justify-content: flex-end; }
+.gameTeamAbbr {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: .03em;
+  white-space: nowrap;
+}
+.gameVs { color: var(--text3); font-size: .75rem; flex-shrink: 0; }
+.gameMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .4rem;
+  border-top: 1px solid var(--border);
+  padding-top: .55rem;
+}
+.gameTime {
+  font-size: .72rem;
+  color: var(--text2);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .04em;
+}
+.statusTag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.statusFinal  { background: rgba(34,197,94,.12);   color: #86EFAC; border: 1px solid rgba(34,197,94,.3); }
+.statusOpen   { background: rgba(99,102,241,.1);   color: #A5B4FC; border: 1px solid rgba(99,102,241,.3); }
+.statusLocked { background: rgba(74,90,122,.15);   color: var(--text2); border: 1px solid rgba(74,90,122,.3); }
+.carouselEmpty {
+  text-align: center;
+  padding: 1.25rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .04em;
+  font-size: .85rem;
+  background: var(--bg2);
+  border: 1px dashed var(--border);
+  border-radius: var(--r);
+}
+
+/* ─── Mis Ligas (compact) ─────────────── */
+.leagueMini { display: flex; flex-direction: column; gap: .6rem; }
+.leagueMiniCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .8rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.leagueMiniCard:hover { border-color: var(--border2); background: var(--surface); }
+.leagueMiniCard.current { border-color: rgba(34,197,94,.4); }
+.leagueMiniIcon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+.leagueMiniInfo { flex: 1; min-width: 0; }
+.leagueMiniName {
+  font-size: .92rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.leagueMiniMeta {
+  font-size: .74rem;
+  color: var(--text2);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .04em;
+  margin-top: 1px;
+}
+.leagueMiniBadges { display: flex; gap: .3rem; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.miniBadge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.miniBadgeCurrent { background: rgba(34,197,94,.12);   color: #86EFAC; border: 1px solid rgba(34,197,94,.3); }
+.miniBadgeAdmin   { background: rgba(245,166,35,.15);  color: var(--accent); border: 1px solid rgba(245,166,35,.3); }
+.miniBadgeTc      { background: rgba(59,130,246,.15);  color: #93C5FD; border: 1px solid rgba(59,130,246,.4); }
+.leagueMiniDelete {
+  background: none;
+  border: none;
+  color: var(--danger, #ff4b4b);
+  font-size: .85rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  opacity: .5;
+  transition: opacity .15s;
+}
+.leagueMiniDelete:hover { opacity: 1; }
+
+/* ─── Quick Stats ─────────────────────── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .6rem;
+}
+.statCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .9rem .95rem;
+}
+.statLabel {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .66rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .35rem;
+}
+.statVal {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.7rem;
+  letter-spacing: .02em;
+  line-height: 1;
+}
+.statSub {
+  font-size: .7rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .03em;
+  margin-top: 4px;
+}
+
+/* ─── Mini Leaderboard (Top 3) ────────── */
+.miniBoard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .5rem .5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+}
+.boardRow {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  padding: .55rem .6rem;
+  border-radius: var(--r-sm);
+  transition: background .15s;
+}
+.boardRow:hover { background: rgba(255,255,255,.02); }
+.boardRow.me { background: rgba(245,166,35,.06); }
+.medal { width: 24px; text-align: center; font-size: 1.1rem; flex-shrink: 0; }
+.boardName {
+  flex: 1;
+  font-size: .85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.boardScore {
+  font-size: .8rem;
+  color: var(--text2);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .04em;
+}
+.boardEmpty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .04em;
+  font-size: .85rem;
+}
+
+/* ─── Próximos partidos ───────────────── */
+.upcoming { display: flex; flex-direction: column; gap: .5rem; }
+.upcomingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: .7rem .9rem;
+}
+.upcomingMatchup {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .85rem;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: .03em;
+  min-width: 0;
+}
+.upcomingTime {
+  font-size: .72rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+/* ─── Countdown Card ──────────────────── */
+.countdown {
+  width: 100%;
+  max-width: 520px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+}
+.countdownIcon { font-size: 1.5rem; flex-shrink: 0; }
+.countdownBody { flex: 1; min-width: 0; }
+.countdownTitle { font-size: .85rem; font-weight: 600; }
+.countdownValue {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: .05em;
+  color: var(--accent);
+  line-height: 1.15;
+  margin-top: 2px;
+}
+.countdownValueLocked { color: var(--text3); }
+.countdownMeta {
+  font-size: .7rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .04em;
+  margin-top: 2px;
+}
+
+.participationBar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: rgba(245,166,35,.08);
+  border: 1px solid rgba(245,166,35,.25);
+  border-radius: var(--r-lg);
+  padding: .7rem 1rem;
+  margin-bottom: 1rem;
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.lobbyBanner {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: .9rem 1.1rem;
+  background:
+    radial-gradient(120% 140% at 10% -10%, rgba(59,130,246,.35), transparent 55%),
+    linear-gradient(135deg, rgba(59,130,246,.15), rgba(7,11,20,.3));
+  border: 1px solid rgba(59,130,246,.45);
+  border-radius: var(--r-lg);
+  color: var(--text);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: .05em;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.lobbyBanner:hover { border-color: var(--mode-tc, #3B82F6); background: rgba(59,130,246,.12); }
+.lobbyBannerIcon { font-size: 1.4rem; }
+.lobbyBannerArrow { margin-left: auto; color: #93C5FD; font-size: 1.3rem; }
+
+/* ─── CTA MAKE YOUR PICKS (BUILD-TC-005.4) ───── */
+.picksCta {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 1rem 1.2rem;
+  background:
+    radial-gradient(120% 140% at 10% -10%, rgba(16,185,129,.35), transparent 55%),
+    linear-gradient(135deg, rgba(16,185,129,.18), rgba(7,11,20,.35));
+  border: 1px solid rgba(16,185,129,.55);
+  border-radius: var(--r-lg);
+  color: var(--text);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: .06em;
+  text-align: left;
+  transition: border-color .15s, background .15s;
+}
+.picksCta:hover { border-color: #10B981; background: rgba(16,185,129,.16); }
+.picksCtaIcon { font-size: 1.5rem; }
+.picksCtaLabel { flex: 1; }
+
+/* ─── Roster cerrado (BUILD-TC-005.4) ───────── */
+.rosterClosed {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  background: var(--bg2);
+  border: 1px dashed rgba(250,204,21,.4);
+  border-radius: var(--r-lg);
+  padding: .9rem 1.1rem;
+}
+.rosterClosedIcon { font-size: 1.3rem; }
+.rosterClosedText { display: flex; flex-direction: column; gap: .15rem; }
+.rosterClosedTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: .06em;
+  color: #FACC15;
+}
+.rosterClosedDesc {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .78rem;
+  letter-spacing: .03em;
+  line-height: 1.5;
+  color: var(--text2);
+}
+
+@media (min-width: 480px) {
+  .gameCard { flex-basis: 250px; }
+  .statsGrid { grid-template-columns: repeat(4, 1fr); }
+}
