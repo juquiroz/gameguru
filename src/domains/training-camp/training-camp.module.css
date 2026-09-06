@@ -20,8 +20,8 @@
 }
 
 .section {
-  background: var(--card, #fff);
-  border: 1px solid var(--border, #e5e5e5);
+  background: var(--surface, #1A2740);
+  border: 1px solid var(--border, rgba(255,255,255,0.07));
   border-radius: 14px;
   padding: 1rem 1.125rem;
   margin-bottom: 1rem;
@@ -47,13 +47,13 @@
 }
 
 .gameCard {
-  border: 1px solid var(--border, #e5e5e5);
+  border: 1px solid var(--border, rgba(255,255,255,0.07));
   border-radius: 10px;
   padding: .6rem;
   display: flex;
   flex-direction: column;
   gap: .35rem;
-  background: var(--card2, #fafafa);
+  background: var(--surface2, #243450);
 }
 
 .gameTop {
@@ -86,17 +86,19 @@
   font-weight: 600;
   transition: opacity .15s;
 }
-.btn { background: var(--muted, #eee); color: var(--text, #111); }
-.btnPrimary { background: var(--accent, #2563eb); color: #fff; }
+.btn { background: var(--surface2, #243450); color: var(--text, #F0F4FF); }
+.btnPrimary { background: var(--accent, #F5A623); color: #0D0D0D; border: none; }
 .btnDanger { background: #dc2626; color: #fff; }
-.btnGhost { background: transparent; border: 1px solid var(--border, #e5e5e5); color: var(--text, #111); }
+.btnGhost { background: transparent; border: 1px solid var(--border2, rgba(255,255,255,0.14)); color: var(--text2, #8B9ABB); }
 .btn:disabled, .btnPrimary:disabled { opacity: .5; cursor: not-allowed; }
 
 .input, .select {
-  border: 1px solid var(--border, #ddd);
+  border: 1px solid var(--border2, rgba(255,255,255,0.14));
   border-radius: 8px;
   padding: .5rem .6rem;
   font-size: .9rem;
+  background: var(--surface, #1A2740);
+  color: var(--text, #F0F4FF);
 }
 
 .badge {
@@ -107,19 +109,20 @@
   font-weight: 700;
 }
 
-.badgeOpen { background: #dcfce7; color: #166534; }
-.badgeLocked { background: #fee2e2; color: #991b1b; }
-.badgeDone { background: #e0e7ff; color: #3730a3; }
-.badgeSetup { background: #fef3c7; color: #92400e; }
+.badgeOpen { background: rgba(34,197,94,0.16); color: #86EFAC; }
+.badgeLocked { background: rgba(239,68,68,0.16); color: #FCA5A5; }
+.badgeDone { background: rgba(99,102,241,0.16); color: #A5B4FC; }
+.badgeSetup { background: rgba(245,166,35,0.16); color: #FCD34D; }
 
 .note {
   border-radius: 10px;
   padding: .75rem 1rem;
   font-size: .85rem;
   margin-bottom: 1rem;
+  border: 1px solid var(--border2, rgba(255,255,255,0.14));
 }
-.noteInfo { background: #eff6ff; color: #1e40af; }
-.noteOk { background: #ecfdf5; color: #065f46; }
+.noteInfo { background: rgba(59,130,246,0.14); color: #BFDBFE; }
+.noteOk { background: rgba(34,197,94,0.14); color: #86EFAC; }
 
 .empty {
   color: var(--text2, #777);
@@ -141,19 +144,19 @@
   margin-bottom: 1rem;
 }
 .weekTab {
-  border: 1px solid var(--border, #e5e5e5);
-  background: var(--card2, #f5f5f5);
+  border: 1px solid var(--border, rgba(255,255,255,0.07));
+  background: var(--surface2, #243450);
   padding: .45rem .8rem;
   border-radius: 999px;
   cursor: pointer;
   font-weight: 600;
   font-size: .85rem;
-  color: var(--text, #111);
+  color: var(--text, #F0F4FF);
 }
 .weekTabActive {
-  background: var(--accent, #2563eb);
+  background: var(--mode-tc, #3B82F6);
   color: #fff;
-  border-color: var(--accent, #2563eb);
+  border-color: var(--mode-tc, #3B82F6);
 }
 .weekTabLocked {
   opacity: .55;

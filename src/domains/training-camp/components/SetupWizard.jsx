@@ -3,7 +3,7 @@ import styles from '../training-camp.module.css'
 
 export default function TrainingCampSetupWizard({ initialName, initialWeeks, busy, onSave }) {
   const [name, setName] = useState(initialName || '')
-  const [weeks, setWeeks] = useState(initialWeeks || 4)
+  const [weeks, setWeeks] = useState(initialWeeks || 2)
 
   const submit = () => {
     const n = Math.max(1, Math.floor(Number(weeks) || 1))

@@ -41,6 +41,13 @@ export function getRosterStatus(event) {
   if (event.event_type !== EVENT_TYPES.TRAINING_CAMP) {
     return { status: ROSTER_STATUS.CLOSED_STARTED, open: false }
   }
+  // MODELO V2 (simple/manual, BUILD-TC-V2-001): el roster queda abierto hasta
+  // que el campamento `started` (flag de 014.0); la fase setup/inviting no lo
+  // congela. Espejo de league_roster_open() en 005.4.
+  if (event.state === 'training_camp_v2') {
+    const open = !event.started
+    return { status: open ? ROSTER_STATUS.OPEN : ROSTER_STATUS.CLOSED_STARTED, open }
+  }
   if (ROSTER_OPEN_STATES.has(event.state)) {
     return { status: ROSTER_STATUS.OPEN, open: true }
   }

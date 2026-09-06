@@ -11,7 +11,7 @@ import styles from '../training-camp.module.css'
 export default function TrainingCampPage({ user, league }) {
   const tc = useTrainingCamp({ leagueId: league?.id, userId: user?.id, league })
   const {
-    loading, busy, phase, isAdmin, totalWeeks, currentWeek, scheduleComplete,
+    loading, busy, phase, isAdmin, session, totalWeeks, currentWeek, scheduleComplete,
     games, currentWeekGames, picks, submitted, membersByUser,
     deadline, deadlineMinutes, picksLocked, weekComplete, progress,
     createCamp, markScheduleComplete, startCamp, setCurrentWeek, addGame, removeGame, setResult,
@@ -43,24 +43,24 @@ export default function TrainingCampPage({ user, league }) {
         <div className={styles.title}>🎓 {league?.name || 'Training Camp'}</div>
         <div className={styles.eyebrow}>
           {phase === 'setup' && 'Configuración · define tus semanas'}
-          {phase === 'inviting' && 'Invita jugadores · los picks cierran 15 min antes del primer juego'}
+          {phase === 'inviting' && 'Invita jugadores · los picks cierran 5 min antes del primer juego'}
           {phase === 'active' && `Semana ${currentWeek} de ${totalWeeks} · resultados manuales`}
           {phase === 'finished' && 'Campamento finalizado'}
         </div>
       </div>
 
-      {/* FASE SETUP: sin sesión → wizard; con sesión → construir calendario */}
+      {/* FASE SETUP: sin sesión → wizard de semanas; con sesión → construir calendario */}
       {phase === 'setup' && !isAdmin && (
         <div className={`${styles.note} ${styles.noteInfo}`}>
           El admin está configurando el campamento. Vuelve en un momento.
         </div>
       )}
 
-      {phase === 'setup' && isAdmin && (
+      {phase === 'setup' && isAdmin && !session && (
         <SetupWizard onSave={createCamp} busy={busy} />
       )}
 
-      {phase === 'setup' && isAdmin && scheduleComplete === false && (
+      {phase === 'setup' && isAdmin && session && scheduleComplete === false && (
         <>
           <div className={styles.weekTabs}>
             {setupWeeksPresent.map(w => (

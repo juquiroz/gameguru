@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NFL_TEAMS } from '../../../data/nflData'
+import { MIN_GAMES_PER_WEEK, MAX_GAMES_PER_WEEK } from '../model'
 import ScoreEditor from '../../../components/ScoreEditor'
 import TeamLogo from '../../../components/TeamLogo'
 import styles from '../training-camp.module.css'
@@ -28,6 +29,9 @@ export default function TrainingCampWeekManager({
     if (!home || !away) return setMsg('Selecciona ambos equipos.')
     if (home === away) return setMsg('Los equipos deben ser distintos.')
     if (!date || !time) return setMsg('Completa fecha y hora.')
+    if (games.length >= MAX_GAMES_PER_WEEK) {
+      return setMsg(`Máximo ${MAX_GAMES_PER_WEEK} juegos por semana.`)
+    }
     const res = await onAddGame({ week, home: TEAM_OPTIONS.find(t => t.abbr === home), away: TEAM_OPTIONS.find(t => t.abbr === away), date, time })
     if (res?.error) return setMsg(res.error.message)
     setHome(''); setAway(''); setDate(''); setTime(''); setMsg(null)
@@ -40,6 +44,9 @@ export default function TrainingCampWeekManager({
   }
 
   const isLastWeek = Number(week) >= Number(totalWeeks)
+  // Min 1 / máx N juegos por semana para avanzar en modo setup.
+  const atMax = games.length >= MAX_GAMES_PER_WEEK
+  const canAdvance = games.length >= MIN_GAMES_PER_WEEK
 
   return (
     <div>
@@ -112,6 +119,9 @@ export default function TrainingCampWeekManager({
       {isAdmin && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>Agregar juego a la semana {week}</div>
+          <div style={{ fontSize: '.8rem', color: 'var(--text2)', marginBottom: '.5rem' }}>
+            {games.length}/{MAX_GAMES_PER_WEEK} juegos — {atMax ? 'máximo alcanzado' : `agrega entre ${MIN_GAMES_PER_WEEK} y ${MAX_GAMES_PER_WEEK} juegos`}
+          </div>
           <div className={styles.row} style={{ marginBottom: '.5rem' }}>
             <select className={styles.select} value={away} onChange={e => setAway(e.target.value)}>
               <option value="">Visitante</option>
@@ -127,20 +137,27 @@ export default function TrainingCampWeekManager({
             <input type="date" className={styles.input} value={date} onChange={e => setDate(e.target.value)} />
             <input type="time" className={styles.input} value={time} onChange={e => setTime(e.target.value)} />
           </div>
-          <button className={styles.btnPrimary} onClick={submitGame} disabled={busy}>Agregar (+)</button>
+          <button className={styles.btnPrimary} onClick={submitGame} disabled={busy || atMax}>Agregar (+)</button>
         </div>
       )}
 
       {/* Navegación de semanas */}
       {isAdmin && mode === 'setup' && (
         <div className={styles.row} style={{ justifyContent: 'flex-end' }}>
-          <button
-            className={isLastWeek ? styles.btnPrimary : styles.btn}
-            disabled={busy}
-            onClick={isLastWeek ? onFinishSchedule : onNextWeek}
-          >
-            {isLastWeek ? 'Finalizar calendario →' : `Siguiente semana (${week + 1}) →`}
-          </button>
+          {canAdvance && (
+            <button
+              className={isLastWeek ? styles.btnPrimary : styles.btn}
+              disabled={busy}
+              onClick={isLastWeek ? onFinishSchedule : onNextWeek}
+            >
+              {isLastWeek ? 'Finalizar calendario →' : `Siguiente semana (${week + 1}) →`}
+            </button>
+          )}
+          {!canAdvance && (
+            <span style={{ fontSize: '.8rem', color: 'var(--text2)' }}>
+              Agrega al menos {MIN_GAMES_PER_WEEK} juego a esta semana para continuar.
+            </span>
+          )}
         </div>
       )}
     </div>

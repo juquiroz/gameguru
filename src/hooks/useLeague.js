@@ -5,7 +5,6 @@ import { localTZOffset } from '../utils/dates'
 import { hydrateLeague, canJoinLeague, getLeagueSeason, masterPhaseForMode, detectBrowserTimezone } from '../domains/league'
 import { trainingSessionService } from '../domains/training/services/trainingSessionService'
 import { trainingCampSessionService } from '../domains/training-camp/services/sessionService'
-import { trainingCampWeekService as weekService } from '../domains/training-camp/services/weekService'
 
 export function useLeague(user) {
   const [myLeagues,      setMyLeagues]      = useState([])
@@ -188,33 +187,14 @@ export function useLeague(user) {
 
     await membersApi.join(league.id, user.id, 'admin')
 
-    // Sesión v2 (simple/manual) con el nº de semanas elegidas.
+    // Sesión v2 (simple/manual) con el nº de semanas elegidas. El calendario
+    // (juegos por semana) queda PENDIENTE: el admin los agrega después desde la
+    // página del Training Camp antes de arrancar (fase setup → WeekManager).
     const { data: event, persisted, fallback } = await trainingCampSessionService.create(
       league.id,
       { name, totalWeeks: config.totalWeeks }
     )
     if (!event?.id) return { error: { message: 'No se pudo crear la sesión del campamento.' } }
-
-    // Inserta los juegos de cada semana (fecha/hora) en la sesión v2.
-    if (Array.isArray(config.weeks)) {
-      for (const wk of config.weeks) {
-        for (const g of wk.games || []) {
-          await weekService.addGame({
-            league,
-            trainingSessionId: event.id,
-            week: wk.week,
-            home: g.__raw?.home,
-            away: g.__raw?.away,
-            date: g.__raw?.date,
-            time: g.__raw?.time,
-            tzOffset: localTZOffset(),
-          })
-        }
-      }
-    }
-
-    // Calendario completo → el Campamento arranca en fase "inviting".
-    await trainingCampSessionService.update(league.id, { schedule_complete: true })
 
     const newLeague = { ...league, role: 'admin', league_mode: 'practice' }
     setMyLeagues(prev => [newLeague, ...prev])

@@ -86,9 +86,20 @@ export function useTrainingCamp({ leagueId, userId, league }) {
     }
 
     // Miembros + perfiles (para leaderboard/snapshot, sin email).
-    const members = await leaguesApi.getMembers(leagueId).catch(() => ({ data: [] }))
+    // try/catch: el builder de Supabase es thenable pero no expone `.catch`.
+    let members = { data: [] }
+    try {
+      members = await leaguesApi.getMembers(leagueId)
+    } catch (err) {
+      console.error('[trainingCamp] error al leer miembros:', err)
+    }
     const userIds = (members.data || []).map(m => m.user_id)
-    const profiles = userIds.length ? await profilesApi.getMany(userIds).catch(() => ({ data: [] })) : { data: [] }
+    let profiles = { data: [] }
+    try {
+      profiles = userIds.length ? await profilesApi.getMany(userIds) : profiles
+    } catch (err) {
+      console.error('[trainingCamp] error al leer perfiles:', err)
+    }
     const byProfile = {}
     ;(profiles.data || []).forEach(p => { byProfile[p.id] = p.username })
     const byUser = {}

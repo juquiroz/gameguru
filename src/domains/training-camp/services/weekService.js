@@ -9,6 +9,7 @@
 //   - los juegos de una semana llevan `training_session_id` + `week`
 //   - un juego de la semana N+1 no puede ocurrir antes que el de la N
 //     (validación en el Model, pero aquí se ancla el game_time)
+//   - 1..5 juegos por semana (min/max en el Model)
 //   - game_id único por semana: `tc2-<sessionId-corto>-<week>-<n>`
 //   - RLS de league_games exige membership; degrada a localStorage cuando no.
 // ============================================================================
@@ -135,7 +136,7 @@ export const trainingCampWeekService = {
   },
 
   // ── Jornadas (game_weeks) ─────────────────────────────────────────────
-  // Crea/lee la fila de la semana. `deadline_at` = 15 min antes del primer
+  // Crea/lee la fila de la semana. `deadline_at` = 5 min antes del primer
   // juego (lo recibe el caller que ya calculó el deadline).
   async ensureWeek(trainingSessionId, leagueId, week, { gameCount, deadlineAt } = {}) {
     try {

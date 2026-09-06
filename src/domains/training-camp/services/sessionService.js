@@ -70,7 +70,15 @@ export const trainingCampSessionService = {
     if (existing.data?.id) {
       return this.update(leagueId, { total_weeks: totalWeeks })
     }
-    const sessions = await trainingSessionsApi.list(leagueId).catch(() => ({ data: null }))
+    // El query builder de Supabase es thenable pero no expone `.catch` en
+    // todas las versiones → envolver en try/catch para no romper la creación.
+    let sessions = { data: null }
+    try {
+      sessions = await trainingSessionsApi.list(leagueId)
+    } catch (err) {
+      logFallback('list', err)
+      sessions = { data: null }
+    }
     const sessionNo = (sessions?.data?.length
       ? Math.max(...sessions.data.map(r => r.session_no || 0)) + 1
       : 1)

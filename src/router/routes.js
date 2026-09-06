@@ -3,7 +3,7 @@
 // `resolveForView`: resuelve rutas legacy / #/league sin id usando el contexto
 // disponible. Principio: la URL manda; `activeLeagueId` es solo sugerencia.
 
-import { buildHash } from './hashRouter'
+import { buildHash } from './hashRouter.js'
 
 // Página legacy → view canónico de la ruta de liga.
 export const LEGACY_VIEW_MAP = {
@@ -45,11 +45,31 @@ export function isMemberOf(myLeagues, leagueId) {
   return !!(myLeagues || []).find(l => l && l.id === leagueId)
 }
 
+// Liga objetivo para una navegación de menú resuelta en el CLICK (elimina el
+// round-trip legacy → redirect que parpadeaba el hub). Prioridad:
+//   1) currentLeague (la liga en la que el usuario está parado) si es miembro
+//   2) activeLeagueId persistido/URL si es miembro
+//   3) única liga
+//   4) primera liga (2+ ligas sin contexto → nunca el hub por ambigüedad)
+export function resolveNavigationTarget({ currentLeague = null, myLeagues = [], activeLeagueId = null } = {}) {
+  const list = (myLeagues || []).filter(Boolean)
+  const candidates = [currentLeague?.id, activeLeagueId]
+  for (const id of candidates) {
+    if (id && isMemberOf(list, id)) {
+      const target = list.find(l => l && l.id === id)
+      if (target) return target
+    }
+  }
+  return list[0] || null
+}
+
 // Resuelve una ruta al contexto disponible:
 //   - ruta de liga con id      → tal cual (la URL manda; LeagueRoute valida)
-//   - ruta de liga sin id (#/league) → activeLeagueId si es miembro; 1 liga → auto; si no → hub
-//   - ruta legacy (#picks/…)    → activeLeagueId si es miembro; 1 liga → auto; si no → hub
+//   - ruta de liga sin id (#/league) → activeLeagueId si es miembro; 1 liga → auto; 2+ → primera
+//   - ruta legacy (#picks/…)    → activeLeagueId si es miembro; 1 liga → auto; 2+ → primera
 //   - dashboard/superadmin      → tal cual
+//   - sin liga resoluble        → dashboard (el menú nunca cae acá:
+//                                 handleNavigate resuelve en el click)
 export function resolveForView({ route, myLeagues = [], activeLeagueId = null }) {
   if (!route) return { type: 'dashboard' }
 
@@ -57,7 +77,8 @@ export function resolveForView({ route, myLeagues = [], activeLeagueId = null })
     if (route.leagueId) return route
     const id = activeLeagueId && isMemberOf(myLeagues, activeLeagueId)
       ? activeLeagueId
-      : myLeagues.length === 1 ? myLeagues[0].id : null
+      : myLeagues.length === 1 ? myLeagues[0].id
+      : myLeagues[0] ? myLeagues[0].id : null
     if (!id) return { type: 'dashboard' }
     return { type: 'league', leagueId: id, page: 'league' }
   }
@@ -66,7 +87,8 @@ export function resolveForView({ route, myLeagues = [], activeLeagueId = null })
     const view = LEGACY_VIEW_MAP[route.page] || 'league'
     const id = activeLeagueId && isMemberOf(myLeagues, activeLeagueId)
       ? activeLeagueId
-      : myLeagues.length === 1 ? myLeagues[0].id : null
+      : myLeagues.length === 1 ? myLeagues[0].id
+      : myLeagues[0] ? myLeagues[0].id : null
     if (!id) return { type: 'dashboard' }
     return { type: 'league', leagueId: id, page: view }
   }
