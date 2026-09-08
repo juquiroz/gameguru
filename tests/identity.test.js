@@ -110,6 +110,19 @@ describe('Identity — nickname POR LIGA + reveal', () => {
     assert.strictEqual(isNicknameUnique(members, 'nuevo', 'u3').unique, true)
   })
 
+  it('isNicknameUnique: filas sin user_id no cuentan; sin userId se cede a la BD', () => {
+    const members = [
+      { user_id: null, nickname: 'fantasma' },
+      { user_id: undefined, nickname: 'duende' },
+      { user_id: 'u1', nickname: 'real' },
+    ]
+    assert.strictEqual(isNicknameUnique(members, 'fantasma', 'u3').unique, true)
+    assert.strictEqual(isNicknameUnique(members, 'duende', 'u3').unique, true)
+    assert.strictEqual(isNicknameUnique(members, 'real', 'u3').unique, false)
+    // Sin userId válido → no se arriesga falso positivo; la BD (23505) decide.
+    assert.strictEqual(isNicknameUnique(members, 'real').unique, true)
+  })
+
   it('revela solo cuando el usuario reutiliza el mismo nick en otra liga (no choca global)', () => {
     const ligaA = [{ user_id: 'u1', nickname: 'hulkhogan' }]
     const ligaB = [{ user_id: 'u1', nickname: 'hulkhogan' }, { user_id: 'u9', nickname: 'otro' }]

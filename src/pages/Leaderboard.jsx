@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
-import { NFL_WEEKS } from '../data/nflData'
 import { isWeekLocked, getCurrentWeek } from '../utils/dates'
 import { calcStandings } from '../utils/standings'
 import LeaderboardTable from '../components/LeaderboardTable'
@@ -9,10 +8,9 @@ import { canManageLeague } from '../domains/platform'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
 
 export default function Leaderboard({ user, league, onNavigate }) {
-  const [activeWeek, setActiveWeek] = useState(() => {
-    const w = Object.keys(NFL_WEEKS).map(Number)
-    return w.length > 0 ? Math.max(...w) : 1
-  })
+  // Default por fechas: antes de arrancar la temporada muestra la semana 1;
+  // al cargar los juegos reales se sincroniza a la semana en juego.
+  const [activeWeek, setActiveWeek] = useState(1)
   const [weeks, setWeeks] = useState([])
   const [allGames, setAllGames] = useState([])
   const [rows, setRows] = useState([])
@@ -25,13 +23,14 @@ export default function Leaderboard({ user, league, onNavigate }) {
   const isGeneral = activeWeek === 'all'
   const { displayMap } = useLeagueIdentity(league, memberUserIds)
 
-  // Sync activeWeek to current week when data loads
+  // Sync activeWeek to the week being played (por fechas) when data loads
+  const syncedRef = useRef(false)
   useEffect(() => {
-    if (weeks.length > 0 && !weeks.includes(activeWeek)) {
-      const current = getCurrentWeek(allGames)
-      setActiveWeek(current || Math.max(...weeks))
-    }
-  }, [weeks])
+    if (weeks.length === 0 || allGames.length === 0 || syncedRef.current) return
+    syncedRef.current = true
+    const current = getCurrentWeek(allGames)
+    setActiveWeek(current || weeks[0])
+  }, [weeks, allGames])
 
   const loadStandings = useCallback(async () => {
     if (!league) return
