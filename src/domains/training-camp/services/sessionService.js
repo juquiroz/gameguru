@@ -17,6 +17,11 @@ const lsKey = (leagueId) => `${LS_PREFIX}${leagueId}`
 
 const STATE_V2 = 'training_camp_v2'
 
+// Cuando la nube no responde, la sesión v2 vive en localStorage con un id
+// sintético estable (el flujo completo + createTrainingCamp siguen su
+// contracto sin depender del UUID de Supabase).
+const localId = (leagueId) => `local-${String(leagueId).slice(0, 8)}`
+
 const normalize = (row) => {
   if (!row) return null
   return {
@@ -25,6 +30,8 @@ const normalize = (row) => {
     current_week: Number(row.current_week) > 0 ? Number(row.current_week) : 1,
     schedule_complete: !!row.schedule_complete,
     started: !!row.started,
+    auto: !!row.auto,
+    seed: row.seed != null ? Number(row.seed) : null,
   }
 }
 
@@ -65,10 +72,10 @@ export const trainingCampSessionService = {
   },
 
   // Crea la sesión simple del campamento (idempotente por liga).
-  async create(leagueId, { name, totalWeeks = 1 } = {}) {
+  async create(leagueId, { name, totalWeeks = 1, auto = false, seed = null } = {}) {
     const existing = await this.get(leagueId)
     if (existing.data?.id) {
-      return this.update(leagueId, { total_weeks: totalWeeks })
+      return this.update(leagueId, { total_weeks: totalWeeks, auto, seed })
     }
     // El query builder de Supabase es thenable pero no expone `.catch` en
     // todas las versiones → envolver en try/catch para no romper la creación.
@@ -91,6 +98,7 @@ export const trainingCampSessionService = {
       total_weeks: Number(totalWeeks) > 0 ? Number(totalWeeks) : 1,
       current_week: 1,
       schedule_complete: false,
+      ...(auto ? { auto: true, seed: seed != null ? Number(seed) : null } : {}),
     }
     try {
       const { data, error } = await trainingSessionsApi.insert(record)
@@ -98,8 +106,8 @@ export const trainingCampSessionService = {
       return { data: normalize(data), persisted: 'cloud' }
     } catch (err) {
       logFallback('create', err)
-      writeLocal(leagueId, record)
-      return { data: normalize(record), persisted: 'local', fallback: true }
+      writeLocal(leagueId, { ...record, id: localId(leagueId) })
+      return { data: normalize({ ...record, id: localId(leagueId) }), persisted: 'local', fallback: true }
     }
   },
 

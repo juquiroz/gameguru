@@ -1,6 +1,6 @@
-import { getLeagueMode, getLeagueSeason } from '../models/modes'
-import { EVENT_TYPES } from '../../event'
-import { TRAINING_STATES } from '../../training/models/states'
+import { getLeagueMode, getLeagueSeason } from '../models/modes.js'
+import { EVENT_TYPES } from '../../event/EventDirector.js'
+import { TRAINING_STATES } from '../../training/models/states.js'
 
 export function hydrateLeague(league) {
   if (!league || typeof league !== 'object') return league

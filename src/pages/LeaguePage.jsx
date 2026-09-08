@@ -203,16 +203,14 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
         </div>
       )}
 
-      {isAdmin && (
-        <div style={{
-          background: 'var(--bg2)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--r-xl)',
-          padding: '1.5rem',
-        }}>
-          <LeagueGamesManager league={league} user={user} />
-        </div>
-      )}
+      <div style={{
+        background: 'var(--bg2)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--r-xl)',
+        padding: '1.5rem',
+      }}>
+        <LeagueGamesManager league={league} user={user} readOnly={!isAdmin} />
+      </div>
 
       {isAdmin && (
         <div style={{ marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>

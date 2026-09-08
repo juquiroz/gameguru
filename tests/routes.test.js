@@ -117,6 +117,29 @@ describe('resolveNavigationTarget — objetivo del menú en el click', () => {
     assert.strictEqual(target.id, ID_A)
   })
 
+  // PLAN-DASH-SELECT: al elegir una liga desde el dashboard se hace
+  // enterLeague(lg) (currentLeague = lg) + selectLeague(lg.id) SIN navegar.
+  // El menú resuelve entonces sobre currentLeague → la liga seleccionada.
+  it('tras seleccionar en el dashboard, el menú usa la liga elegida (currentLeague)', () => {
+    const target = resolveNavigationTarget({ currentLeague: leagueB, myLeagues: [leagueA, leagueB] })
+    assert.strictEqual(target.id, ID_B)
+  })
+
+  it('tras seleccionar, activeLeagueId persistido también resuelve a la elegida', () => {
+    const target = resolveNavigationTarget({ myLeagues: [leagueA, leagueB], activeLeagueId: ID_B })
+    assert.strictEqual(target.id, ID_B)
+  })
+
+  it('selección en dashboard + click Picks → ruta de liga de la elegida', () => {
+    // Mismo flujo que handleNavigate('picks') tras enterLeague(leagueB).
+    const target = resolveNavigationTarget({ currentLeague: leagueB, myLeagues: [leagueA, leagueB] })
+    assert.strictEqual(target.id, ID_B)
+    assert.deepEqual(
+      { type: 'league', leagueId: target.id, page: 'picks' },
+      { type: 'league', leagueId: ID_B, page: 'picks' }
+    )
+  })
+
   it('currentLeague/activeLeagueId no miembro → fallback primera liga', () => {
     const target = resolveNavigationTarget({
       currentLeague: { id: 'outside' },

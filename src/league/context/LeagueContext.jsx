@@ -106,15 +106,24 @@ export function LeagueProvider({ user, leaguesState, children }) {
     navigate({ type: 'league', leagueId, page })
   }, [])
 
+  // Selección SIN navegar (PLAN-DASH-SELECT): marca la liga como contexto
+  // activo y la persiste, pero se queda en el dashboard. El menú resuelve su
+  // objetivo desde `currentLeague`/`activeLeagueId` (ameba de RESOLUCIÓN), así
+  // que "Picks/Tabla/Liga" ya usan la liga seleccionada sin salir del hub.
+  const selectLeague = useCallback((leagueId) => {
+    saveActiveLeagueId(leagueId)
+    setPersistedId(leagueId)
+  }, [])
+
   const value = useMemo(
     () => buildContextValue({
-      leaguesState: { ...leaguesState, setActiveLeague },
+      leaguesState: { ...leaguesState, setActiveLeague, selectLeague },
       route: { ...route, hash },
       persistedId,
       resolved,
       error,
     }),
-    [leaguesState, route, hash, persistedId, resolved, error, setActiveLeague]
+    [leaguesState, route, hash, persistedId, resolved, error, setActiveLeague, selectLeague]
   )
 
   return <LeagueContext.Provider value={value}>{children}</LeagueContext.Provider>

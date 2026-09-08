@@ -69,14 +69,14 @@ export const trainingCampPicksService = {
     return { complete: missing.length === 0, missing }
   },
 
-  async confirmPicks({ user, league, event, gameWeekId, games, picks }) {
+  async confirmPicks({ user, league, event, gameWeekId, games, picks, week }) {
     const { complete } = this.validateComplete(games, picks)
     if (!complete) return { error: { message: 'Faltan selecciones' } }
     const submittedAt = new Date().toISOString()
     const rows = games.map(g => ({
       user_id: user.id,
       league_id: league.id,
-      week: Number(event.current_week) || 1,
+      week: Number(week ?? event.current_week) || 1,
       game_id: g.game_id,
       pick: picks[g.game_id]?.pick,
       training_session_id: event.id,
@@ -108,14 +108,30 @@ export const trainingCampPicksService = {
   },
 
   // Todos los picks confirmados de la sesión (para leaderboard y snapshot).
-  async getConfirmedPicks(leagueId, trainingSessionId) {
+  async getConfirmedPicks(leagueId, trainingSessionId, { userId } = {}) {
     try {
       const { data, error } = await picksApi.getAllForSession(leagueId, trainingSessionId)
       if (error) throw error
       return { picks: data || [], persisted: 'cloud' }
     } catch (err) {
       console.error('[trainingCamp.picksService.getConfirmedPicks] error:', err)
-      return { picks: [], persisted: 'local' }
+      // Degradación local (demo sin migración/RLS): agrega los picks que el
+      // propio usuario confirmó en su browser. Otros usuarios no son visibles
+      // offline; al menos sus propios aciertos cuentan en el leaderboard.
+      const local = []
+      if (userId && trainingSessionId) {
+        const map = readLocalPicks(picksKey(trainingSessionId, userId))
+        Object.entries(map || {}).forEach(([gameId, rec]) => {
+          if (!rec || !rec.pick) return
+          local.push({
+            user_id: userId,
+            game_id: gameId,
+            pick: rec.pick,
+            submitted_at: rec.submitted_at || rec.submittedAt || null,
+          })
+        })
+      }
+      return { picks: local, persisted: 'local' }
     }
   },
 

@@ -14,9 +14,12 @@ const TEAM_OPTIONS = Object.entries(NFL_TEAMS).map(([abbr, data]) => ({ abbr, na
 //              "Finalizar calendario" (onScheduleComplete → INVITING).
 //   'active' → fase de juego: agrega juegos, resultados manuales (ScoreEditor),
 //              avanza semanas y completa el campamento.
+// readOnly (BUILD-TC-V2-AUTO): en el campamento automático el calendario y los
+// resultados se generan solos; la gestión manual queda SOLO de lectura.
 export default function TrainingCampWeekManager({
   mode = 'active', week, totalWeeks, games, deadline, picksLocked, weekComplete, progress,
   busy, isAdmin, onAddGame, onRemoveGame, onSetResult, onNextWeek, onFinishSchedule,
+  readOnly = false,
 }) {
   const [home, setHome] = useState('')
   const [away, setAway] = useState('')
@@ -63,11 +66,17 @@ export default function TrainingCampWeekManager({
         {mode === 'active' && picksLocked && <span className={`${styles.badge} ${styles.badgeLocked}`}>Picks cerrados</span>}
         {mode === 'active' && weekComplete && <span className={`${styles.badge} ${styles.badgeDone}`}>Completada ✓</span>}
         {mode === 'setup' && <span style={{ fontSize: '.8rem', color: 'var(--text2)' }}>Agrega los juegos de esta semana</span>}
+      {readOnly && <span className={`${styles.badge} ${styles.badgeDone}`}>Automático</span>}
       </div>
 
-      {mode === 'active' && (
+      {mode === 'active' && !readOnly && (
         <div style={{ fontSize: '.82rem', color: 'var(--text2)', marginBottom: '1rem' }}>
           Resultados manuales: {progress.done}/{progress.total}
+        </div>
+      )}
+      {readOnly && (
+        <div style={{ fontSize: '.82rem', color: 'var(--text2)', marginBottom: '1rem' }}>
+          Calendario y resultados automáticos. Nada es editable en este modo.
         </div>
       )}
 
@@ -77,7 +86,7 @@ export default function TrainingCampWeekManager({
           <div key={g.game_id || g.id} className={styles.gameCard}>
             <div className={styles.gameTop}>
               <span>{g.game_time ? new Date(g.game_time).toLocaleString() : '—'}</span>
-              {isAdmin && <button className={styles.btnGhost} onClick={() => onRemoveGame(g.game_id || g.id)}>✕</button>}
+              {isAdmin && !readOnly && <button className={styles.btnGhost} onClick={() => onRemoveGame(g.game_id || g.id)}>✕</button>}
             </div>
             <div className={styles.gameMatchup}>
               <span style={{ display: 'flex', gap: '.3rem', alignItems: 'center' }}>
@@ -94,7 +103,7 @@ export default function TrainingCampWeekManager({
                 {g.away_score}-{g.home_score}
               </div>
             ) : (
-              resultFor === g.id && mode === 'active' && isAdmin ? (
+              resultFor === g.id && mode === 'active' && isAdmin && !readOnly ? (
                 <ScoreEditor
                   away={{ abbr: g.away_abbr }} home={{ abbr: g.home_abbr }}
                   initialAwayScore={g.away_score} initialHomeScore={g.home_score}
@@ -103,7 +112,7 @@ export default function TrainingCampWeekManager({
                   onCancel={() => setResultFor(null)}
                 />
               ) : (
-                mode === 'active' && isAdmin && (
+                mode === 'active' && isAdmin && !readOnly && (
                   <button className={styles.btn} onClick={() => setResultFor(g.id)}>
                     {busy ? '…' : 'Resultado'}
                   </button>
@@ -115,8 +124,8 @@ export default function TrainingCampWeekManager({
         {games.length === 0 && <div className={styles.empty}>Aún no hay juegos en esta semana.</div>}
       </div>
 
-      {/* Agregar juego manual (solo admin) */}
-      {isAdmin && (
+      {/* Agregar juego manual (solo admin, solo lectura en auto) */}
+      {isAdmin && !readOnly && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>Agregar juego a la semana {week}</div>
           <div style={{ fontSize: '.8rem', color: 'var(--text2)', marginBottom: '.5rem' }}>

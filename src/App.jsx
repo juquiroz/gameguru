@@ -147,6 +147,7 @@ function AppShell({
     enterLeague,
     leaveCurrentLeague,
     setActiveLeague,
+    selectLeague,
   } = useLeagueContext()
 
   // PLAN-LEAGUE-CONTEXT-01.1: la liga de contexto es la resuelta por la URL
@@ -290,10 +291,13 @@ function AppShell({
         onNavigate={handleNavigate}
         onCreateNew={() => openWizard()}
         onJoinClick={() => setShowJoin(true)}
-         onEnterLeague={(lg) => {
-           enterLeague(lg)
-           setActiveLeague(lg.id, 'league')
-         }}
+        onEnterLeague={(lg) => {
+          // PLAN-DASH-SELECT: al hacer click en una liga desde el dashboard se
+          // selecciona como contexto (actualiza el dashboard) SIN navegar fuera
+          // del hub. El menú (Picks/Tabla/Liga/…) resuelve ya sobre `currentLeague`.
+          enterLeague(lg)
+          selectLeague(lg.id)
+        }}
         onRefreshLeagues={fetchMyLeagues}
         onCreateTrainingCamp={() => openWizard('practice')}
       />
@@ -380,7 +384,6 @@ function AppShell({
         isSuperAdmin={isSuperAdmin}
         onCreateNew={() => openWizard()}
         onCreateSimulation={() => openWizard('practice')}
-        onCreateTrainingCamp={() => openWizard('practice')}
         route={route}
       />
 
@@ -409,7 +412,6 @@ function AppShell({
         activePage={activePage}
         onNavigate={handleNavigate}
         isSuperAdmin={isSuperAdmin}
-        isPractice={!!effectiveLeague && (effectiveLeague.league_mode === 'practice' || effectiveLeague.simulation)}
       />
 
       {showWizard && (

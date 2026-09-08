@@ -20,7 +20,7 @@
 //   - total de puntos acotado a un rango tipo NFL (3..38)
 // ════════════════════════════════════════════════════════════════════
 
-import { calendarHelpers } from '../event/services/fixtureCalendar'
+import { calendarHelpers } from '../event/services/fixtureCalendar.js'
 
 // Rango de puntuación v1 (NFL-ish, valores cerrados y estables).
 const MIN_SCORE = 3
