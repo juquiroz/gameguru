@@ -43,6 +43,17 @@ export default {
     logout: 'Logout',
     home: 'Go home',
     needLeague: 'You don\'t have an active league. Open one from the dashboard to view this section.',
+    profileOpen: 'Profile summary',
+    profile: 'Profile',
+    profileRealName: 'Real name',
+    profileRealNameEmpty: 'Not set — you registered without a real name.',
+    profileRealNameHint: 'Private. It is revealed to everyone else only when the admin closes and reveals each league.',
+    profileRealNameInvalid: 'Looked like an email, so it is ignored when revealing. Update it to show your real name at the end.',
+    profileUsername: 'Username',
+    profileLeagueNicks: 'Nickname per league',
+    profileNoLeagues: 'You are not in any league yet.',
+    profileNoNickname: 'No nickname',
+    profileNickCurrent: 'Showing as "{nick}" in {league}.',
   },
 
   bottomNav: {

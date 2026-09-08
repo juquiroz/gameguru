@@ -13,13 +13,23 @@ export const getWeekDeadline = (games) => {
 export const getCurrentWeek = (games) => {
   if (!games?.length) return null
   const weeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b)
-  const now = new Date()
-  const open = weeks.find(w => {
+  const now = Date.now()
+  // Default por fechas: la semana en juego es la primera (en orden) cuyo
+  // último partido todavía no pasó. Si aún no arrancó la temporada, cae en la
+  // primera semana; al cerrar cada semana avanza a la siguiente.
+  for (const w of weeks) {
     const wg = games.filter(g => g.week === w)
-    const deadline = getWeekDeadline(wg)
-    return !wg.every(g => g.finished) && (!deadline || now < deadline)
-  })
-  return open ?? weeks[weeks.length - 1]
+    if (wg.every(g => g.finished)) continue
+    const times = wg
+      .map(g => g.game_time || g.time)
+      .filter(Boolean)
+      .map(t => new Date(t).getTime())
+      .filter(t => !isNaN(t))
+      .sort((a, b) => a - b)
+    const last = times.length ? times[times.length - 1] : null
+    if (last == null || now <= last) return w
+  }
+  return weeks[weeks.length - 1]
 }
 
 export const isWeekLocked = (games) => {

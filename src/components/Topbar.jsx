@@ -1,5 +1,6 @@
 import { useLanguage } from '../i18n/context'
 import LanguageSwitch from './LanguageSwitch'
+import ProfileMenu from './ProfileMenu'
 import { navigate, platformReconciliationRoute } from '../router/routes'
 import styles from './Topbar.module.css'
 
@@ -94,7 +95,7 @@ export default function Topbar({ user, league, myLeagues, onChangeLeague, onSele
           </button>
         )}
         <LanguageSwitch />
-        <span className={styles.userName}>{user?.email?.split('@')[0]}</span>
+        <ProfileMenu user={user} league={league} myLeagues={sortedLeagues} />
         <button className={styles.logoutBtn} onClick={onLogout}>{t('topbar.logout')}</button>
       </div>
     </header>

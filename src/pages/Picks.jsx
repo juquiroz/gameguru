@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import GameCard from '../components/GameCard'
 import LeagueIdentity from '../components/LeagueIdentity'
 import { NFL_WEEKS } from '../data/nflData'
@@ -11,10 +11,9 @@ import { usePicks } from '../hooks/usePicks'
 import styles from './Picks.module.css'
 
 export default function Picks({ user, league, onNavigate }) {
-  const [activeWeek, setActiveWeek] = useState(() => {
-    const w = Object.keys(NFL_WEEKS).map(Number)
-    return w.length > 0 ? Math.max(...w) : 2
-  })
+  // Default por fechas: antes de arrancar la temporada muestra la semana 1;
+  // al cargar los juegos reales se sincroniza a la semana en juego.
+  const [activeWeek, setActiveWeek] = useState(1)
   const [leagueGames, setLeagueGames] = useState(null)
   const [loadingGames, setLoadingGames] = useState(false)
   const [memberUserIds, setMemberUserIds] = useState([])
@@ -88,16 +87,14 @@ export default function Picks({ user, league, onNavigate }) {
     ? [...new Set(leagueGames.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
     : Object.keys(NFL_WEEKS).map(Number)
 
-  // When dynamic games load, sync to current week
+  // When dynamic games load, sync to the week being played (por fechas)
+  const syncedRef = useRef(false)
   useEffect(() => {
-    if (useDynamic && weeks.length > 0) {
-      setActiveWeek(prev => {
-        if (weeks.includes(prev)) return prev
-        const current = getCurrentWeek(leagueGames)
-        return current || Math.max(...weeks)
-      })
-    }
-  }, [loadingGames])
+    if (!useDynamic || weeks.length === 0 || syncedRef.current) return
+    syncedRef.current = true
+    const current = getCurrentWeek(leagueGames)
+    if (current != null && current !== activeWeek) setActiveWeek(current)
+  }, [useDynamic, weeks, leagueGames, activeWeek])
 
   const totalGames = weekData?.games?.length || 0
   const pickedCount = weekData?.games?.filter(g => picks[g.id]).length || 0

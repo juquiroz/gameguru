@@ -29,10 +29,21 @@ export default function NicknameModal({ league, userId, onSaved }) {
   if (!show) return null
 
   const handleSave = async () => {
+    if (saving) return
     if (!value || !String(value).trim()) return setError(t('nickname.required'))
     setSaving(true)
     setError(null)
     try {
+      // Evita el falso positivo: si otro evento (o un doble Enter) ya guardó mi
+      // nickname en este mismo momento, el modal se cierra en vez de revalidar
+      // contra un snapshot a medias.
+      const { data: mine } = await membersApi.getMyMembership(league.id, userId)
+      if (mine && mine.nickname && String(mine.nickname).trim()) {
+        setShow(false)
+        if (onSaved) onSaved({ leagueId: league.id, nickname: mine.nickname })
+        return
+      }
+
       const { data: members } = await leaguesApi.getMembers(league.id)
       const check = isNicknameUnique(members || [], value, userId)
       if (!check.unique) {
@@ -41,9 +52,13 @@ export default function NicknameModal({ league, userId, onSaved }) {
       }
 
       const { data: saved, error: saveErr } = await membersApi.setNickname(league.id, userId, value.trim())
+      // La BD es la fuente de verdad: un conflicto real de unicidad (23505)
+      // llega aquí como "taken" aunque el snapshot del cliente estuviera viejo.
+      // Cualquier otro error (ej. trigger de inmutabilidad, P0001) es distinto.
       if (saveErr || !saved || saved.length === 0) {
         console.error('[nickname] no se pudo guardar:', saveErr, saved)
-        setError(`${t('nickname.saveError')} ${saveErr?.message || ''}`)
+        const dbTaken = saveErr && (saveErr.code === '23505' || /duplicate key|duplicat/.test(`${saveErr.code || ''} ${saveErr.message || ''}`))
+        setError(dbTaken ? t('nickname.taken') : `${t('nickname.saveError')} ${saveErr?.message || ''}`)
         return
       }
 

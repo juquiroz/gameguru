@@ -8,8 +8,13 @@ export const isEmailLike = (value) => {
 export const isNicknameUnique = (members, nickname, userId) => {
   if (!nickname || !String(nickname).trim()) return { unique: false, error: 'nickname_required' }
   const normalized = String(nickname).trim().toLowerCase()
+  // Higiene: las filas sin user_id (basura/parciales) no cuentan como rival;
+  // sin userId válido no se puede descartar la fila propia, así que el chequeo
+  // se cede a la BD (23505) en lugar de arriesgar un falso positivo.
+  if (!userId) return { unique: true, error: null }
   const clash = (members || []).some(
     (m) =>
+      m.user_id &&
       m.user_id !== userId &&
       String(m.nickname || '').trim().toLowerCase() === normalized
   )

@@ -43,6 +43,17 @@ export default {
     logout: 'Salir',
     home: 'Ir al inicio',
     needLeague: 'No tenés una liga activa. Entrá a una liga desde el dashboard para ver esta sección.',
+    profileOpen: 'Resumen de perfil',
+    profile: 'Perfil',
+    profileRealName: 'Nombre real',
+    profileRealNameEmpty: 'No configurado — te registraste sin nombre real.',
+    profileRealNameHint: 'Privado. Solo se revela a los demás cuando el admin cierra y revela cada liga.',
+    profileRealNameInvalid: 'Parece un correo, por eso se ignora al revelar. Actualizalo para mostrar tu nombre real al final.',
+    profileUsername: 'Usuario',
+    profileLeagueNicks: 'Nickname por liga',
+    profileNoLeagues: 'Todavía no estás en ninguna liga.',
+    profileNoNickname: 'Sin nickname',
+    profileNickCurrent: 'En {league} apareces como "{nick}".',
   },
 
   bottomNav: {
