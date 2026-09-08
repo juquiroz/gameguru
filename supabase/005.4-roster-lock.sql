@@ -11,9 +11,15 @@
 -- 1) `public.league_roster_open(league_id)` → decisión de dominio en SQL,
 --    espejo de `canJoinLeague()` en
 --    src/domains/league/services/leagueService.js (fuente única de verdad).
+--    Modelo v2 (BUILD-TC-V2-001): una sesión `training_camp_v2` mantiene el
+--    roster abierto hasta que el flag `started` sea true (requiere previo
+--    despliegue de 014.0); setup e inviting no congelan invitaciones.
 -- 2) Política de INSERT sobre `league_members` con la guarda → el backend
 --    rechaza nuevos miembros cuando el roster está cerrado (defensa en
 --    profundidad; la app ya rechaza en la capa de servicio joinByCode).
+-- 3) `lm_update USING (true)` → RESTAURA el UPDATE sobre league_members
+--    (el nickname del BUILD-AUTH-NICK-001 se persiste porque la membresía
+--    propia es actualizable).
 --
 -- NOTA: si en la consola existe una política de INSERT anterior y permisiva
 -- sobre `league_members` con otro nombre, eliminala para que esta guarda sea
@@ -26,8 +32,13 @@ LANGUAGE sql
 STABLE
 AS $$
   SELECT COALESCE((
-    SELECT (ts.event_type = 'training_camp'
+    SELECT CASE
+      WHEN ts.event_type = 'training_camp' AND ts.state = 'training_camp_v2' THEN
+        -- Modelo v2: abierto hasta que el campamento arranca (started, 014.0).
+        NOT COALESCE(ts.started, false)
+      ELSE (ts.event_type = 'training_camp'
             AND ts.state IN ('created', 'waiting_players', 'countdown'))
+    END
     FROM public.training_sessions ts
     WHERE ts.league_id = p_league_id
     ORDER BY ts.session_no DESC

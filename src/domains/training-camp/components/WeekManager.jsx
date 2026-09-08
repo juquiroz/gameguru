@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NFL_TEAMS } from '../../../data/nflData'
+import { MIN_GAMES_PER_WEEK, MAX_GAMES_PER_WEEK } from '../model'
 import ScoreEditor from '../../../components/ScoreEditor'
 import TeamLogo from '../../../components/TeamLogo'
 import styles from '../training-camp.module.css'
@@ -13,9 +14,12 @@ const TEAM_OPTIONS = Object.entries(NFL_TEAMS).map(([abbr, data]) => ({ abbr, na
 //              "Finalizar calendario" (onScheduleComplete → INVITING).
 //   'active' → fase de juego: agrega juegos, resultados manuales (ScoreEditor),
 //              avanza semanas y completa el campamento.
+// readOnly (BUILD-TC-V2-AUTO): en el campamento automático el calendario y los
+// resultados se generan solos; la gestión manual queda SOLO de lectura.
 export default function TrainingCampWeekManager({
   mode = 'active', week, totalWeeks, games, deadline, picksLocked, weekComplete, progress,
   busy, isAdmin, onAddGame, onRemoveGame, onSetResult, onNextWeek, onFinishSchedule,
+  readOnly = false,
 }) {
   const [home, setHome] = useState('')
   const [away, setAway] = useState('')
@@ -28,6 +32,9 @@ export default function TrainingCampWeekManager({
     if (!home || !away) return setMsg('Selecciona ambos equipos.')
     if (home === away) return setMsg('Los equipos deben ser distintos.')
     if (!date || !time) return setMsg('Completa fecha y hora.')
+    if (games.length >= MAX_GAMES_PER_WEEK) {
+      return setMsg(`Máximo ${MAX_GAMES_PER_WEEK} juegos por semana.`)
+    }
     const res = await onAddGame({ week, home: TEAM_OPTIONS.find(t => t.abbr === home), away: TEAM_OPTIONS.find(t => t.abbr === away), date, time })
     if (res?.error) return setMsg(res.error.message)
     setHome(''); setAway(''); setDate(''); setTime(''); setMsg(null)
@@ -40,6 +47,9 @@ export default function TrainingCampWeekManager({
   }
 
   const isLastWeek = Number(week) >= Number(totalWeeks)
+  // Min 1 / máx N juegos por semana para avanzar en modo setup.
+  const atMax = games.length >= MAX_GAMES_PER_WEEK
+  const canAdvance = games.length >= MIN_GAMES_PER_WEEK
 
   return (
     <div>
@@ -56,11 +66,17 @@ export default function TrainingCampWeekManager({
         {mode === 'active' && picksLocked && <span className={`${styles.badge} ${styles.badgeLocked}`}>Picks cerrados</span>}
         {mode === 'active' && weekComplete && <span className={`${styles.badge} ${styles.badgeDone}`}>Completada ✓</span>}
         {mode === 'setup' && <span style={{ fontSize: '.8rem', color: 'var(--text2)' }}>Agrega los juegos de esta semana</span>}
+      {readOnly && <span className={`${styles.badge} ${styles.badgeDone}`}>Automático</span>}
       </div>
 
-      {mode === 'active' && (
+      {mode === 'active' && !readOnly && (
         <div style={{ fontSize: '.82rem', color: 'var(--text2)', marginBottom: '1rem' }}>
           Resultados manuales: {progress.done}/{progress.total}
+        </div>
+      )}
+      {readOnly && (
+        <div style={{ fontSize: '.82rem', color: 'var(--text2)', marginBottom: '1rem' }}>
+          Calendario y resultados automáticos. Nada es editable en este modo.
         </div>
       )}
 
@@ -70,7 +86,7 @@ export default function TrainingCampWeekManager({
           <div key={g.game_id || g.id} className={styles.gameCard}>
             <div className={styles.gameTop}>
               <span>{g.game_time ? new Date(g.game_time).toLocaleString() : '—'}</span>
-              {isAdmin && <button className={styles.btnGhost} onClick={() => onRemoveGame(g.game_id || g.id)}>✕</button>}
+              {isAdmin && !readOnly && <button className={styles.btnGhost} onClick={() => onRemoveGame(g.game_id || g.id)}>✕</button>}
             </div>
             <div className={styles.gameMatchup}>
               <span style={{ display: 'flex', gap: '.3rem', alignItems: 'center' }}>
@@ -87,7 +103,7 @@ export default function TrainingCampWeekManager({
                 {g.away_score}-{g.home_score}
               </div>
             ) : (
-              resultFor === g.id && mode === 'active' && isAdmin ? (
+              resultFor === g.id && mode === 'active' && isAdmin && !readOnly ? (
                 <ScoreEditor
                   away={{ abbr: g.away_abbr }} home={{ abbr: g.home_abbr }}
                   initialAwayScore={g.away_score} initialHomeScore={g.home_score}
@@ -96,7 +112,7 @@ export default function TrainingCampWeekManager({
                   onCancel={() => setResultFor(null)}
                 />
               ) : (
-                mode === 'active' && isAdmin && (
+                mode === 'active' && isAdmin && !readOnly && (
                   <button className={styles.btn} onClick={() => setResultFor(g.id)}>
                     {busy ? '…' : 'Resultado'}
                   </button>
@@ -108,10 +124,13 @@ export default function TrainingCampWeekManager({
         {games.length === 0 && <div className={styles.empty}>Aún no hay juegos en esta semana.</div>}
       </div>
 
-      {/* Agregar juego manual (solo admin) */}
-      {isAdmin && (
+      {/* Agregar juego manual (solo admin, solo lectura en auto) */}
+      {isAdmin && !readOnly && (
         <div className={styles.section}>
           <div className={styles.sectionTitle}>Agregar juego a la semana {week}</div>
+          <div style={{ fontSize: '.8rem', color: 'var(--text2)', marginBottom: '.5rem' }}>
+            {games.length}/{MAX_GAMES_PER_WEEK} juegos — {atMax ? 'máximo alcanzado' : `agrega entre ${MIN_GAMES_PER_WEEK} y ${MAX_GAMES_PER_WEEK} juegos`}
+          </div>
           <div className={styles.row} style={{ marginBottom: '.5rem' }}>
             <select className={styles.select} value={away} onChange={e => setAway(e.target.value)}>
               <option value="">Visitante</option>
@@ -127,20 +146,27 @@ export default function TrainingCampWeekManager({
             <input type="date" className={styles.input} value={date} onChange={e => setDate(e.target.value)} />
             <input type="time" className={styles.input} value={time} onChange={e => setTime(e.target.value)} />
           </div>
-          <button className={styles.btnPrimary} onClick={submitGame} disabled={busy}>Agregar (+)</button>
+          <button className={styles.btnPrimary} onClick={submitGame} disabled={busy || atMax}>Agregar (+)</button>
         </div>
       )}
 
       {/* Navegación de semanas */}
       {isAdmin && mode === 'setup' && (
         <div className={styles.row} style={{ justifyContent: 'flex-end' }}>
-          <button
-            className={isLastWeek ? styles.btnPrimary : styles.btn}
-            disabled={busy}
-            onClick={isLastWeek ? onFinishSchedule : onNextWeek}
-          >
-            {isLastWeek ? 'Finalizar calendario →' : `Siguiente semana (${week + 1}) →`}
-          </button>
+          {canAdvance && (
+            <button
+              className={isLastWeek ? styles.btnPrimary : styles.btn}
+              disabled={busy}
+              onClick={isLastWeek ? onFinishSchedule : onNextWeek}
+            >
+              {isLastWeek ? 'Finalizar calendario →' : `Siguiente semana (${week + 1}) →`}
+            </button>
+          )}
+          {!canAdvance && (
+            <span style={{ fontSize: '.8rem', color: 'var(--text2)' }}>
+              Agrega al menos {MIN_GAMES_PER_WEEK} juego a esta semana para continuar.
+            </span>
+          )}
         </div>
       )}
     </div>

@@ -5,13 +5,19 @@
 // rediseñado (simple y manual). Sin React, sin IO. Funciones puras:
 //   - estado del campamento (setup → activo → finalizado)
 //   - validación secuencial de semanas (N+1 no puede empezar antes que N)
-//   - deadline de picks (15 min antes del primer juego de la semana)
+//   - deadline de picks (5 min antes del primer juego de la semana)
 //   - decisiones de bloqueo (los picks se cierran al iniciar el primer juego)
 //   - cálculo de snapshot de auditoría
 // ============================================================================
 
-// Ventana de picks: los picks se cierran 15 min antes del primer juego.
-export const PICK_DEADLINE_MINUTES = 15
+// Ventana de picks: los picks se cierran 5 min antes del primer juego de la
+// semana. El sistema detecta el primer y el último juego de cada semana
+// (firstGameTimeOf / lastGameTime) para ubicar el lock y el fin del bloque.
+export const PICK_DEADLINE_MINUTES = 5
+
+// Límites de juegos por semana en el calendario manual.
+export const MIN_GAMES_PER_WEEK = 1
+export const MAX_GAMES_PER_WEEK = 5
 
 // Semana más temprana sin resultado definida por el primer game_time.
 export function firstGameTime(game) {
@@ -44,7 +50,8 @@ export function derivePhase({ scheduleComplete, totalWeeks, currentWeek, complet
   return PHASE.INVITING
 }
 
-// Deadline de picks de una semana = 15 min antes del primer game_time.
+// Deadline de picks de una semana = 5 min antes del primer game_time de la
+// semana. `firstGameTime` filtra por la fecha más temprana.
 export function weekDeadline(games) {
   const times = (games || [])
     .map(firstGameTime)

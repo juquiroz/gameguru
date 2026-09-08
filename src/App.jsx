@@ -29,7 +29,7 @@ import TrainingCampSetupModal from './domains/training/components/TrainingCampSe
 import { LeagueProvider, useLeagueContext } from './league/context/LeagueContext'
 import { LeagueRoute } from './league/LeagueRoute'
 import NicknameModal from './league/components/NicknameModal'
-import { resolveForView, navigate, LEGACY_REDIRECTABLE } from './router/routes'
+import { resolveForView, resolveNavigationTarget, navigate, LEGACY_REDIRECTABLE } from './router/routes'
 
 export default function App() {
   return (
@@ -147,6 +147,7 @@ function AppShell({
     enterLeague,
     leaveCurrentLeague,
     setActiveLeague,
+    selectLeague,
   } = useLeagueContext()
 
   // PLAN-LEAGUE-CONTEXT-01.1: la liga de contexto es la resuelta por la URL
@@ -169,20 +170,37 @@ function AppShell({
     platformReconciliation: 'Provider Reconciliation',
   }
 
-  // Sync URL with active page (flujo legacy: #picks, #board, ...)
+  // PLAN-LEAGUE-CONTEXT-01.1 §4: la URL es la fuente de verdad. Mantiene el
+  // `activePage` (highlight del menú) sincronizado con la ruta actual, también
+  // en entradas directas (#/league/:id/standings, refresh). Los views de liga
+  // se mapean al id del menú (standings → board, igual que LEGACY_VIEW_MAP).
+  const LEAGUE_VIEW_TO_NAV = {
+    picks: 'picks',
+    standings: 'board',
+    publicpicks: 'publicpicks',
+    training: 'training',
+    league: 'league',
+    dashboard: 'dashboard',
+  }
+
   useEffect(() => {
-    const hash = window.location.hash.replace('#', '')
-    if (hash && hash !== activePage) {
-      setActivePage(hash)
+    if (!route) return
+    if (route.type === 'league') {
+      setActivePage(LEAGUE_VIEW_TO_NAV[route.page] || 'league')
+    } else if (route.type === 'legacy' && route.page) {
+      setActivePage(route.page)
+    } else if (route.type === 'dashboard') {
+      setActivePage('dashboard')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [route && route.hash])
 
   // Redirects legacy (#picks/#board/#league/#publicpicks) hacia
-  // #/league/:id/:view cuando hay contexto resoluble. La URL manda;
-  // activeLeagueId es sugerencia. `training` se excluye hasta Fase 6 (el
-  // lobby del TC no está migrado a contexto de ruta). 2+ ligas sin contexto →
-  // hub (selector de liga llega en BUILD-02).
+  // #/league/:id/:view cuando hay contexto resoluble (entrada directa por URL
+  // compartida). La URL manda; activeLeagueId es sugerencia. `training` se
+  // excluye hasta Fase 6 (el lobby del TC no está migrado a contexto de ruta).
+  // Sin liga resoluble → dashboard (el menú usa handleNavigate, que resuelve
+  // el target en el click; este efecto cubre las URLs manuales).
   useEffect(() => {
     if (!route || route.type !== 'legacy') return
     if (!(route.page in LEGACY_REDIRECTABLE)) return
@@ -193,11 +211,32 @@ function AppShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route && route.hash, myLeagues && myLeagues.length])
 
+  // Navegación determinista: las vistas de liga resuelven el objetivo EN EL
+  // CLICK y van directo a #/league/:id/:view (sin round-trip por hash legacy,
+  // que mostraba el hub un frame). Dashboard/superadmin/usuario sin liga →
+  // hash legacy (el estado `topbar.needLeague` nunca es el hub).
+  const LEAGUE_NAV_TARGET = {
+    picks: 'picks',
+    board: 'standings',
+    publicpicks: 'publicpicks',
+    league: 'league',
+    training: 'training',
+  }
+
   const handleNavigate = (page) => {
-    setActivePage(page)
-    window.location.hash = page
     const pageTitle = t(PAGE_KEYS[page] || 'app.name')
     document.title = `${pageTitle} · ${t('app.name')}`
+    setActivePage(page)
+
+    const view = LEAGUE_NAV_TARGET[page]
+    if (view) {
+      const target = resolveNavigationTarget({ currentLeague, myLeagues, activeLeagueId })
+      if (target) {
+        navigate({ type: 'league', leagueId: target.id, page: view })
+        return
+      }
+    }
+    navigate(page)
   }
 
   const handleChangeLeague = () => {
@@ -252,10 +291,13 @@ function AppShell({
         onNavigate={handleNavigate}
         onCreateNew={() => openWizard()}
         onJoinClick={() => setShowJoin(true)}
-         onEnterLeague={(lg) => {
-           enterLeague(lg)
-           setActiveLeague(lg.id, 'league')
-         }}
+        onEnterLeague={(lg) => {
+          // PLAN-DASH-SELECT: al hacer click en una liga desde el dashboard se
+          // selecciona como contexto (actualiza el dashboard) SIN navegar fuera
+          // del hub. El menú (Picks/Tabla/Liga/…) resuelve ya sobre `currentLeague`.
+          enterLeague(lg)
+          selectLeague(lg.id)
+        }}
         onRefreshLeagues={fetchMyLeagues}
         onCreateTrainingCamp={() => openWizard('practice')}
       />
@@ -342,7 +384,6 @@ function AppShell({
         isSuperAdmin={isSuperAdmin}
         onCreateNew={() => openWizard()}
         onCreateSimulation={() => openWizard('practice')}
-        onCreateTrainingCamp={() => openWizard('practice')}
         route={route}
       />
 
@@ -353,14 +394,14 @@ function AppShell({
             está finalizada. Solo aplica a rutas de liga (URL o legacy). */}
         {route && route.type === 'league' && route.leagueId && (
           <NicknameModal
-            key={route.leagueId}
+            key={`nickname-${route.leagueId}`}
             league={routeLeague || { id: route.leagueId }}
             userId={user.id}
           />
         )}
         {!route && currentLeague && activePage !== 'dashboard' && (
           <NicknameModal
-            key={`${currentLeague.id}-${activePage}`}
+            key={`nickname-${currentLeague.id}-${activePage}`}
             league={currentLeague}
             userId={user.id}
           />
@@ -371,7 +412,6 @@ function AppShell({
         activePage={activePage}
         onNavigate={handleNavigate}
         isSuperAdmin={isSuperAdmin}
-        isPractice={!!effectiveLeague && (effectiveLeague.league_mode === 'practice' || effectiveLeague.simulation)}
       />
 
       {showWizard && (

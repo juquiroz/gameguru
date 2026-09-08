@@ -11,7 +11,7 @@ import styles from './LeagueGamesManager.module.css'
 
 const TOTAL_WEEKS = 18
 
-export default function LeagueGamesManager({ league, user }) {
+export default function LeagueGamesManager({ league, user, readOnly = false }) {
   const [activeWeek, setActiveWeek] = useState(1)
   const [masterGames, setMasterGames] = useState([])
   const [leagueGames, setLeagueGames] = useState([])
@@ -197,7 +197,9 @@ export default function LeagueGamesManager({ league, user }) {
     <div>
       <div className="sec-title">📋 Gestión de Partidos</div>
       <p style={{ fontSize: '.85rem', color: 'var(--text2)', marginBottom: '1rem', lineHeight: 1.5 }}>
-        Importa partidos del calendario maestro a tu liga. Los miembros harán sus picks sobre estos partidos.
+        {readOnly
+          ? 'Resultados de los partidos de la liga. Solo lectura: los cambios los hace el administrador.'
+          : 'Importa partidos del calendario maestro a tu liga. Los miembros harán sus picks sobre estos partidos.'}
       </p>
 
       {msg && (
@@ -225,7 +227,7 @@ export default function LeagueGamesManager({ league, user }) {
         ))}
       </div>
 
-      {!league.simulation && (
+      {!league.simulation && !readOnly && (
         <div className={styles.sectionCard}>
           <div className={styles.sectionHeader}>
             <span>📅 Calendario Maestro — Semana {activeWeek}</span>
@@ -306,7 +308,9 @@ export default function LeagueGamesManager({ league, user }) {
         {leagueWeekGames.length === 0 ? (
           <div className="empty-state" style={{ padding: '1.5rem' }}>
             <div className="big" style={{ fontSize: '1.5rem' }}>🔄</div>
-            No hay partidos en esta semana. Impórtalos desde el calendario maestro.
+            {readOnly
+              ? 'No hay partidos en esta semana todavía.'
+              : 'No hay partidos en esta semana. Impórtalos desde el calendario maestro.'}
           </div>
         ) : (
           <div className={styles.gamesList}>
@@ -315,12 +319,12 @@ export default function LeagueGamesManager({ league, user }) {
                 g.result ||
                 (g.home_score != null && g.away_score != null)
               )
-              const editing = resultForm === g.id
+              const editing = !readOnly && resultForm === g.id
               return (
                 <div
                   key={g.id}
                   className={`${styles.gameRow} ${g.active === false ? styles.inactive : ''} ${hasResult ? styles.hasResult : ''} ${editing ? styles.editing : ''}`}
-                  onClick={() => { if (!editing) setResultForm(g.id) }}
+                  onClick={() => { if (!readOnly && !editing) setResultForm(g.id) }}
                 >
                   {g.active === false && <span className={styles.inactiveBadge}>🚫</span>}
 
@@ -342,7 +346,7 @@ export default function LeagueGamesManager({ league, user }) {
                   <div className={editing ? styles.editMeta : styles.rowMeta}>
                     <span className={styles.time}><GameTime when={g.game_time} timeZone={leagueTz} /></span>
 
-                    {!editing && (
+                    {!readOnly && !editing && (
                       <button
                         className={styles.resultBtn}
                         onClick={(e) => { e.stopPropagation(); setResultForm(g.id) }}
@@ -351,13 +355,15 @@ export default function LeagueGamesManager({ league, user }) {
                         {hasResult ? '📝' : '🏆'}
                       </button>
                     )}
-                    <button
-                      className={g.active === false ? styles.enableBtn : styles.disableBtn}
-                      onClick={(e) => { e.stopPropagation(); handleToggleActive(g.game_id, g.active !== false) }}
-                      title={g.active === false ? 'Habilitar' : 'Inhabilitar'}
-                    >
-                      {g.active === false ? '✓' : '✕'}
-                    </button>
+                    {!readOnly && (
+                      <button
+                        className={g.active === false ? styles.enableBtn : styles.disableBtn}
+                        onClick={(e) => { e.stopPropagation(); handleToggleActive(g.game_id, g.active !== false) }}
+                        title={g.active === false ? 'Habilitar' : 'Inhabilitar'}
+                      >
+                        {g.active === false ? '✓' : '✕'}
+                      </button>
+                    )}
                   </div>
 
                   {editing && (
@@ -379,7 +385,7 @@ export default function LeagueGamesManager({ league, user }) {
         )}
       </div>
 
-      {!isOfficial && (
+      {!isOfficial && !readOnly && (
         <div className={styles.sectionCard}>
           <div className={styles.sectionHeader}>
             <span>➕ Agregar juego manual a Semana {activeWeek}</span>

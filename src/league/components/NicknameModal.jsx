@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../../i18n/context'
-import { membersApi } from '../../supabase'
+import { leaguesApi, membersApi } from '../../supabase'
 import { isNicknameUnique } from '../../domains/league'
 
 // BUILD-AUTH-NICK-001 — Captura única del nickname POR LIGA.
@@ -33,17 +33,17 @@ export default function NicknameModal({ league, userId, onSaved }) {
     setSaving(true)
     setError(null)
     try {
-      const { data: members } = await membersApi.getMembers(league.id)
+      const { data: members } = await leaguesApi.getMembers(league.id)
       const check = isNicknameUnique(members || [], value, userId)
       if (!check.unique) {
         setError(t('nickname.taken'))
         return
       }
 
-      const { error: saveErr } = await membersApi.setNickname(league.id, userId, value.trim())
-      if (saveErr) {
-        console.error('[nickname] no se pudo guardar:', saveErr)
-        setError(t('nickname.taken'))
+      const { data: saved, error: saveErr } = await membersApi.setNickname(league.id, userId, value.trim())
+      if (saveErr || !saved || saved.length === 0) {
+        console.error('[nickname] no se pudo guardar:', saveErr, saved)
+        setError(`${t('nickname.saveError')} ${saveErr?.message || ''}`)
         return
       }
 
@@ -51,7 +51,7 @@ export default function NicknameModal({ league, userId, onSaved }) {
       if (onSaved) onSaved({ leagueId: league.id, nickname: value.trim() })
     } catch (ex) {
       console.error('[nickname] excepción al guardar:', ex)
-      setError(t('nickname.taken'))
+      setError(`${t('nickname.saveError')} ${ex?.message || ''}`)
     } finally {
       setSaving(false)
     }

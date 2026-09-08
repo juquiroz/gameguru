@@ -5,7 +5,8 @@ import { localTZOffset } from '../utils/dates'
 import { hydrateLeague, canJoinLeague, getLeagueSeason, masterPhaseForMode, detectBrowserTimezone } from '../domains/league'
 import { trainingSessionService } from '../domains/training/services/trainingSessionService'
 import { trainingCampSessionService } from '../domains/training-camp/services/sessionService'
-import { trainingCampWeekService as weekService } from '../domains/training-camp/services/weekService'
+import { trainingCampAutoScheduleService } from '../domains/training-camp/services/autoScheduleService'
+import { leagueSeed } from '../domains/training-camp/autoSchedule'
 
 export function useLeague(user) {
   const [myLeagues,      setMyLeagues]      = useState([])
@@ -146,7 +147,16 @@ export function useLeague(user) {
     // Generation, Game Week…) NO acepta nuevos jugadores. La validación vive
     // en la capa de servicio, no solo en la UI; la UI traduce el mensaje por
     // `error.code` (JoinLeagueModal).
-    const { data: event } = await trainingSessionService.get(league.id)
+    // TC v2 (BUILD-TC-V2-AUTO): la sesión se guarda vía trainingCampSessionService
+    // (`state='training_camp_v2'`, con flag `started`). El roster permanece
+    // ABIERTO durante 'inviting'/setup y solo cierra cuando el admin pulsa
+    // "Comenzar semana 1" (started=true) — independientemente de la hora del
+    // primer juego. Preferimos esta sesión cuando existe.
+    const [{ data: v2Event }, { data: legacyEvent }] = await Promise.all([
+      trainingCampSessionService.get(league.id),
+      trainingSessionService.get(league.id),
+    ])
+    const event = v2Event || legacyEvent
     if (!canJoinLeague(event)) {
       return {
         error: {
@@ -168,11 +178,15 @@ export function useLeague(user) {
     setCurrentLeague(league)
   }, [])
 
-  // Training Camp (BUILD-TC-001): crea la liga + su evento en un solo paso.
-  // Sin generación de partidos: el fixture llega con el Simulation Engine.
+  // Training Camp (BUILD-TC-001 + TC-V2-AUTO): crea la liga + su evento en un
+  // solo paso. En modo automático (BUILD-TC-V2-AUTO) el wizard envía
+  // `weekStarts`: la sesión nace con `auto: true` + `seed` y se genera el
+  // calendario completo (5 juegos/semana, 5 min entre tips, sorteo aleatorio
+  // único por semana). Sin `weekStarts` conserva el flujo manual (014.0).
   const createTrainingCamp = useCallback(async (name, config = {}) => {
     if (!user) return { error: { message: 'No hay sesión activa.' } }
     const code = genInviteCode()
+    const auto = Array.isArray(config.weekStarts) && config.weekStarts.length >= 1
 
     const { data: league, error } = await leaguesApi.create({
       name,
@@ -188,35 +202,33 @@ export function useLeague(user) {
 
     await membersApi.join(league.id, user.id, 'admin')
 
-    // Sesión v2 (simple/manual) con el nº de semanas elegidas.
     const { data: event, persisted, fallback } = await trainingCampSessionService.create(
       league.id,
-      { name, totalWeeks: config.totalWeeks }
+      auto
+        ? { name, totalWeeks: config.totalWeeks, auto: true, seed: leagueSeed(league.id) }
+        : { name, totalWeeks: config.totalWeeks }
     )
     if (!event?.id) return { error: { message: 'No se pudo crear la sesión del campamento.' } }
 
-    // Inserta los juegos de cada semana (fecha/hora) en la sesión v2.
-    if (Array.isArray(config.weeks)) {
-      for (const wk of config.weeks) {
-        for (const g of wk.games || []) {
-          await weekService.addGame({
-            league,
-            trainingSessionId: event.id,
-            week: wk.week,
-            home: g.__raw?.home,
-            away: g.__raw?.away,
-            date: g.__raw?.date,
-            time: g.__raw?.time,
-            tzOffset: localTZOffset(),
-          })
-        }
+    const newLeague = { ...league, role: 'admin', league_mode: 'practice' }
+
+    if (auto) {
+      const gen = await trainingCampAutoScheduleService.generateCalendar({
+        league: newLeague,
+        sessionId: event.id,
+        weekStarts: config.weekStarts,
+        seed: leagueSeed(league.id),
+      })
+      if (gen.error) {
+        return { error: { message: gen.error.message || 'No se pudo generar el calendario.' } }
       }
+      await trainingCampSessionService.update(league.id, {
+        schedule_complete: true,
+        current_week: 1,
+        started: false,
+      })
     }
 
-    // Calendario completo → el Campamento arranca en fase "inviting".
-    await trainingCampSessionService.update(league.id, { schedule_complete: true })
-
-    const newLeague = { ...league, role: 'admin', league_mode: 'practice' }
     setMyLeagues(prev => [newLeague, ...prev])
     return { data: newLeague, event, persisted, fallback }
   }, [user])

@@ -202,6 +202,7 @@ export default {
     promptHint: 'Con este nickname se te verá durante TODA la liga. Es permanente y no se puede cambiar.',
     required: 'El nickname es obligatorio.',
     taken: 'Ese nickname ya está en uso en esta liga. Elige otro.',
+    saveError: 'No se pudo guardar tu nickname.',
     save: 'Guardar nickname',
   },
 

@@ -3,16 +3,14 @@ import LanguageSwitch from './LanguageSwitch'
 import { navigate, platformReconciliationRoute } from '../router/routes'
 import styles from './Topbar.module.css'
 
-export default function Topbar({ user, league, myLeagues, onChangeLeague, onSelectLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation, onCreateTrainingCamp, route }) {
+export default function Topbar({ user, league, myLeagues, onChangeLeague, onSelectLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation, route }) {
   const { t } = useLanguage()
-  const isPractice = league && (league.league_mode === 'practice' || league.simulation)
 
   const navItems = [
     { id: 'dashboard',   label: t('topbar.dashboard') },
     { id: 'picks',       label: t('topbar.picks') },
     { id: 'board',       label: t('topbar.board') },
     { id: 'league',      label: t('topbar.league') },
-    ...(isPractice ? [{ id: 'training', label: '🎓 Training Camp' }] : []),
   ]
 
   // Selector estable: ordena alfabético de la lista mostrada para que el
@@ -90,13 +88,6 @@ export default function Topbar({ user, league, myLeagues, onChangeLeague, onSele
           </>
         )}
         <button className={styles.createBtn} onClick={onCreateNew}>{t('topbar.create')}</button>
-        <button
-          className={styles.createBtn}
-          onClick={() => isPractice ? onNavigate('training') : onCreateTrainingCamp()}
-          style={{ borderColor: 'var(--mode-tc, #3B82F6)', color: 'var(--mode-tc, #3B82F6)' }}
-        >
-          {t('training.cta')}
-        </button>
         {isSuperAdmin && (
           <button className={styles.createBtn} onClick={onCreateSimulation} style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
             🧪 Simular

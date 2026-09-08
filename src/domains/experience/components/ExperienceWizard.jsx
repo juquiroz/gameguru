@@ -30,7 +30,8 @@ export default function ExperienceWizard({ initialExperience, onClose, onCreateL
     else setStep('league-config')
   }
 
-  // Paso de creación: crea la liga + sesión + juegos y entra al Campamento.
+  // Paso de creación: crea la liga + sesión (con nº de semanas) y entra al
+  // Campamento; los juegos se agregan después (WeekManager en fase setup).
   const handleCreateEvent = async (campDraft) => {
     if (!campDraft) return
     setMsg(null)

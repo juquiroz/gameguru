@@ -183,11 +183,13 @@ export const picksApi = {
       .eq('training_session_id', trainingSessionId),
 
   // Todos los picks confirmados de una sesión (punto de integración TC-006:
-  // el Simulation Engine consume la planilla sin tocar la UI).
+  // el Simulation Engine consume la planilla sin tocar la UI). Incluye
+  // submitted_at para que el leaderboard del campamento automático solo
+  // cuente las planillas confirmadas (BUILD-TC-V2-AUTO).
   getAllForSession: (leagueId, trainingSessionId) =>
     supabase
       .from('picks')
-      .select('user_id, pick, game_id')
+      .select('user_id, pick, game_id, submitted_at')
       .eq('league_id', leagueId)
       .eq('training_session_id', trainingSessionId),
 
@@ -345,6 +347,15 @@ export const leagueGamesApi = {
 
   addGame: (game) =>
     supabase.from('league_games').insert(game).select().single(),
+
+  // BUILD-TC-V2-AUTO: borra los juegos de una sesión del campamento
+  // (regeneración idempotente del calendario automático).
+  deleteSessionGames: (leagueId, trainingSessionId) =>
+    supabase
+      .from('league_games')
+      .delete()
+      .eq('league_id', leagueId)
+      .eq('training_session_id', trainingSessionId),
 
   removeFromLeague: (leagueId, gameId) =>
     supabase

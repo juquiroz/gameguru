@@ -3,11 +3,15 @@ import assert from 'node:assert'
 import { parseHash, buildHash } from '../src/router/hashRouter.js'
 import {
   PICK_DEADLINE_MINUTES,
+  MIN_GAMES_PER_WEEK,
+  MAX_GAMES_PER_WEEK,
   derivePhase,
   weekDeadline,
   isWeekPicksLocked,
   isWeekComplete,
   validateWeeksOrder,
+  firstGameTimeOf,
+  lastGameTime,
   buildSnapshotPayload,
   snapshotHash,
   reducer,
@@ -15,15 +19,38 @@ import {
 } from '../src/domains/training-camp/model.js'
 
 describe('Training Camp v2 — dominio (modelo simple/manual)', () => {
-  it('deadline de picks = 15 min antes del primer juego', () => {
+  it('deadline de picks = 5 min antes del primer juego', () => {
     const games = [
       { game_time: '2026-09-10T20:00:00.000Z' },
       { game_time: '2026-09-10T23:30:00.000Z' },
     ]
     const d = weekDeadline(games)
     assert.ok(d)
-    assert.strictEqual(d.toISOString(), '2026-09-10T19:45:00.000Z')
-    assert.strictEqual(PICK_DEADLINE_MINUTES, 15)
+    assert.strictEqual(d.toISOString(), '2026-09-10T19:55:00.000Z')
+    assert.strictEqual(PICK_DEADLINE_MINUTES, 5)
+  })
+
+  it('detecta primer y último juego de la semana (deadline y cierre)', () => {
+    const games = [
+      { game_time: '2026-09-10T23:30:00.000Z' },
+      { game_time: '2026-09-10T20:00:00.000Z' },
+    ]
+    assert.strictEqual(firstGameTimeOf(games), '2026-09-10T20:00:00.000Z')
+    assert.strictEqual(lastGameTime(games), '2026-09-10T23:30:00.000Z')
+  })
+
+  it('deadline = 5 min antes del primer juego, no del último', () => {
+    const games = [
+      { game_time: '2026-09-10T20:00:00.000Z' },
+      { game_time: '2026-09-10T23:30:00.000Z' },
+    ]
+    const d = weekDeadline(games)
+    assert.strictEqual(d.toISOString(), '2026-09-10T19:55:00.000Z')
+  })
+
+  it('límites de juegos por semana (1..5)', () => {
+    assert.strictEqual(MIN_GAMES_PER_WEEK, 1)
+    assert.strictEqual(MAX_GAMES_PER_WEEK, 5)
   })
 
   it('sin juegos no hay deadline', () => {

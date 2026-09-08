@@ -202,6 +202,7 @@ export default {
     promptHint: 'You will be seen by this nickname for the WHOLE league. It is permanent and cannot be changed.',
     required: 'A nickname is required.',
     taken: 'That nickname is already used in this league. Choose another.',
+    saveError: 'Could not save your nickname.',
     save: 'Save nickname',
   },
 

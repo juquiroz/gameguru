@@ -6,8 +6,8 @@
 // FixtureGeneratorService (persistencia) y que verificamos con node/tests.
 // ════════════════════════════════════════════════════════════════════
 
-import { NFL_TEAMS } from '../../../data/nflData'
-import { localTZOffset } from '../../../utils/dates'
+import { NFL_TEAMS } from '../../../data/nflData.js'
+import { localTZOffset } from '../../../utils/dates.js'
 
 // ─── RNG determinista (mulberry32) ──────────────────────────────────────────
 const mulberry32 = (seed) => {
