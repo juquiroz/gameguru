@@ -28,6 +28,18 @@ export default {
     completeFields: 'Completa todos los campos.',
     passwordTooShort: 'La contraseña debe tener al menos 6 caracteres.',
     loading: 'Cargando...',
+    forgotPassword: '¿Olvidaste tu contraseña?',
+    forgotHint: 'Ingresá el email de tu cuenta y te enviaremos un enlace para restablecer tu contraseña.',
+    forgotSubmit: 'Enviar enlace de recuperación',
+    forgotSent: '✅ Si ese email existe, te enviamos un enlace de recuperación. Revisá tu bandeja (y spam).',
+    forgotBack: 'Volver al login',
+    recoverTitle: 'Establecé una nueva contraseña',
+    recoverHint: 'Elegí una nueva contraseña para tu cuenta.',
+    recoverSubmit: 'Guardar nueva contraseña',
+    recoverSuccess: '✅ Contraseña actualizada. Volviendo al login...',
+    recoverMismatch: 'Las contraseñas no coinciden.',
+    newPassword: 'Nueva contraseña',
+    confirmPassword: 'Confirmar contraseña',
   },
 
   topbar: {

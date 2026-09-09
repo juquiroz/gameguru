@@ -1,22 +1,30 @@
 import { useState, useEffect, useCallback } from 'react'
-import { authApi, profilesApi } from '../supabase'
+import { authApi, profilesApi, isRecoveryLink } from '../supabase'
 
 export function useAuth() {
   const [user,    setUser]    = useState(null)
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
+  // Inicializado desde la URL de arranque: cubre el caso real donde el SDK
+  // consume el token del link antes de registrar el listener y no llega el
+  // evento PASSWORD_RECOVERY (→ el usuario entraría al dashboard directo).
+  const [recovery, setRecovery] = useState(isRecoveryLink)
 
-  // Listen to auth state changes
+  // Listen to auth state changes. El listener se registra ANTES de getSession:
+  // la inicialización del SDK procesa el hash del link de recuperación y
+  // dispara PASSWORD_RECOVERY durante esa primera llamada; si el listener se
+  // registrara después, el evento se perdería.
   useEffect(() => {
+    const { data: listener } = authApi.onAuthChange((event, newSession) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovery(true)
+      setSession(newSession)
+      setUser(newSession?.user ?? null)
+    })
+
     authApi.getSession().then(({ data }) => {
       setSession(data.session)
       setUser(data.session?.user ?? null)
       setLoading(false)
-    })
-
-    const { data: listener } = authApi.onAuthChange((_event, newSession) => {
-      setSession(newSession)
-      setUser(newSession?.user ?? null)
     })
 
     return () => listener.subscription.unsubscribe()
@@ -54,11 +62,30 @@ export function useAuth() {
     return { data }
   }, [])
 
+  const resetPassword = useCallback(async (email) => {
+    const { error } = await authApi.resetPassword(email)
+    return { error }
+  }, [])
+
+  const updatePassword = useCallback(async (newPassword) => {
+    const { data, error } = await authApi.updatePassword(newPassword)
+    if (error) return { error }
+    return { data }
+  }, [])
+
+  // Cierra la sesión de recuperación y devuelve al login.
+  const completeRecovery = useCallback(async () => {
+    await authApi.signOut()
+    setRecovery(false)
+    setUser(null)
+    setSession(null)
+  }, [])
+
   const signOut = useCallback(async () => {
     await authApi.signOut()
     setUser(null)
     setSession(null)
   }, [])
 
-  return { user, session, loading, signUp, signIn, signInWithGoogle, signOut }
+  return { user, session, loading, recovery, signUp, signIn, signInWithGoogle, resetPassword, updatePassword, completeRecovery, signOut }
 }

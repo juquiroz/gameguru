@@ -111,3 +111,28 @@
   line-height: 1.35;
   color: var(--text3);
 }
+
+.linkBtn {
+  display: block;
+  width: 100%;
+  margin-top: .85rem;
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-family: 'Barlow', sans-serif;
+  font-size: .8rem;
+  text-align: center;
+  cursor: pointer;
+  transition: color .2s;
+}
+.linkBtn:hover { color: var(--accent); }
+
+.forgotTitle,
+.recoverTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: .04em;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 4px;
+}

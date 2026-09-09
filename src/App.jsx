@@ -25,6 +25,7 @@ import BottomNav   from './components/BottomNav'
 import CreateSimulationModal from './components/CreateSimulationModal'
 import ExperienceWizard from './domains/experience/components/ExperienceWizard'
 import TrainingCampSetupModal from './domains/training/components/TrainingCampSetupModal'
+import RecoverPassword from './pages/RecoverPassword'
 
 import { LeagueProvider, useLeagueContext } from './league/context/LeagueContext'
 import { LeagueRoute } from './league/LeagueRoute'
@@ -50,7 +51,7 @@ function AppInner() {
   const [lobbyVersion, setLobbyVersion] = useState(0)
   const { t } = useLanguage()
 
-  const { user, loading, signIn, signUp, signInWithGoogle, signOut } = useAuth()
+  const { user, loading, signIn, signUp, signInWithGoogle, signOut, resetPassword, recovery, updatePassword, completeRecovery } = useAuth()
   const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
   const leaguesState = useLeague(user)
 
@@ -83,8 +84,14 @@ function AppInner() {
     )
   }
 
+  // FLOW-RECOVER: sesión de recuperación de contraseña → form de nueva clave
+  // (actúa antes del gate de login; un usuario normal nunca la ve).
+  if (recovery) {
+    return <RecoverPassword onUpdate={updatePassword} onFinish={completeRecovery} />
+  }
+
   if (!user) {
-    return <Auth onAuth={{ signIn, signUp, signInWithGoogle }} />
+    return <Auth onAuth={{ signIn, signUp, signInWithGoogle, resetPassword }} />
   }
 
   return (

@@ -227,5 +227,11 @@ export const translateAuthError = (msg = '') => {
     return 'El registro está desactivado temporalmente.'
   if (m.includes('email rate limit'))
     return 'Demasiados intentos. Espera unos minutos.'
+  if (m.includes('new password should be different'))
+    return 'La nueva contraseña debe ser diferente a la anterior.'
+  if (m.includes('email sending is restricted'))
+    return 'No se pudo enviar el correo. Probá de nuevo más tarde.'
+  if (m.includes('jwt has expired') || m.includes('invalid jwt') || m.includes('token has expired'))
+    return 'El enlace expiró o no es válido. Solicitá uno nuevo.'
   return msg
 }
