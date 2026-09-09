@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { picksApi } from '../supabase'
+import { draftKey, readDraft, writeDraft, dropDraft } from './pickDraft'
 
 export function usePicks(user, league, week) {
   const [picks,     setPicks]     = useState({})
   const [submitted, setSubmitted] = useState(false)
   const [saving,    setSaving]    = useState(false)
+
+  // Espejo del estado para persistir drafts desde selectPick sin lecturas
+  // estancadas (los updaters de estado deben ser puros).
+  const picksRef = useRef({})
 
   // Juegos elegidos localmente en la (liga, semana) actual. Protege las
   // selecciones del usuario de ser pisadas por un loadPicks en vuelo:
@@ -12,11 +17,21 @@ export function usePicks(user, league, week) {
   //   orden en el cambio de liga).
   // - el merge conserva picks locales sobre el snapshot de BD (race del load
   //   de la liga actual con una selección recién hecha).
+  // - los picks sin guardar del draft de localStorage entran al set para que
+  //   el merge no los pise (persistencia entre recargas del tab en móvil).
   const localEdits = useRef(new Set())
 
   useEffect(() => {
     if (!user || !league || !week) return
-    localEdits.current = new Set()
+    const key = draftKey(user.id, league.id, week)
+    const draft = readDraft(key)
+    localEdits.current = new Set(draft ? Object.keys(draft) : [])
+
+    if (draft) {
+      picksRef.current = draft
+      setPicks(draft)
+    }
+
     let cancelled = false
     ;(async () => {
       const { data } = await picksApi.getForWeek(user.id, league.id, week)
@@ -28,7 +43,9 @@ export function usePicks(user, league, week) {
         }
         const local = {}
         for (const gid of localEdits.current) if (prev[gid]) local[gid] = prev[gid]
-        return { ...dbMap, ...local }
+        const merged = { ...dbMap, ...local }
+        picksRef.current = merged
+        return merged
       })
       setSubmitted(!!data?.length)
     })()
@@ -37,11 +54,17 @@ export function usePicks(user, league, week) {
 
   const selectPick = useCallback((gameId, teamAbbr) => {
     localEdits.current.add(gameId)
-    setPicks(prev => ({ ...prev, [gameId]: teamAbbr }))
-  }, [])
+    const next = { ...picksRef.current, [gameId]: teamAbbr }
+    picksRef.current = next
+    setPicks(next)
+    if (user && league && week) {
+      writeDraft(draftKey(user.id, league.id, week), next)
+    }
+  }, [user, league, week])
 
   const submitPicks = useCallback(async (totalGames) => {
     if (!user || !league) return { error: { message: 'No hay sesión o liga activa.' } }
+    if (!week) return { error: { message: 'No hay semana activa.' } }
     if (Object.keys(picks).length < totalGames)
       return { error: { message: 'Selecciona todos los partidos antes de enviar.' } }
 
@@ -58,6 +81,7 @@ export function usePicks(user, league, week) {
     setSaving(false)
     if (error) return { error }
 
+    dropDraft(draftKey(user.id, league.id, week))
     setSubmitted(true)
     return { success: true }
   }, [user, league, week, picks])
