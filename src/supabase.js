@@ -8,6 +8,19 @@ if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Faltan variables de entorno de Supabase. Crea un archivo .env basado en .env.example')
 }
 
+// FLOW-RECOVER: detecta si la app arrancó desde el link de recuperación de
+// contraseña (tokens `type=recovery` en la URL). Se captura ANTES de que el SDK
+// consuma el hash (la primera llamada de auth lo borra), porque el evento
+// PASSWORD_RECOVERY puede perderse si el SDK inicializa antes que nuestro
+// listener. No confiar en el evento como única señal.
+export const isRecoveryLink = (() => {
+  try {
+    return /(?:[?&#])type=recovery(?:&|$)/i.test(window.location.hash + window.location.search)
+  } catch {
+    return false
+  }
+})()
+
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
 // ─── Auth helpers ───────────────────────────────────────────────────────────
@@ -27,6 +40,17 @@ export const authApi = {
       provider: 'google',
       options: { redirectTo: redirectTo || window.location.origin + window.location.pathname },
     }),
+
+  // FLOW-RECOVER: olvidé mi contraseña. Supabase envía el mail con un link a
+  // redirectTo (origin+pathname, igual que Google); el SDK captura el token
+  // del hash y dispara el evento PASSWORD_RECOVERY.
+  resetPassword: (email) =>
+    supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname,
+    }),
+
+  updatePassword: (newPassword) =>
+    supabase.auth.updateUser({ password: newPassword }),
 
   signOut: () =>
     supabase.auth.signOut(),

@@ -28,6 +28,18 @@ export default {
     completeFields: 'Complete all fields.',
     passwordTooShort: 'Password must be at least 6 characters.',
     loading: 'Loading...',
+    forgotPassword: 'Forgot your password?',
+    forgotHint: 'Enter your account email and we will send you a link to reset your password.',
+    forgotSubmit: 'Send reset link',
+    forgotSent: '✅ If that email exists, we sent you a recovery link. Check your inbox (and spam).',
+    forgotBack: 'Back to sign in',
+    recoverTitle: 'Set a new password',
+    recoverHint: 'Pick a new password for your account.',
+    recoverSubmit: 'Save new password',
+    recoverSuccess: '✅ Password updated. Taking you back to sign in...',
+    recoverMismatch: 'Passwords do not match.',
+    newPassword: 'New password',
+    confirmPassword: 'Confirm password',
   },
 
   topbar: {
