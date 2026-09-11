@@ -1,8 +1,9 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
-import { getCurrentWeek } from '../src/utils/dates.js'
+import { getCurrentWeek, isGameLocked } from '../src/utils/dates.js'
 
 const H = 3600 * 1000
+const M = 60 * 1000
 const iso = (ms) => new Date(ms).toISOString()
 const now = Date.now()
 // Juego único = define el "último partido" de la semana (borde de cierre).
@@ -42,5 +43,36 @@ describe('dates — getCurrentWeek (default por fechas)', () => {
   it('sin juegos → null', () => {
     assert.strictEqual(getCurrentWeek(null), null)
     assert.strictEqual(getCurrentWeek([]), null)
+  })
+})
+
+describe('dates — isGameLocked (cierre POR PARTIDO, no por semana)', () => {
+  it('juego sin finalizar y con kickoff a >5 min en el futuro → abierto', () => {
+    assert.strictEqual(isGameLocked({ game_time: iso(now + 10 * M) }), false)
+  })
+
+  it('juego cuyo kickoff ya pasó la ventana de 5 min → bloqueado', () => {
+    assert.strictEqual(isGameLocked({ game_time: iso(now - 1 * M) }), true)
+  })
+
+  it('juego que arranca en <5 min (dentro de la ventana) → bloqueado', () => {
+    assert.strictEqual(isGameLocked({ game_time: iso(now + 3 * M) }), true)
+  })
+
+  it('juego finalizado → bloqueado aunque su fecha sea futura', () => {
+    assert.strictEqual(isGameLocked({ game_time: iso(now + 24 * H), finished: true }), true)
+  })
+
+  it('soporta el campo time (formato NFL_WEEKS estático)', () => {
+    assert.strictEqual(isGameLocked({ time: iso(now + 10 * M) }), false)
+  })
+
+  it('sin fecha → abierto (no se puede afirmar bloqueo)', () => {
+    assert.strictEqual(isGameLocked({}), false)
+  })
+
+  it('sin juego → bloqueado', () => {
+    assert.strictEqual(isGameLocked(null), true)
+    assert.strictEqual(isGameLocked(undefined), true)
   })
 })

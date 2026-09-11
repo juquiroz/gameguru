@@ -62,11 +62,15 @@ export function usePicks(user, league, week) {
     }
   }, [user, league, week])
 
-  const submitPicks = useCallback(async (totalGames) => {
+  // BUILD-016.1 — cierre por partido: totalGames = solo los juegos aún abiertos
+  // de la semana (los ya cerrados/finalizados quedan fuera del requisito). Así
+  // un participante que se suma con la liga iniciada puede guardar los picks de
+  // los juegos que todavía no arrancaron.
+  const submitPicks = useCallback(async (requiredCount) => {
     if (!user || !league) return { error: { message: 'No hay sesión o liga activa.' } }
     if (!week) return { error: { message: 'No hay semana activa.' } }
-    if (Object.keys(picks).length < totalGames)
-      return { error: { message: 'Selecciona todos los partidos antes de enviar.' } }
+    if (Object.keys(picks).length < requiredCount)
+      return { error: { message: 'Selecciona todos los partidos abiertos antes de enviar.' } }
 
     setSaving(true)
     const rows = Object.entries(picks).map(([gameId, pick]) => ({

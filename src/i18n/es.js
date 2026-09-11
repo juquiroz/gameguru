@@ -367,9 +367,6 @@ export default {
     enterLobby: '🎓 Ir al Lobby',
     lobbyBanner: 'Estás en un Training Camp 🎓',
     makePicksCta: 'HACÉ TUS PICKS',
-    rosterClosedTitle: '🔒 Roster cerrado',
-    rosterClosedDesc: 'Esta liga ya comenzó y no acepta nuevos jugadores.',
-    rosterClosedMessage: 'Esta liga ya comenzó y no acepta nuevos jugadores.',
   },
 
   gameWeek: {

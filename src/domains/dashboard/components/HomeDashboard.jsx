@@ -3,7 +3,6 @@ import { useLanguage } from '../../../i18n/context'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { getLeagueMode } from '../../league/models/modes'
 import { getLeagueTimezone } from '../../league'
-import { canJoinLeague } from '../../league'
 import { canManageLeague } from '../../platform'
 import { useLeagueEvent } from '../../training/hooks/useLeagueEvent'
 import DashboardHeader from './DashboardHeader'
@@ -51,10 +50,9 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
     showCountdown,
   } = state
 
-  // BUILD-TC-005.4 — Evento más reciente de la liga activa (lectura ligera,
-  // sin orquestación) para el CTA MAKE YOUR PICKS y el estado del roster.
+  // BUILD-016 — Roster siempre abierto: la invitación (código) se muestra en
+  // todo momento, aunque la liga ya haya comenzado.
   const event = useLeagueEvent(hasCurrentLeague ? currentLeague?.id : null)
-  const rosterOpen = !event || canJoinLeague(event)
   const picksOpen = !!event && event.event_type === 'game_week' && event.state === 'picks_open'
 
   const isAdmin = canManageLeague(currentLeague, user)
@@ -210,23 +208,13 @@ export default function HomeDashboard({ user, myLeagues, currentLeague, onNaviga
 
       {isAdmin && (
         <>
-          {rosterOpen ? (
-            <div className={homeStyles.inviteBox}>
-              <div className={homeStyles.inviteLabel}>{t('dashboard.inviteLabel')}</div>
-              <div className={homeStyles.inviteCode}>{currentLeague.code}</div>
-              <button className={homeStyles.inviteCopy} onClick={copyInviteLink}>
-                {t('dashboard.copyLink')}
-              </button>
-            </div>
-          ) : (
-            <div className={styles.rosterClosed}>
-              <span className={styles.rosterClosedIcon}>🔒</span>
-              <div className={styles.rosterClosedText}>
-                <div className={styles.rosterClosedTitle}>{t('training.rosterClosedTitle')}</div>
-                <div className={styles.rosterClosedDesc}>{t('training.rosterClosedDesc')}</div>
-              </div>
-            </div>
-          )}
+          <div className={homeStyles.inviteBox}>
+            <div className={homeStyles.inviteLabel}>{t('dashboard.inviteLabel')}</div>
+            <div className={homeStyles.inviteCode}>{currentLeague.code}</div>
+            <button className={homeStyles.inviteCopy} onClick={copyInviteLink}>
+              {t('dashboard.copyLink')}
+            </button>
+          </div>
 
           <div className={homeStyles.quickActions}>
             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => onNavigate('league')}>

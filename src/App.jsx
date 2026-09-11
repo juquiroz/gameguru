@@ -479,10 +479,8 @@ function JoinLeagueModal({ onClose, onJoin, onEnter }) {
     const { data, error, alreadyMember } = await onJoin(code)
     setJoining(false)
     if (error) {
-      // BUILD-TC-005.4 — el servicio rechaza con `error.message` la liga cuyo
-      // roster ya cerró (canJoinLeague): "Esta liga ya comenzó y no acepta
-      // nuevos jugadores." También deja `error.code === 'roster_closed'` para
-      // manejo programático. El modal es español, igual que el resto.
+      // BUILD-016 — el roster está siempre abierto; un error acá es otra razón
+      // (código inválido, sesión, etc.) y se muestra directo desde el servicio.
       setMsg({ type: 'error', text: error.message })
       return
     }

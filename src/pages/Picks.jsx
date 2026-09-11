@@ -3,7 +3,7 @@ import GameCard from '../components/GameCard'
 import LeagueIdentity from '../components/LeagueIdentity'
 import { NFL_WEEKS } from '../data/nflData'
 import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
-import { isWeekLocked, isGameLocked, getCurrentWeek } from '../utils/dates'
+import { isGameLocked, getCurrentWeek } from '../utils/dates'
 import { getLeagueTimezone } from '../domains/league'
 import { canManageLeague } from '../domains/platform'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
@@ -80,7 +80,12 @@ export default function Picks({ user, league, onNavigate }) {
 
   const weekData = getWeekData(activeWeek)
 
-  const weekLocked = isWeekLocked(weekData?.games)
+  // BUILD-016.1 — cierre por partido: solo cuentan los juegos aún abiertos de
+  // la semana. Un participante que se suma con la liga iniciada puede cargar
+  // los picks de los juegos que todavía no arrancaron.
+  const weekGames = weekData?.games || []
+  const openGames = weekGames.filter(g => !isGameLocked(g))
+  const requiredCount = openGames.length
 
   // Available weeks
   const weeks = useDynamic
@@ -96,7 +101,6 @@ export default function Picks({ user, league, onNavigate }) {
     if (current != null && current !== activeWeek) setActiveWeek(current)
   }, [useDynamic, weeks, leagueGames, activeWeek])
 
-  const totalGames = weekData?.games?.length || 0
   const pickedCount = weekData?.games?.filter(g => picks[g.id]).length || 0
 
   const correctCount = weekData?.results
@@ -104,7 +108,7 @@ export default function Picks({ user, league, onNavigate }) {
     : 0
 
   const handleSubmit = async () => {
-    const { error } = await submitPicks(totalGames)
+    const { error } = await submitPicks(requiredCount)
     if (error) alert(error.message)
   }
 
@@ -270,9 +274,10 @@ td:first-child{position:sticky;left:0;background:#0D1525}
         </div>
       ) : (
         <>
-          {!weekLocked && (
+          {!weekData.finished && requiredCount > 0 && (
             <div className="msg warning" style={{ marginBottom: '1rem', fontSize: '.78rem' }}>
-              📅 Todos los picks se bloquean 5 min antes del primer partido
+              📅 Cada partido se bloquea 5 min antes de su kickoff. Podés cargar
+              solo los {requiredCount} partido(s) aún abiertos de esta semana.
             </div>
           )}
 
@@ -289,8 +294,8 @@ td:first-child{position:sticky;left:0;background:#0D1525}
             </div>
           )}
 
-          {/* Week state actions — visible without scrolling, before the games list */}
-          {weekLocked && (
+          {/* Week state actions — visible once there are no open games left */}
+          {requiredCount === 0 && (
             <div className={styles.weekActions}>
               <button
                 className="btn-secondary"
@@ -316,18 +321,18 @@ td:first-child{position:sticky;left:0;background:#0D1525}
                 pick={picks[game.id]}
                 onPick={selectPick}
                 results={weekData.results}
-                locked={isGameLocked(game, weekData?.games)}
+                locked={isGameLocked(game)}
                 timeZone={getLeagueTimezone(league)}
               />
             ))}
           </div>
 
-          {/* Submit bar — visible until the week's deadline passes */}
-          {!weekLocked && (
+          {/* Submit bar — visible while there are open games to pick */}
+          {!weekData.finished && requiredCount > 0 && (
             <div className={styles.submitBar}>
               <div>
                 <div className={styles.pickCount}>
-                  <strong>{pickedCount}</strong> / {totalGames} partidos seleccionados
+                  <strong>{pickedCount}</strong> / {requiredCount} partidos abiertos seleccionados
                 </div>
                 {submitted && (
                   <div className={styles.submitOk}>✓ Picks guardados correctamente</div>
@@ -336,14 +341,14 @@ td:first-child{position:sticky;left:0;background:#0D1525}
               <button
                 className={styles.submitBtn}
                 onClick={handleSubmit}
-                disabled={pickedCount < totalGames || saving}
+                disabled={pickedCount < requiredCount || saving}
               >
                 {saving ? 'Guardando...' : 'Guardar Picks'}
               </button>
             </div>
           )}
 
-          {weekLocked && !weekData.finished && (
+          {requiredCount === 0 && !weekData.finished && (
             <div className="lock-notice">🔒 Hora límite alcanzada — los picks están bloqueados</div>
           )}
           {weekData.finished && (
