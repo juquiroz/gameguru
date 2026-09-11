@@ -21,6 +21,8 @@ export default function Leaderboard({ user, league, onNavigate }) {
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
   const isGeneral = activeWeek === 'all'
+  // BUILD-017-B: joined_at por usuario (juegos pre-cerrados → fallidos).
+  const joinedAtRef = useRef({})
   const { displayMap } = useLeagueIdentity(league, memberUserIds)
 
   // Sync activeWeek to the week being played (por fechas) when data loads
@@ -47,9 +49,16 @@ export default function Leaderboard({ user, league, onNavigate }) {
         username: displayMap[m.user_id] || m.user_id.slice(0, 8),
         role: m.role,
       })))
+      // BUILD-017-B: joined_at por usuario para que los juegos ya cerrados al
+      // unirse cuenten como fallidos en los standings.
+      joinedAtRef.current = {}
+      memberData.forEach(m => {
+        if (m.joined_at) joinedAtRef.current[m.user_id] = new Date(m.joined_at).getTime()
+      })
     } else {
       setMemberUserIds([])
       setMembers([])
+      joinedAtRef.current = {}
     }
 
     // Get games for this league
@@ -104,7 +113,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
       const finishedGames = games.filter(g => g.finished && g.result)
       const pickUserIds = [...new Set(allPicks.map(p => p.user_id))]
       setMemberUserIds(prev => [...new Set([...prev, ...pickUserIds])])
-      const sorted = calcStandings(allPicks, finishedGames, displayMap)
+      const sorted = calcStandings(allPicks, finishedGames, displayMap, { joinedAt: joinedAtRef.current })
       setRows(sorted)
       setWeekFinished(allWeeksFinished)
       setLoading(false)
@@ -129,7 +138,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
 
     const pickUserIds = [...new Set(picks.map(p => p.user_id))]
     setMemberUserIds(prev => [...new Set([...prev, ...pickUserIds])])
-    const sorted = calcStandings(picks, scoredGames, displayMap)
+    const sorted = calcStandings(picks, scoredGames, displayMap, { joinedAt: joinedAtRef.current })
     setRows(sorted)
     setLoading(false)
   }, [league, activeWeek, displayMap])

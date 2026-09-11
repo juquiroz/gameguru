@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { SPORTS } from '../data/nflData'
-import { leaguesApi } from '../supabase'
+import { leaguesApi, membersApi } from '../supabase'
 import InviteModal from '../components/InviteModal'
 import LeagueGamesManager from '../components/LeagueGamesManager'
 import { canManageLeague } from '../domains/platform'
@@ -8,6 +8,9 @@ import { useLanguage } from '../i18n/context'
 
 export default function LeaguePage({ user, league, onChangeLeague }) {
   const { t } = useLanguage()
+  // BUILD-017: la admin section se usa en hooks (efectos), así que se calcula
+  // antes del early-return. canManageLeague(null, user) → false, es seguro.
+  const isAdmin = canManageLeague(league, user)
   const [showModal, setShowModal] = useState(false)
   const [copied,    setCopied]    = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -15,6 +18,19 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
   const [lifecycle, setLifecycle] = useState({ finished: false, revealed: false })
   const [lifecycleBusy, setLifecycleBusy] = useState(false)
   const [confirmFinish, setConfirmFinish] = useState(false)
+  // BUILD-017 — gestión de participantes (solo admin).
+  const [members, setMembers] = useState(null)
+  const [removeTarget, setRemoveTarget] = useState(null)
+  const [removing, setRemoving] = useState(false)
+
+  useEffect(() => {
+    if (!league?.id || !isAdmin) return
+    let active = true
+    leaguesApi.getMembers(league.id).then(({ data }) => {
+      if (active && data) setMembers(data)
+    })
+    return () => { active = false }
+  }, [league?.id, isAdmin])
 
   if (!league) {
     return (
@@ -27,7 +43,6 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
     )
   }
 
-  const isAdmin    = canManageLeague(league, user)
   const sportIcon  = SPORTS.find(s => s.id === league.sport)?.icon || '🏆'
   const inviteLink = `${window.location.origin}${window.location.pathname}?join=${league.code}`
 
@@ -80,6 +95,17 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
   }
 
   const canReveal = lifecycle.finished && !lifecycle.revealed
+
+  // BUILD-017 — quitar participante: delega en el RPC (valida admin y límites
+  // en BD). Al éxito se refresca la lista local sin recargar.
+  const handleRemoveMember = async (member) => {
+    setRemoving(true)
+    const { error } = await membersApi.removeMember(league.id, member.user_id)
+    setRemoving(false)
+    if (error) return alert('Error al quitar participante: ' + error.message)
+    setMembers(prev => (prev || []).filter(x => x.user_id !== member.user_id))
+    setRemoveTarget(null)
+  }
 
   return (
     <div className="page">
@@ -144,6 +170,81 @@ export default function LeaguePage({ user, league, onChangeLeague }) {
           league={league}
           onClose={() => setShowModal(false)}
         />
+      )}
+
+      {/* BUILD-017 — gestión de participantes (solo admin): lista a los
+          miembros y permite quitar a cualquiera salvo al dueño y a sí mismo. */}
+      {isAdmin && (
+        <div style={{
+          background: 'var(--bg2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--r-xl)',
+          padding: '1.5rem',
+          marginBottom: '1rem',
+        }}>
+          <div className="sec-title">👥 Participantes ({members?.length ?? 0})</div>
+          {!members ? (
+            <p style={{ fontSize: '.85rem', color: 'var(--text3)' }}>Cargando...</p>
+          ) : members.length === 0 ? (
+            <p style={{ fontSize: '.85rem', color: 'var(--text3)' }}>Sin participantes.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {members.map(m => {
+                const isOwner = m.user_id === league.admin_id
+                const isSelf = m.user_id === user.id
+                const shortId = (m.user_id || '').slice(0, 4)
+                return (
+                  <li key={m.user_id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.5rem',
+                    padding: '.55rem 0', borderBottom: '1px solid var(--border)',
+                  }}>
+                    <span style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                      {isOwner ? '👑 ' : '🏈 '}
+                      <strong>{m.nickname || `Jugador ${shortId}`}</strong>
+                      <span style={{ color: 'var(--text3)', fontSize: '.75rem', marginLeft: '.5rem' }}>
+                        {isOwner ? 'admin (dueño)' : m.role === 'admin' ? 'co-admin' : 'miembro'}
+                      </span>
+                      {isSelf && (
+                        <span style={{ color: 'var(--accent)', fontSize: '.75rem', marginLeft: '.5rem' }}>(vos)</span>
+                      )}
+                    </span>
+                    {!isOwner && !isSelf && (
+                      removeTarget?.user_id === m.user_id ? (
+                        <span style={{ display: 'inline-flex', gap: '.35rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          <span style={{ color: 'var(--red)', fontSize: '.78rem' }}>¿Quitar?</span>
+                          <button
+                            className="btn-primary"
+                            style={{ padding: '.25rem .6rem', fontSize: '.75rem', background: 'var(--red)', borderColor: 'var(--red)' }}
+                            onClick={() => handleRemoveMember(m)}
+                            disabled={removing}
+                          >
+                            {removing ? '...' : 'Quitar'}
+                          </button>
+                          <button
+                            className="btn-secondary"
+                            style={{ padding: '.25rem .6rem', fontSize: '.75rem' }}
+                            onClick={() => setRemoveTarget(null)}
+                            disabled={removing}
+                          >
+                            No
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          className="btn-secondary"
+                          style={{ padding: '.25rem .6rem', fontSize: '.75rem', flexShrink: 0 }}
+                          onClick={() => setRemoveTarget(m)}
+                        >
+                          Quitar
+                        </button>
+                      )
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </div>
       )}
 
       {/* BUILD-AUTH-NICK-001: ciclo de revelación admin (Finalizar → Revelar) */}

@@ -227,6 +227,8 @@ export default {
     taken: 'Ese nickname ya está en uso en esta liga. Elige otro.',
     saveError: 'No se pudo guardar tu nickname.',
     save: 'Guardar nickname',
+    skip: 'Ahora no',
+    skipHint: 'Podés elegirlo más tarde entrando de nuevo a la liga.',
   },
 
   modes: {

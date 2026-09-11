@@ -116,10 +116,16 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
         displayMap = {}
         for (const uid of Object.keys(identityMap)) displayMap[uid] = identityMap[uid].display
       }
+      // BUILD-017-B: joined_at por usuario para que los juegos ya cerrados al
+      // unirse cuenten como fallidos en los standings de la semana bloqueada.
+      const joinedAt = {}
+      ;(membersRes.data || []).forEach(m => {
+        if (m.joined_at) joinedAt[m.user_id] = new Date(m.joined_at).getTime()
+      })
       const scored = (sourceGames || [])
         .filter(g => g.week === lastLockedWeek && g.finished && g.result)
       if (active) {
-        setStandings(allPicks && scored.length ? calcStandings(allPicks, scored, displayMap) : [])
+        setStandings(allPicks && scored.length ? calcStandings(allPicks, scored, displayMap, { joinedAt }) : [])
       }
     })()
     return () => { active = false }
@@ -163,7 +169,11 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
         const results = {}
         sourceGames
           .filter(g => g.week === w && g.finished && g.result)
-          .forEach(g => { results[g.game_id] = g.result })
+          // BUILD-017-C: acepta clave maestro (game_id) y UUID (league_games.id)
+          .forEach(g => {
+            if (g.game_id != null) results[g.game_id] = g.result
+            if (g.id != null) results[g.id] = g.result
+          })
         const correct = (byWeek[w] || [])
           .filter(p => results[p.game_id] && p.pick === results[p.game_id]).length
         if (correct > 0) s++
