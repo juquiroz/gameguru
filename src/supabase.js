@@ -85,7 +85,7 @@ export const leaguesApi = {
   getMembers: (leagueId) =>
     supabase
       .from('league_members')
-      .select('user_id, role, nickname')
+      .select('user_id, role, nickname, joined_at')
       .eq('league_id', leagueId),
 
   getLeadLifecycle: (leagueId) =>
@@ -171,6 +171,16 @@ export const membersApi = {
       .eq('user_id', userId)
       .select('role, nickname')
       .maybeSingle(),
+
+  // BUILD-017 — Quitar un participante (solo admins). Delega en el RPC
+  // SECURITY DEFINER `league_remove_member` (migración 017.0): valida en BD
+  // que el actor sea admin, prohíbe quitar al dueño/a sí mismo, y borra los
+  // picks + la membresía del participante.
+  removeMember: (leagueId, targetId) =>
+    supabase.rpc('league_remove_member', {
+      p_league_id: leagueId,
+      p_target: targetId,
+    }),
 }
 
 // ─── Picks helpers ──────────────────────────────────────────────────────────

@@ -227,6 +227,8 @@ export default {
     taken: 'That nickname is already used in this league. Choose another.',
     saveError: 'Could not save your nickname.',
     save: 'Save nickname',
+    skip: 'Not now',
+    skipHint: 'You can pick it later by entering the league again.',
   },
 
   modes: {

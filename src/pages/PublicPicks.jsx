@@ -1,18 +1,23 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { leagueGamesApi, picksApi } from '../supabase'
 import { leaguesApi } from '../supabase'
-import { isGameLocked, getCurrentWeek } from '../utils/dates'
+import { getCurrentWeek } from '../utils/dates'
 import TeamLogo from '../components/TeamLogo'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
 
 const TOTAL_WEEKS = 18
 
 export default function PublicPicks({ user, league }) {
-  const [activeWeek, setActiveWeek] = useState(TOTAL_WEEKS)
+  // BUILD-017-D: el default es la semana EN JUEGO, no la última. La versión
+  // anterior arrancaba en TOTAL_WEEKS (18) y solo cambiaba si 18 no existía
+  // en las semanas importadas → con las 18 semanas cargadas se quedaba fija en
+  // la última (todas las celdas en "–").
+  const [activeWeek, setActiveWeek] = useState(1)
   const [games, setGames] = useState([])
   const [picks, setPicks] = useState([])
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
+  const syncedRef = useRef(false)
   const memberUserIds = members.map(m => m.user_id)
   const { displayMap } = useLeagueIdentity(league, memberUserIds)
 
@@ -32,16 +37,16 @@ export default function PublicPicks({ user, league }) {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Sync activeWeek to current week when games load
+  // Sync activeWeek a la semana en juego, una sola vez al cargar (después el
+  // usuario puede navegar pestañas libremente).
   useEffect(() => {
-    if (games.length > 0) {
-      const weeks = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
-      if (weeks.length > 0 && !weeks.includes(activeWeek)) {
-        const current = getCurrentWeek(games)
-        setActiveWeek(current || Math.max(...weeks))
-      }
-    }
-  }, [games, activeWeek])
+    if (games.length === 0 || syncedRef.current) return
+    const weeks = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
+    if (weeks.length === 0) return
+    syncedRef.current = true
+    const current = getCurrentWeek(games)
+    setActiveWeek(current != null && weeks.includes(current) ? current : weeks[0])
+  }, [games])
 
   const weekGames = games
     .filter(g => g.active !== false && g.week === activeWeek)
@@ -54,20 +59,20 @@ export default function PublicPicks({ user, league }) {
   const weeksWithGames = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
   const weekList = weeksWithGames.length > 0 ? weeksWithGames : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
 
-  const lockedGames = weekGames.filter(g => isGameLocked(g, weekGames))
-  const weeksWithLocked = weekList.filter(w => {
-    const wGames = games.filter(g => g.active !== false && g.week === w)
-    return wGames.length > 0 && wGames.some(g => isGameLocked(g, wGames))
-  })
-
   const gamesById = {}
   weekGames.forEach(g => { gamesById[g.id] = g })
 
   const weekPicks = picks.filter(p => p.week === activeWeek)
 
   const buildRow = (memberId) => {
-    return lockedGames.map(g => {
-      const pick = weekPicks.find(p => p.user_id === memberId && p.game_id === g.game_id)
+    return weekGames.map(g => {
+      // BUILD-017-C: el pick se guarda con el game_id del calendario maestro,
+      // salvo partidos manuales (game_id NULL) que se guardan con el UUID
+      // league_games.id. Se aceptan ambas claves.
+      const pick = weekPicks.find(p =>
+        p.user_id === memberId &&
+        (p.game_id === g.game_id || (g.id != null && p.game_id === g.id))
+      )
       const result = g.finished && g.result
       const correct = result && pick && pick.pick === g.result
       const wrong = result && pick && pick.pick !== g.result
@@ -90,7 +95,9 @@ export default function PublicPicks({ user, league }) {
   return (
     <div className="page">
       <div className="page-title">👁️ Picks Públicos</div>
-      <div className="page-sub">Picks de todos los miembros para juegos bloqueados</div>
+      <div className="page-sub">
+        Todos los picks de la semana {activeWeek} realizados por los participantes
+      </div>
 
       {loading ? (
         <div className="empty-state"><div className="big">⏳</div></div>
@@ -100,29 +107,21 @@ export default function PublicPicks({ user, league }) {
         <>
           {/* Week tabs */}
           <div className="week-tabs" style={{ marginBottom: '1rem' }}>
-            {weekList.map(w => {
-              const locked = weeksWithLocked.includes(w)
-              return (
-                <button
-                  key={w}
-                  className={`week-tab ${activeWeek === w ? 'active' : ''}`}
-                  onClick={() => setActiveWeek(w)}
-                  style={locked ? {} : { opacity: 0.5 }}
-                >
-                  Semana {w}
-                  {locked && <span className="fin-tag" style={{ fontSize: '.6rem' }}>🔓</span>}
-                </button>
-              )
-            })}
+            {weekList.map(w => (
+              <button
+                key={w}
+                className={`week-tab ${activeWeek === w ? 'active' : ''}`}
+                onClick={() => setActiveWeek(w)}
+              >
+                Semana {w}
+              </button>
+            ))}
           </div>
 
-          {lockedGames.length === 0 ? (
+          {weekGames.length === 0 ? (
             <div className="empty-state">
-              <div className="big">🔒</div>
-              No hay juegos bloqueados en esta semana aún.<br />
-              <span style={{ fontSize: '.82rem', color: 'var(--text3)' }}>
-                Todos los juegos de la semana se vuelven visibles 1h antes del primer partido.
-              </span>
+              <div className="big">📭</div>
+              No hay partidos para la Semana {activeWeek}.
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -133,7 +132,7 @@ export default function PublicPicks({ user, league }) {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
                     <th style={{ ...thStyle, position: 'sticky', left: 0, zIndex: 3, background: 'var(--bg)' }}>Miembro</th>
-                    {lockedGames.map(g => (
+                    {weekGames.map(g => (
                       <th key={g.id} style={{ ...thStyle, textAlign: 'center', minWidth: '80px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '3px', justifyContent: 'center' }}>
                           <TeamLogo abbr={g.away_abbr} size={16} />
