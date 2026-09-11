@@ -39,9 +39,19 @@ export const isWeekLocked = (games) => {
   return deadline ? new Date() >= deadline : false
 }
 
-export const isGameLocked = (game, weekGames) => {
-  if (game?.finished) return true
-  return isWeekLocked(weekGames)
+// cierre POR PARTIDO (BUILD-016.1): cada juego se bloquea 5 min antes de su
+// propio kickoff (o al marcar finished). A diferencia de isWeekLocked (que
+// congela la semana entera en el deadline del primer partido), esto permite
+// cargar picks de los juegos aún abiertos aunque la semana ya haya arrancado —
+// clave para participantes que se suman con la liga iniciada.
+export const isGameLocked = (game) => {
+  if (!game) return true
+  if (game.finished) return true
+  const t = game.game_time || game.time
+  if (!t) return false
+  const time = new Date(t).getTime()
+  if (Number.isNaN(time)) return false
+  return Date.now() >= time - 5 * 60 * 1000
 }
 
 export const localTZOffset = () => {

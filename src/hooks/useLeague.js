@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { leaguesApi, membersApi, masterGamesApi, leagueGamesApi } from '../supabase'
 import { genInviteCode, NFL_TEAMS } from '../data/nflData'
 import { localTZOffset } from '../utils/dates'
-import { hydrateLeague, canJoinLeague, getLeagueSeason, masterPhaseForMode, detectBrowserTimezone } from '../domains/league'
+import { hydrateLeague, getLeagueSeason, masterPhaseForMode, detectBrowserTimezone } from '../domains/league'
 import { trainingSessionService } from '../domains/training/services/trainingSessionService'
 import { trainingCampSessionService } from '../domains/training-camp/services/sessionService'
 import { trainingCampAutoScheduleService } from '../domains/training-camp/services/autoScheduleService'
@@ -142,30 +142,8 @@ export function useLeague(user) {
     const { data: league, error: fetchError } = await leaguesApi.getByCode(code.toUpperCase())
     if (fetchError || !league) return { error: { message: 'Código no válido.' } }
 
-    // BUILD-TC-005.4 — Regla central del roster (canJoinLeague, dominio):
-    // una liga cuyo último evento ya superó START (TC activo, Fixture
-    // Generation, Game Week…) NO acepta nuevos jugadores. La validación vive
-    // en la capa de servicio, no solo en la UI; la UI traduce el mensaje por
-    // `error.code` (JoinLeagueModal).
-    // TC v2 (BUILD-TC-V2-AUTO): la sesión se guarda vía trainingCampSessionService
-    // (`state='training_camp_v2'`, con flag `started`). El roster permanece
-    // ABIERTO durante 'inviting'/setup y solo cierra cuando el admin pulsa
-    // "Comenzar semana 1" (started=true) — independientemente de la hora del
-    // primer juego. Preferimos esta sesión cuando existe.
-    const [{ data: v2Event }, { data: legacyEvent }] = await Promise.all([
-      trainingCampSessionService.get(league.id),
-      trainingSessionService.get(league.id),
-    ])
-    const event = v2Event || legacyEvent
-    if (!canJoinLeague(event)) {
-      return {
-        error: {
-          code: 'roster_closed',
-          message: 'Esta liga ya comenzó y no acepta nuevos jugadores.',
-        },
-      }
-    }
-
+    // BUILD-016 — Roster siempre abierto: cualquiera puede sumarse con el
+    // código aunque la liga ya haya comenzado (regular o Training Camp).
     const { error: joinError } = await membersApi.join(league.id, user.id)
     if (joinError) return { error: joinError }
 

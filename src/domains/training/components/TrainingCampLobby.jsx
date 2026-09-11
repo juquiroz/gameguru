@@ -3,7 +3,6 @@ import { useLanguage } from '../../../i18n/context'
 import { useTrainingSession } from '../hooks/useTrainingSession'
 import { getTrainingLevel } from '../models/levels'
 import { EVENT_TYPES } from '../../event'
-import { canJoinLeague } from '../../league'
 import TrainingCampHeader from './TrainingCampHeader'
 import TrainingCampStatus from './TrainingCampStatus'
 import TrainingCampCountdown from './TrainingCampCountdown'
@@ -39,11 +38,8 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
   // (transitoria, antes del TICK) o `training_started` (estado persistido).
   const isTrainingActive = phase === 'ready' || phase === 'training_started'
 
-  // BUILD-TC-005.4 — Regla central del roster (dominio): abierto desde League
-  // Created → TC WAITING → TC COUNTDOWN; se cierra cuando el TC entra en START.
-  // La invitación (código) solo se muestra mientras el roster está abierto.
-  const rosterOpen = !event || canJoinLeague(event)
-
+  // BUILD-016 — Roster siempre abierto: la invitación (código) se muestra en
+  // todo momento, aunque el campamento ya haya comenzado.
   const copyInvite = () => {
     const link = `${window.location.origin}/?join=${league.code}`
     navigator.clipboard.writeText(link)
@@ -148,25 +144,13 @@ export default function TrainingCampLobby({ user, league, onConfigure }) {
         />
       )}
 
-      {rosterOpen && (
-        <div className={styles.invite}>
-          <div className={styles.inviteLabel}>{t('training.inviteCode')}</div>
-          <div className={styles.inviteCode}>{league.code}</div>
-          <button className={styles.inviteCopy} onClick={copyInvite}>
-            {copied ? t('training.copied') : t('training.copyLink')}
-          </button>
-        </div>
-      )}
-
-      {event && !rosterOpen && (
-        <div className={styles.rosterClosed}>
-          <span className={styles.rosterClosedIcon}>🔒</span>
-          <div className={styles.rosterClosedText}>
-            <div className={styles.rosterClosedTitle}>{t('training.rosterClosedTitle')}</div>
-            <div className={styles.rosterClosedDesc}>{t('training.rosterClosedDesc')}</div>
-          </div>
-        </div>
-      )}
+      <div className={styles.invite}>
+        <div className={styles.inviteLabel}>{t('training.inviteCode')}</div>
+        <div className={styles.inviteCode}>{league.code}</div>
+        <button className={styles.inviteCopy} onClick={copyInvite}>
+          {copied ? t('training.copied') : t('training.copyLink')}
+        </button>
+      </div>
 
       <TrainingCampParticipants participants={participants} isAdmin={isAdmin} userId={user?.id} />
 
