@@ -1,0 +1,100 @@
+import { useLanguage } from '../../../i18n/context'
+import styles from '../training.module.css'
+
+const pad = (n) => String(n).padStart(2, '0')
+
+const split = (ms) => {
+  if (!ms || ms <= 0) return { d: 0, h: 0, m: 0, s: 0 }
+  const total = Math.floor(ms / 1000)
+  return {
+    d: Math.floor(total / 86400),
+    h: Math.floor((total % 86400) / 3600),
+    m: Math.floor((total % 3600) / 60),
+    s: total % 60,
+  }
+}
+
+const fmtStart = (d) =>
+  new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(d))
+
+export default function TrainingCampCountdown({ phase, remainingMs, startAt, startedAt, sessionNo, now }) {
+  const { t } = useLanguage()
+
+  const active = phase === 'waiting' || phase === 'countdown'
+  const live = phase === 'countdown'
+
+  // BUILD-TC-005.3 — Estado activo (START): muestra el evento en curso, hora de
+  // inicio y tiempo transcurrido, y el próximo paso (Fixture Generation).
+  if (phase === 'ready' || phase === 'training_started') {
+    const started = startedAt || startAt
+    const base = started && !Number.isNaN(new Date(started).getTime()) ? new Date(started) : null
+    const elapsed = base ? Math.max(0, (now || new Date()) - base) : 0
+    const { h, m, s } = split(elapsed)
+    return (
+      <div className={styles.countdownCard}>
+        <div className={styles.countdownReady}>
+          <div className={styles.readyTitle}>🏈 {t('training.personaActive')}</div>
+          <div className={styles.readySub}>{t('training.activeSub')}</div>
+          {base && (
+            <div className={styles.activeMeta}>
+              <div className={styles.activeMetaRow}>{t('training.startsAt', { date: fmtStart(base.toISOString()) })}</div>
+              <div className={styles.activeMetaRow}>{t('training.elapsed', { time: `${pad(h)}:${pad(m)}:${pad(s)}` })}</div>
+            </div>
+          )}
+          <div className={styles.readySub}>{t('training.nextStep')}</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!active || remainingMs == null) {
+    return (
+      <div className={styles.countdownCard}>
+        {sessionNo && (
+          <div className={styles.sessionTag}>{t('training.sessionTag', { no: sessionNo })}</div>
+        )}
+        <div className={styles.countdownLabel}>{t('training.personaCountdown')}</div>
+        <div className={styles.readySub}>
+          {startAt ? fmtStart(startAt) : t('training.statusUnknown')}
+        </div>
+      </div>
+    )
+  }
+
+  const { d, h, m, s } = split(remainingMs)
+  const boxes = [
+    { v: d, u: t('training.unitDays') },
+    { v: h, u: t('training.unitHours') },
+    { v: m, u: t('training.unitMin') },
+    { v: s, u: t('training.unitSec') },
+  ]
+
+  return (
+    <div className={styles.countdownCard}>
+      {sessionNo && (
+        <div className={styles.sessionTag}>{t('training.sessionTag', { no: sessionNo })}</div>
+      )}
+      <div className={`${styles.countdownLabel} ${live ? styles.countdownLabelLive : ''}`}>
+        {t('training.personaCountdown')}
+      </div>
+      <div className={styles.countdownBoxes}>
+        {boxes.map((b, i) => (
+          <div key={b.u} className={styles.cdItem}>
+            <div className={`${styles.cdBox} ${live ? styles.cdBoxLive : ''}`}>
+              <div className={styles.cdValue}>{pad(b.v)}</div>
+              <div className={styles.cdUnit}>{b.u}</div>
+            </div>
+            {i < boxes.length - 1 && <span className={styles.cdSep}>:</span>}
+          </div>
+        ))}
+      </div>
+      <div className={styles.countdownMeta}>{t('training.startsAt', { date: fmtStart(startAt) })}</div>
+    </div>
+  )
+}

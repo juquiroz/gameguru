@@ -1,0 +1,367 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem 0;
+  color: var(--text);
+}
+
+.subtitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text3);
+  letter-spacing: 0.02em;
+}
+
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(245, 166, 35, 0.1);
+  border: 2px solid rgba(245, 166, 35, 0.3);
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.warningIcon {
+  font-size: 2rem;
+}
+
+.warningText {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.scopeSection {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem 0;
+  color: var(--text);
+}
+
+.scopeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.input,
+.select {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.input:disabled,
+.select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actions {
+  margin-bottom: 2rem;
+}
+
+.button {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.08em;
+  padding: 1rem 2.5rem;
+  background: linear-gradient(135deg, #F5A623, #FF4B4B);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 166, 35, 0.4);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 75, 75, 0.1);
+  border: 2px solid rgba(255, 75, 75, 0.3);
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.errorIcon {
+  font-size: 1.5rem;
+}
+
+.errorText {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.results {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  border: 2px solid var(--border);
+}
+
+.statValue {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.statLabel {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detailsSection {
+  margin-top: 2rem;
+}
+
+.detailsTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem 0;
+  color: var(--text);
+}
+
+.detailsTable {
+  overflow-x: auto;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 80px 80px 60px 100px 180px 120px 140px 150px;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border-radius: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 80px 80px 60px 100px 180px 120px 140px 150px;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border-radius: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.gameTime {
+  font-size: 0.85rem;
+  color: var(--text2);
+}
+
+.externalId {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--text3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reason {
+  font-size: 0.85rem;
+  color: var(--text2);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badgeSuccess {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4CAF50;
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.badgeWarning {
+  background: rgba(255, 152, 0, 0.2);
+  color: #FF9800;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.badgeError {
+  background: rgba(244, 67, 54, 0.2);
+  color: #F44336;
+  border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+.badgeInfo {
+  background: rgba(33, 150, 243, 0.2);
+  color: #2196F3;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+}
+
+.badgeDefault {
+  background: rgba(158, 158, 158, 0.2);
+  color: #9E9E9E;
+  border: 1px solid rgba(158, 158, 158, 0.3);
+}
+
+.noMutation {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(76, 175, 80, 0.1);
+  border: 2px solid rgba(76, 175, 80, 0.3);
+  border-radius: 8px;
+  margin-top: 2rem;
+}
+
+.noMutationIcon {
+  font-size: 1.5rem;
+}
+
+.noMutationText {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.duration {
+  margin-top: 1rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text3);
+  text-align: right;
+}
+
+.denied {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.deniedIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.denied h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem 0;
+  color: var(--text);
+}
+
+.denied p {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  color: var(--text2);
+}
+
+@media (max-width: 768px) {
+  .scopeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tableHeader,
+  .tableRow {
+    grid-template-columns: 60px 60px 50px 80px 140px 100px 120px 120px;
+    font-size: 0.75rem;
+  }
+}

@@ -1,0 +1,13 @@
+# Supabase Edge Functions Configuration
+# 
+# This config disables JWT verification at the gateway level for results-sync.
+# Authentication is handled internally by the Edge Function:
+# - Manual sync: validates JWT + user permissions
+# - Cron sync: validates X-Cron-Secret
+#
+# This allows both authentication methods to coexist:
+# - Frontend requests with JWT (manual sync)
+# - Cron requests with X-Cron-Secret (automated sync)
+
+[functions.results-sync]
+verify_jwt = false

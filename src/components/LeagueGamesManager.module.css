@@ -1,0 +1,331 @@
+.sectionCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 480px) {
+  .sectionCard { border-radius: var(--r-xl); padding: 1.25rem; margin-bottom: 1.25rem; }
+  .sectionHeader { font-size: 0.9rem; margin-bottom: 1rem; }
+}
+
+.sectionActions {
+  display: flex;
+  gap: 6px;
+}
+
+.availHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.availTitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+.availActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.actionBtn {
+  padding: 0.4rem 0.9rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: var(--r-sm);
+  transition: all 0.15s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.actionBtn:hover { border-color: var(--accent); color: var(--accent); }
+.actionBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.gamesList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 0.45rem 0.5rem;
+  background: var(--bg3);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.gameRow:hover { background: var(--surface); }
+.gameRow.selected { background: rgba(245, 166, 35, 0.08); }
+
+.gameRow.editing {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: default;
+}
+
+.editMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.teamsRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.chk {
+  font-size: 0.85rem;
+  color: var(--accent);
+  width: 1rem;
+  flex-shrink: 0;
+}
+
+.emoji {
+  font-size: 1rem;
+  line-height: 1;
+  width: 1.2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.abbr {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  width: 2rem;
+  flex-shrink: 0;
+}
+
+.vs {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.6rem;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+
+.score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text);
+  min-width: 1.2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  color: var(--text);
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (min-width: 480px) {
+  .gameRow { flex-wrap: nowrap; gap: 6px; padding: 0.5rem 0.6rem; }
+  .teamsRow { flex: none; }
+  .chk { font-size: 1rem; width: 1.2rem; }
+  .emoji { font-size: 1.1rem; width: 1.4rem; }
+  .abbr { font-size: 1rem; width: 2.5rem; }
+  .vs { font-size: 0.7rem; }
+  .score { font-size: 1rem; min-width: 1.5rem; }
+  .time { font-size: 0.72rem; opacity: 0.6; }
+  .rowMeta { margin-left: auto; }
+}
+
+.emptyRow {
+  padding: 1rem;
+  text-align: center;
+  color: var(--green);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.inactive {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.inactiveBadge {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.disableBtn {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.6rem;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--red);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.disableBtn:hover { background: rgba(239, 68, 68, 0.1); }
+
+.enableBtn {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.6rem;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: var(--green);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.enableBtn:hover { background: rgba(34, 197, 94, 0.1); }
+
+@media (min-width: 480px) {
+  .disableBtn,
+  .enableBtn { padding: 0.2rem 0.5rem; font-size: 0.7rem; }
+}
+
+.hasResult {
+  background: rgba(34, 197, 94, 0.06);
+}
+
+.winner {
+  color: var(--accent);
+}
+
+.score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text);
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+@media (min-width: 480px) {
+  .score { font-size: 1rem; min-width: 1.5rem; }
+}
+
+.resultBtn {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.75rem;
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.resultBtn:hover { background: var(--surface); }
+
+@media (min-width: 480px) {
+  .resultBtn { padding: 0.2rem 0.45rem; font-size: 0.85rem; }
+}
+
+/* ─── Add custom game form ─────────────────────────────────────── */
+.addForm {
+  background: var(--bg3);
+  border-radius: var(--r);
+  padding: 1rem;
+}
+
+@media (max-width: 480px) {
+  .addForm { padding: .75rem; }
+}
+
+.teamRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.teamSelect {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  min-width: 0;
+}
+
+.teamVs {
+  color: var(--text3); font-size: .85rem;
+  text-align: center; white-space: nowrap;
+}
+
+.dateRow {
+  display: flex; gap: 8px; align-items: center;
+}
+
+@media (max-width: 480px) {
+  .dateRow { flex-wrap: wrap; }
+  .dateRow .inputDate { flex: 1 1 100%; }
+  .dateRow .inputTime { flex: 1; min-width: 0; }
+  .dateRow .addBtn { flex: 1 1 100%; }
+}
+
+.inputDate {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  flex: 1;
+}
+
+.inputTime {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  flex: 1;
+}
+
+.addBtn {
+  padding: .5rem 1rem; background: var(--accent); color: #000;
+  border: none; border-radius: var(--r-sm); cursor: pointer;
+  font-weight: 600; white-space: nowrap;
+}
