@@ -1,4 +1,4 @@
-export default function LeaderboardTable({ rows, currentUserId, showWinner }) {
+export default function LeaderboardTable({ rows, currentUserId, showWinner, streaks = {} }) {
   if (!rows?.length) return (
     <div className="empty-state">
       <div className="big">📊</div>
@@ -37,6 +37,15 @@ export default function LeaderboardTable({ rows, currentUserId, showWinner }) {
                 <div className="lb-uname">
                   <span className="lb-name">{row.username || 'Jugador'}</span>
                   <span className="lb-score-inline">{row.correct}/{row.total} aciertos</span>
+                  {/* BUILD-017-F: racha = juegos acertados de seguido */}
+                  {streaks[row.userId] >= 2 && (
+                    <span
+                      className="lb-badge lb-badge-streak"
+                      title={`Racha: ${streaks[row.userId]} juegos acertados seguidos`}
+                    >
+                      🔥 {streaks[row.userId]}
+                    </span>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                   {isWinner && <span className="lb-badge lb-badge-winner">🏆 GANADOR</span>}

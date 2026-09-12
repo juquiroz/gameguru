@@ -122,10 +122,12 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
       ;(membersRes.data || []).forEach(m => {
         if (m.joined_at) joinedAt[m.user_id] = new Date(m.joined_at).getTime()
       })
-      const scored = (sourceGames || [])
-        .filter(g => g.week === lastLockedWeek && g.finished && g.result)
+      const weekGames = (sourceGames || []).filter(g => g.week === lastLockedWeek)
+      const scored = weekGames.filter(g => g.finished && g.result)
       if (active) {
-        setStandings(allPicks && scored.length ? calcStandings(allPicks, scored, displayMap, { joinedAt }) : [])
+        // BUILD-017-G: se pasan todos los juegos de la semana para que los
+        // pre-cerrados sin resultado cuenten como fallido para quien entró tarde.
+        setStandings(allPicks && scored.length ? calcStandings(allPicks, weekGames, displayMap, { joinedAt }) : [])
       }
     })()
     return () => { active = false }

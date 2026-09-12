@@ -305,7 +305,13 @@ td:first-child{position:sticky;left:0;background:#0D1525}
               </button>
               <button
                 className="btn-secondary"
-                onClick={() => onNavigate('publicpicks')}
+                onClick={() => {
+                  // BUILD-017-E: ya no se navega a otra ruta; se va a la Tabla
+                  // de Posiciones con la matriz de picks abierta al lado de los
+                  // jugadores.
+                  sessionStorage.setItem('gg.showPicks', '1')
+                  onNavigate('board')
+                }}
               >
                 👁️ Ver Picks Públicos
               </button>
