@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
-import { isWeekLocked, getCurrentWeek } from '../utils/dates'
-import { calcStandings } from '../utils/standings'
+import { getCurrentWeek } from '../utils/dates'
+import { calcStandings, calcStreaks } from '../utils/standings'
 import LeaderboardTable from '../components/LeaderboardTable'
 import LeagueIdentity from '../components/LeagueIdentity'
+import PublicPicksMatrix from '../components/PublicPicksMatrix'
 import { canManageLeague } from '../domains/platform'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
 
@@ -17,12 +18,18 @@ export default function Leaderboard({ user, league, onNavigate }) {
   const [members, setMembers] = useState([])
   const [memberUserIds, setMemberUserIds] = useState([])
   const [weekFinished, setWeekFinished] = useState(false)
-  const [lockedWeeks, setLockedWeeks] = useState([])
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
-  const isGeneral = activeWeek === 'all'
   // BUILD-017-B: joined_at por usuario (juegos pre-cerrados → fallidos).
   const joinedAtRef = useRef({})
+  // BUILD-017-E: matriz de picks de todos, expandible en la misma página
+  // (antes navegaba a otra ruta). Si el usuario aprieta "Ver Picks Públicos"
+  // desde la página de Picks, se llega acá con la matriz ya abierta.
+  const [showPicks, setShowPicks] = useState(() => !!sessionStorage.getItem('gg.showPicks'))
+  // BUILD-017-F: racha (juegos acertados seguidos) por usuario, global sobre
+  // todos los partidos finalizados de la liga.
+  const [streaks, setStreaks] = useState({})
+  const isGeneral = activeWeek === 'all'
   const { displayMap } = useLeagueIdentity(league, memberUserIds)
 
   // Sync activeWeek to the week being played (por fechas) when data loads
@@ -33,6 +40,12 @@ export default function Leaderboard({ user, league, onNavigate }) {
     const current = getCurrentWeek(allGames)
     setActiveWeek(current || weeks[0])
   }, [weeks, allGames])
+
+  // BUILD-017-E: consumir el flag que deja la página de Picks al redirigir a
+  // la Tabla para que la matriz aparezca abierta solo ese viaje.
+  useEffect(() => {
+    sessionStorage.removeItem('gg.showPicks')
+  }, [])
 
   const loadStandings = useCallback(async () => {
     if (!league) return
@@ -80,13 +93,6 @@ export default function Leaderboard({ user, league, onNavigate }) {
     setWeeks(uniqueWeeks)
     setAllGames(games)
 
-    // Compute which weeks have locked games
-    const locked = uniqueWeeks.filter(w => {
-      const weekGames = games.filter(g => g.week === w)
-      return isWeekLocked(weekGames)
-    })
-    setLockedWeeks(locked)
-
     if (isGeneral) {
       // General view: accumulate across all finished weeks
       const finishedWeeks = uniqueWeeks.filter(w =>
@@ -110,11 +116,15 @@ export default function Leaderboard({ user, league, onNavigate }) {
         return
       }
 
-      const finishedGames = games.filter(g => g.finished && g.result)
       const pickUserIds = [...new Set(allPicks.map(p => p.user_id))]
       setMemberUserIds(prev => [...new Set([...prev, ...pickUserIds])])
-      const sorted = calcStandings(allPicks, finishedGames, displayMap, { joinedAt: joinedAtRef.current })
+      // BUILD-017-G: se pasan TODOS los juegos (no solo los con resultado)
+      // para que los fallidos de quien entró tarde cuenten aunque el juego ya
+      // haya pasado y todavía no tenga resultado cargado.
+      const sorted = calcStandings(allPicks, games, displayMap, { joinedAt: joinedAtRef.current })
       setRows(sorted)
+      // BUILD-017-F: racha global sobre todos los juegos finalizados.
+      setStreaks(calcStreaks(allPicks, games, sorted.map(r => r.userId)))
       setWeekFinished(allWeeksFinished)
       setLoading(false)
       return
@@ -132,14 +142,21 @@ export default function Leaderboard({ user, league, onNavigate }) {
     const scoredGames = weekGames.filter(g => g.finished && g.result)
     if (!picks?.length || !scoredGames.length) {
       setRows([])
+      setStreaks({})
       setLoading(false)
       return
     }
 
     const pickUserIds = [...new Set(picks.map(p => p.user_id))]
     setMemberUserIds(prev => [...new Set([...prev, ...pickUserIds])])
-    const sorted = calcStandings(picks, scoredGames, displayMap, { joinedAt: joinedAtRef.current })
+    // BUILD-017-G: se pasan todos los partidos de la semana (no solo los con
+    // resultado) para que los pre-cerrados sin resultado cuenten como fallido.
+    const sorted = calcStandings(picks, weekGames, displayMap, { joinedAt: joinedAtRef.current })
     setRows(sorted)
+    // BUILD-017-F: la racha es global (todos los partidos finalizados de la
+    // liga), aunque la vista sea de una semana puntual.
+    const { data: allPicks } = await picksApi.getAllForLeague(league.id)
+    setStreaks(allPicks ? calcStreaks(allPicks, games, sorted.map(r => r.userId)) : {})
     setLoading(false)
   }, [league, activeWeek, displayMap])
 
@@ -208,7 +225,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
                     : 'Resultados parciales — se muestran los aciertos de los partidos ya finalizados.'
                 }
               </div>
-              <LeaderboardTable rows={rows} currentUserId={user?.id} showWinner={weekFinished} />
+              <LeaderboardTable rows={rows} currentUserId={user?.id} showWinner={weekFinished} streaks={streaks} />
             </>
           ) : !weekFinished && !isGeneral ? (
             <>
@@ -271,14 +288,25 @@ export default function Leaderboard({ user, league, onNavigate }) {
             </div>
           )}
 
-          {(isGeneral ? lockedWeeks.length > 0 : lockedWeeks.includes(activeWeek)) && (
-            <button
-              className="btn-secondary"
-              style={{ width: '100%', marginTop: '1rem' }}
-              onClick={() => onNavigate('publicpicks')}
-            >
-              👁️ Ver Picks Públicos
-            </button>
+          {/* BUILD-017-E: ver los picks de todos acá mismo, al lado de los
+              jugadores, sin ir a otra ruta. Llega abierta si el clic provino
+              de "Ver Picks Públicos" en la página de Picks. */}
+          <button
+            className={showPicks ? 'btn-primary' : 'btn-secondary'}
+            style={{ width: '100%', marginTop: '1rem' }}
+            onClick={() => setShowPicks(v => {
+              const next = !v
+              if (!next) sessionStorage.removeItem('gg.showPicks')
+              return next
+            })}
+          >
+            👁️ {showPicks ? 'Ocultar Picks Públicos' : 'Ver Picks Públicos'}
+          </button>
+
+          {showPicks && (
+            <div style={{ marginTop: '1rem' }}>
+              <PublicPicksMatrix league={league} />
+            </div>
           )}
         </>
       )}
