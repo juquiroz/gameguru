@@ -202,3 +202,13 @@ SELECT
   jobname, schedule
 FROM cron.job
 WHERE jobname = 'auto-sync-nfl-results';
+
+SELECT
+  'Budget defaults' as check_l,
+  t.provider,
+  CASE WHEN t.provider = 'espn' THEN 600 ELSE 80 END AS automatic_limit,
+  20 AS manual_limit
+FROM (
+  SELECT 'espn' AS provider
+  UNION ALL SELECT 'api-sports'
+) t;
