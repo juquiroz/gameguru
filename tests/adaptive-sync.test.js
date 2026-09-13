@@ -237,22 +237,24 @@ describe('API consumption estimates', () => {
   })
 
   it('should estimate 1 request for multiple games on same date', () => {
+    const toDateKey = (gameTime) => String(gameTime || '').slice(0, 10)
     const games = [
       { game_time: '2026-09-15T13:00:00Z' },
       { game_time: '2026-09-15T17:00:00Z' },
-      { game_time: '2026-09-15T20:00:00Z' },
+      { game_time: '2026-09-15 20:00:00Z' },
     ]
-    const dates = [...new Set(games.map(g => g.game_time.split('T')[0]))]
-    assert.strictEqual(dates.length, 1) // 1 fecha = 1 request
+    const dates = [...new Set(games.map(g => toDateKey(g.game_time)))]
+    assert.strictEqual(dates.length, 1) // 1 fecha = 1 request (ISO y con espacio)
   })
 
   it('should estimate multiple requests for games on different dates', () => {
+    const toDateKey = (gameTime) => String(gameTime || '').slice(0, 10)
     const games = [
       { game_time: '2026-09-15T13:00:00Z' },
       { game_time: '2026-09-16T17:00:00Z' },
-      { game_time: '2026-09-17T20:00:00Z' },
+      { game_time: '2026-09-17 20:00:00Z' },
     ]
-    const dates = [...new Set(games.map(g => g.game_time.split('T')[0]))]
+    const dates = [...new Set(games.map(g => toDateKey(g.game_time)))]
     assert.strictEqual(dates.length, 3) // 3 fechas = 3 requests
   })
 

@@ -202,8 +202,11 @@ async function schedulerDecision(supa: any, now: Date, scope: any, isManual: boo
     }
   }
 
-  // 5. Obtener fechas únicas para consultar
-  const dates = [...new Set(needsSync.map((g: any) => g.game_time.split('T')[0]))]
+  // 5. Obtener fechas únicas para consultar (game_time puede venir como
+  //    ISO `2026-09-13T17:00:00Z` o con espacio `2026-09-11 00:35:00Z`;
+  //    solo interesa la parte de fecha YYYY-MM-DD → `dates=YYYYMMDD`).
+  const toDateKey = (gameTime: any) => String(gameTime || '').slice(0, 10)
+  const dates = [...new Set(needsSync.map((g: any) => toDateKey(g.game_time)))]
 
   return {
     should: true,

@@ -91,3 +91,33 @@ OpenCode (big-pickle) · trabajo de investigación, re-plan y QA, sin BUILD de d
 Revisar/clasificar **sin escribir** (README de riesgo): al aprobar el PO, redactar y
 aprobar un PLAN de recuperación con snapshot previo + rollback por juego antes de
 cualquier escritura.
+
+## Resolución aplicada (2026-09-13)
+
+Cambios de código (deployados) aprobados por el PO:
+
+1. **Fix cron `ESPN 400`** — `supabase/functions/results-sync/index.ts`
+   (`schedulerDecision`): extrae la fecha con `String(game_time).slice(0, 10)` en lugar de
+   `split('T')[0]`, soportando el formato con espacio de los `master_games` preexistentes
+   (`"2026-09-11 00:35:00Z"`). Test actualizado en `tests/adaptive-sync.test.js` (ISO y con
+   espacio). **Cron verificable en producción: run 21:55 UTC = completed,
+   records_fetched=211, records_propagated=422** (corrige el ciclo de fallos cada 5 min).
+   Evidencia: request malformado → ESP 400; corregido → 200.
+
+2. **Fix UI My League** — `src/components/LeagueGamesManager.jsx`: `hasResult` ya no exige
+   `g.finished` (solo `result` o ambos scores), por lo que se muestran los marcadores de
+   juegos que tienen scores aunque `finished=false` (la causa de "solo se ve el primer
+   juego" era que casi todos tenían scores con `finished=false`). En My Picks ya funcionaba
+   porque usa `g.result` directo. 
+
+3. **GESTIÓN DE PARTIDOS solo-admin** — `src/pages/LeaguePage.jsx`: el bloque de
+   `LeagueGamesManager` (scores, import, gestión) ahora se renderiza solo cuando
+   `isAdmin`; los participantes ya no lo ven (ven resultados en Mis Picks / Tabla de
+   Posiciones).
+
+Evidencia de QA: **370/370 tests pass** (`node --test`), **build OK** (`npm run build`).
+Tras el sync, ambas ligas quedaron con scores de ESPN en vivo en Semana 1
+(Momios2026: 14/16 con scores; NflMasters2026: 16/16). Juegos del jueves de apertura
+(SEA-NE y LAR-SF) sin marcador automático — quedarán para carga manual del admin
+(flujo normal). Riesgo residual: fuentes sin respaldo de auditoría previo al fix;
+cron activo cada 5 min (deseado para auto-refresco de scores en vivo).
