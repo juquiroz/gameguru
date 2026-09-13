@@ -5,22 +5,26 @@
 This guide documents the manual steps required to deploy the Auto-Results Sync feature to production.
 
 **Status**: Ready for deployment  
-**Tests**: 56/56 passing  
+**Tests**: 370/370 passing  
 **Security**: Authorization and concurrency protection implemented
+
+> **PLAN-021 (temporada 2026)**: el provider de resultados es el **scoreboard público de ESPN**
+> (`site.api.espn.com`, sin API key). API-Sports free no cubre temporada 2026 y ya no se usa.
+> `API_SPORTS_API_KEY` no es requerida por las edge functions.
 
 ---
 
 ## Pre-Deployment Checklist
 
-### 1. API-Sports Credentials
+### 1. Sourcede datos: ESPN (scoreboard público)
 
-**Status**: ✅ Configured in Supabase Secrets  
-**Secret Name**: `API_SPORTS_API_KEY`
+**Status**: ✅ Sin credenciales necesarias  
+Los edge functions `reconcile` y `results-sync` consumen directamente
+`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard` (parámetros
+`dates=YYYYMMDD` o `week`+`seasonType`+`season`). No requiere key ni secret.
 
-Verify in Supabase Dashboard:
-```
-Dashboard → Edge Functions → Secrets → API_SPORTS_API_KEY
-```
+`API_SPORTS_API_KEY` puede permanecer en Edge Functions Secrets sin uso (legado), o
+eliminarse.
 
 ### 2. Cron Secret
 
@@ -349,8 +353,8 @@ LIMIT 10;
 ### Issue: Edge Function returns 500
 
 **Possible causes**:
-1. `API_SPORTS_API_KEY` not configured
-2. `CRON_SECRET` not configured (for cron)
+1. `CRON_SECRET` not configured (for cron)
+2. ESPN scoreboard no disponible (endpoint público caído o shape cambiado)
 3. Database connection issue
 
 **Solution**:
@@ -442,7 +446,7 @@ DROP TABLE IF EXISTS sync_runs;
 ## Post-Deployment Tasks
 
 1. **Monitor first 24 hours**: Check sync_runs for errors
-2. **Verify data accuracy**: Compare API-Sports data with master_games
+2. **Verify data accuracy**: Compare ESPN scoreboard data with master_games
 3. **Check performance**: Monitor Edge Function execution times
 4. **User feedback**: Enable for beta users and collect feedback
 5. **Gradual rollout**: Enable auto_update_results for more leagues

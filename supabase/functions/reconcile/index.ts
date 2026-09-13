@@ -1,23 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { fetchGamesByDate } from '../_shared/espn-nfl.ts'
 
 const TIME_TOLERANCE_MS = 2 * 60 * 60 * 1000
-
-const TEAM_MAP: Record<string, string> = {
-  'Arizona Cardinals': 'ARI', 'Atlanta Falcons': 'ATL', 'Baltimore Ravens': 'BAL',
-  'Buffalo Bills': 'BUF', 'Carolina Panthers': 'CAR', 'Chicago Bears': 'CHI',
-  'Cincinnati Bengals': 'CIN', 'Cleveland Browns': 'CLE', 'Dallas Cowboys': 'DAL',
-  'Denver Broncos': 'DEN', 'Detroit Lions': 'DET', 'Green Bay Packers': 'GB',
-  'Houston Texans': 'HOU', 'Indianapolis Colts': 'IND', 'Jacksonville Jaguars': 'JAX',
-  'Kansas City Chiefs': 'KC', 'Las Vegas Raiders': 'LV', 'Los Angeles Chargers': 'LAC',
-  'Los Angeles Rams': 'LAR', 'Miami Dolphins': 'MIA', 'Minnesota Vikings': 'MIN',
-  'New England Patriots': 'NE', 'New Orleans Saints': 'NO', 'New York Giants': 'NYG',
-  'New York Jets': 'NYJ', 'Philadelphia Eagles': 'PHI', 'Pittsburgh Steelers': 'PIT',
-  'San Francisco 49ers': 'SF', 'Seattle Seahawks': 'SEA', 'Tampa Bay Buccaneers': 'TB',
-  'Tennessee Titans': 'TEN', 'Washington Commanders': 'WAS',
-}
-
-const SEASON_TYPE_MAP: Record<number, string> = { 1: 'preseason', 2: 'regular', 3: 'postseason' }
 
 function parseGameTime(gameTime: string | null): Date | null {
   if (!gameTime) return null
@@ -114,31 +99,6 @@ function snapshotMasterGame(mg: any) {
     away_abbr: mg.away_abbr ?? null, week: mg.week ?? null, phase: mg.phase ?? null, season: mg.season ?? null,
     mapped_at: mg.mapped_at ?? null, mapped_by: mg.mapped_by ?? null,
   }
-}
-
-// ── NORMALIZE ──────────────────────────────────────────────────────────────────
-function normalize(g: any) {
-  const h = TEAM_MAP[g.teams?.home?.name], a = TEAM_MAP[g.teams?.away?.name]
-  if (!h || !a) return null
-  const phase = SEASON_TYPE_MAP[g.league?.season_type] || 'regular'
-  return {
-    externalGameId: String(g.fixture?.id),
-    externalCompetitionId: `${g.league?.id}-${g.league?.season}`,
-    homeTeamAbbr: h, awayTeamAbbr: a, gameTime: g.fixture?.date,
-    week: g.fixture?.week || null, phase,
-  }
-}
-
-// ── API CALLS ──────────────────────────────────────────────────────────────────
-async function fetchGamesByDate(key: string, season: string, date: string) {
-  const p = new URLSearchParams({ league: '1', season, date })
-  const r = await fetch(`https://v1.american-football.api-sports.io/games?${p}`, {
-    headers: { 'x-apisports-key': key, Accept: 'application/json' },
-  })
-  if (!r.ok) throw new Error(`API-Sports ${r.status}`)
-  const d = await r.json()
-  if (d.errors?.length) throw new Error(`API-Sports: ${JSON.stringify(d.errors)}`)
-  return (d.response || []).map(normalize).filter(Boolean)
 }
 
 // ── DRY RUN ────────────────────────────────────────────────────────────────────
@@ -447,9 +407,23 @@ async function executeRollback(supa: any, auditId: string, actor: string) {
   return { status: 'applied', restored_fields: Object.keys(restorePayload), entityId, auditId }
 }
 
+// ── CORS ───────────────────────────────────────────────────────────────────────
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: corsHeaders })
+}
+
 // ── MAIN HANDLER ───────────────────────────────────────────────────────────────
 serve(async (req) => {
   const t0 = Date.now()
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
   try {
     const supaUrl = Deno.env.get('SUPABASE_URL')!
     const supaKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -458,14 +432,14 @@ serve(async (req) => {
     // ── AUTHORIZATION ─────────────────────────────────────────────────────
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401 })
+      return json({ error: 'Missing Authorization header' }, 401)
     }
 
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supa.auth.getUser(token)
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), { status: 401 })
+      return json({ error: 'Invalid or expired token' }, 401)
     }
 
     const { data: profile } = await supa
@@ -475,29 +449,24 @@ serve(async (req) => {
       .single()
 
     if (profile?.platform_role !== 'platform_superadmin') {
-      return new Response(JSON.stringify({ error: 'Unauthorized: platform_superadmin required' }), { status: 403 })
+      return json({ error: 'Unauthorized: platform_superadmin required' }, 403)
     }
 
     const body = await req.json().catch(() => ({}))
     const operation = body.operation || 'dry_run'
-    const provider = body.provider || 'api-sports'
+    const provider = body.provider || 'espn'
     const actor = user.id
 
     // ── FETCH PROVIDER GAMES ──────────────────────────────────────────────
-    const apiKey = Deno.env.get('API_SPORTS_API_KEY')
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'Missing API_SPORTS_API_KEY' }), { status: 500 })
-    }
-
     const season = body.season || '2026'
     const phase = body.phase || 'regular'
     const date = body.date || null
 
     let providerGames: any[] = []
     if (date) {
-      providerGames = await fetchGamesByDate(apiKey, season, date)
+      providerGames = await fetchGamesByDate(date)
     } else {
-      return new Response(JSON.stringify({ error: 'date parameter is required' }), { status: 400 })
+      return json({ error: 'date parameter is required' }, 400)
     }
 
     // ── FETCH EXISTING MASTER GAMES ───────────────────────────────────────
@@ -513,9 +482,7 @@ serve(async (req) => {
     // ── EXECUTE OPERATION ─────────────────────────────────────────────────
     if (operation === 'dry_run') {
       const result = executeDryRun(providerGames, existingMasterGames, provider)
-      return new Response(JSON.stringify({ ok: true, ...result, duration_ms: Date.now() - t0 }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return json({ ok: true, ...result, duration_ms: Date.now() - t0 })
     }
 
     if (operation === 'apply') {
@@ -531,25 +498,21 @@ serve(async (req) => {
         })
       }
 
-      return new Response(JSON.stringify({ ok: true, ...result, duration_ms: Date.now() - t0 }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
-    }
+      return json({ ok: true, ...result, duration_ms: Date.now() - t0 })
+      }
 
     if (operation === 'rollback') {
       const auditId = body.audit_id
       if (!auditId) {
-        return new Response(JSON.stringify({ error: 'audit_id is required for rollback' }), { status: 400 })
+        return json({ error: 'audit_id is required for rollback' }, 400)
       }
 
       const result = await executeRollback(supa, auditId, actor)
-      return new Response(JSON.stringify({ ok: true, ...result, duration_ms: Date.now() - t0 }), {
-        headers: { 'Content-Type': 'application/json' },
-      })
+      return json({ ok: true, ...result, duration_ms: Date.now() - t0 })
     }
 
-    return new Response(JSON.stringify({ error: `Unknown operation: ${operation}` }), { status: 400 })
+    return json({ error: `Unknown operation: ${operation}` }, 400)
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 })
+    return json({ error: err.message }, 500)
   }
 })

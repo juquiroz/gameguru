@@ -1,29 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-
-const API_URL = 'https://v1.american-football.api-sports.io'
-
-const STATUS_MAP: Record<string, string> = {
-  NS: 'scheduled', '1H': 'live', HT: 'live', '2H': 'live', ET: 'live',
-  P: 'postponed', CANC: 'cancelled', SUSP: 'suspended', INT: 'delayed',
-  FT: 'final', AET: 'final', PEN: 'final',
-}
-
-const TEAM_MAP: Record<string, string> = {
-  'Arizona Cardinals': 'ARI', 'Atlanta Falcons': 'ATL', 'Baltimore Ravens': 'BAL',
-  'Buffalo Bills': 'BUF', 'Carolina Panthers': 'CAR', 'Chicago Bears': 'CHI',
-  'Cincinnati Bengals': 'CIN', 'Cleveland Browns': 'CLE', 'Dallas Cowboys': 'DAL',
-  'Denver Broncos': 'DEN', 'Detroit Lions': 'DET', 'Green Bay Packers': 'GB',
-  'Houston Texans': 'HOU', 'Indianapolis Colts': 'IND', 'Jacksonville Jaguars': 'JAX',
-  'Kansas City Chiefs': 'KC', 'Las Vegas Raiders': 'LV', 'Los Angeles Chargers': 'LAC',
-  'Los Angeles Rams': 'LAR', 'Miami Dolphins': 'MIA', 'Minnesota Vikings': 'MIN',
-  'New England Patriots': 'NE', 'New Orleans Saints': 'NO', 'New York Giants': 'NYG',
-  'New York Jets': 'NYJ', 'Philadelphia Eagles': 'PHI', 'Pittsburgh Steelers': 'PIT',
-  'San Francisco 49ers': 'SF', 'Seattle Seahawks': 'SEA', 'Tampa Bay Buccaneers': 'TB',
-  'Tennessee Titans': 'TEN', 'Washington Commanders': 'WAS',
-}
-
-const SEASON_TYPE_MAP: Record<number, string> = { 1: 'preseason', 2: 'regular', 3: 'postseason' }
+import { fetchGamesByDate, fetchGamesBySeason } from '../_shared/espn-nfl.ts'
 
 // ── WINDOW CLASSIFICATION ──────────────────────────────────────────────────────
 // Determina la ventana temporal de un partido basada SOLO en game_time + now.
@@ -52,50 +29,7 @@ function classifyWindow(gameTime: string, now: Date): string {
   return 'future'
 }
 
-// ── NORMALIZE ──────────────────────────────────────────────────────────────────
-function normalize(g: any) {
-  const h = TEAM_MAP[g.teams?.home?.name], a = TEAM_MAP[g.teams?.away?.name]
-  if (!h || !a) return null
-  const st = STATUS_MAP[g.fixture?.status?.short] || 'scheduled'
-  const fin = st === 'final'
-  let hs = g.scores?.home?.total ?? null, as_ = g.scores?.away?.total ?? null, res = null
-  if (hs !== null && as_ !== null && fin) res = hs > as_ ? h : as_ > hs ? a : null
-  return {
-    externalGameId: String(g.fixture?.id),
-    externalCompetitionId: `${g.league?.id}-${g.league?.season}`,
-    homeTeamAbbr: h, awayTeamAbbr: a, gameTime: g.fixture?.date,
-    status: st, homeScore: hs, awayScore: as_, result: res,
-    finished: fin, week: g.fixture?.week || null,
-    phase: SEASON_TYPE_MAP[g.league?.season_type] || 'regular',
-  }
-}
-
-// ── API CALLS ──────────────────────────────────────────────────────────────────
-async function fetchGamesByDate(key: string, season: string, date: string) {
-  const p = new URLSearchParams({ league: '1', season, date })
-  const r = await fetch(`${API_URL}/games?${p}`, {
-    headers: { 'x-apisports-key': key, Accept: 'application/json' },
-  })
-  if (!r.ok) throw new Error(`API-Sports ${r.status}`)
-  const d = await r.json()
-  if (d.errors?.length) throw new Error(`API-Sports: ${JSON.stringify(d.errors)}`)
-  return (d.response || []).map(normalize).filter(Boolean)
-}
-
-async function fetchGames(key: string, season: string, phase: string) {
-  const st = Object.entries(SEASON_TYPE_MAP).find(([, v]) => v === phase)?.[0]
-  const p = new URLSearchParams({ league: '1', season })
-  if (st) p.append('season_type', st)
-  const r = await fetch(`${API_URL}/games?${p}`, {
-    headers: { 'x-apisports-key': key, Accept: 'application/json' },
-  })
-  if (!r.ok) throw new Error(`API-Sports ${r.status}`)
-  const d = await r.json()
-  if (d.errors?.length) throw new Error(`API-Sports: ${JSON.stringify(d.errors)}`)
-  return (d.response || []).map(normalize).filter(Boolean)
-}
-
-// ── PERSISTENCE ────────────────────────────────────────────────────────────────
+// ── WINDOW CLASSIFICATION ──────────────────────────────────────────────────────
 async function upsertMaster(supa: any, games: any[], sport: string, season: string, provider: string) {
   let created = 0, updated = 0, unchanged = 0, rejected = 0
   for (const g of games) {
@@ -114,7 +48,7 @@ async function upsertMaster(supa: any, games: any[], sport: string, season: stri
       } else unchanged++
     } else {
       const { error } = await supa.from('master_games').insert({
-        sport, season, week: g.week, game_id: `api-${g.externalGameId}`,
+        sport, season, week: g.week, game_id: `espn-${g.externalGameId}`,
         home_team: g.homeTeamAbbr, away_team: g.awayTeamAbbr,
         home_abbr: g.homeTeamAbbr, away_abbr: g.awayTeamAbbr,
         game_time: g.gameTime, home_score: g.homeScore, away_score: g.awayScore,
@@ -194,7 +128,7 @@ async function schedulerDecision(supa: any, now: Date, scope: any, isManual: boo
   const { data: games } = await supa
     .from('master_games')
     .select('id, game_time, sync_state, last_synced_at, reconciled_at, external_game_id')
-    .eq('provider', 'api-sports')
+    .eq('provider', 'espn')
     .eq('sport', scope.sport)
     .eq('season', scope.season)
     .eq('phase', scope.phase)
@@ -252,7 +186,7 @@ async function schedulerDecision(supa: any, now: Date, scope: any, isManual: boo
 
   // 4. Verificar budget
   const { data: budget, error: budgetError } = await supa.rpc('check_budget', {
-    p_provider: 'api-sports',
+    p_provider: 'espn',
     p_source: 'automatic',
   })
 
@@ -280,13 +214,24 @@ async function schedulerDecision(supa: any, now: Date, scope: any, isManual: boo
   }
 }
 
+// ── CORS ───────────────────────────────────────────────────────────────────────
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function json(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify(data), { status, headers: corsHeaders })
+}
+
 // ── MAIN HANDLER ───────────────────────────────────────────────────────────────
 serve(async (req) => {
   const t0 = Date.now()
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
   try {
-    const apiKey = Deno.env.get('API_SPORTS_API_KEY')
-    if (!apiKey) return new Response(JSON.stringify({ error: 'Missing API_SPORTS_API_KEY' }), { status: 500 })
-
     const supaUrl = Deno.env.get('SUPABASE_URL')!
     const supaKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supa = createClient(supaUrl, supaKey)
@@ -302,14 +247,14 @@ serve(async (req) => {
     if (isManual) {
       const authHeader = req.headers.get('Authorization')
       if (!authHeader) {
-        return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401 })
+        return json({ error: 'Missing Authorization header' }, 401)
       }
 
       const token = authHeader.replace('Bearer ', '')
       const { data: { user }, error: authError } = await supa.auth.getUser(token)
 
       if (authError || !user) {
-        return new Response(JSON.stringify({ error: 'Invalid or expired token' }), { status: 401 })
+        return json({ error: 'Invalid or expired token' }, 401)
       }
 
       userId = user.id
@@ -331,7 +276,7 @@ serve(async (req) => {
           .single()
 
         if (membership?.role !== 'admin') {
-          return new Response(JSON.stringify({ error: 'Unauthorized: not admin of this league' }), { status: 403 })
+          return json({ error: 'Unauthorized: not admin of this league' }, 403)
         }
       }
     } else {
@@ -339,11 +284,11 @@ serve(async (req) => {
       const expectedSecret = Deno.env.get('CRON_SECRET')
 
       if (!expectedSecret) {
-        return new Response(JSON.stringify({ error: 'CRON_SECRET not configured' }), { status: 500 })
+        return json({ error: 'CRON_SECRET not configured' }, 500)
       }
 
       if (cronSecret !== expectedSecret) {
-        return new Response(JSON.stringify({ error: 'Invalid cron secret' }), { status: 403 })
+        return json({ error: 'Invalid cron secret' }, 403)
       }
     }
 
@@ -357,11 +302,11 @@ serve(async (req) => {
       .maybeSingle()
 
     if (runningSync) {
-      return new Response(JSON.stringify({ 
+      return json({
         error: 'Another sync is already in progress',
         running_sync_id: runningSync.id,
         started_at: runningSync.started_at
-      }), { status: 409 })
+      }, 409)
     }
 
     // ── DETERMINAR SCOPES ─────────────────────────────────────────────────
@@ -373,19 +318,19 @@ serve(async (req) => {
         .single()
 
       if (leagueError || !lg) {
-        return new Response(JSON.stringify({ error: 'League not found' }), { status: 404 })
+        return json({ error: 'League not found' }, 404)
       }
 
       if (lg.sport !== 'NFL') {
-        return new Response(JSON.stringify({ error: 'Only NFL leagues are supported' }), { status: 400 })
+        return json({ error: 'Only NFL leagues are supported' }, 400)
       }
 
       if (!['preseason', 'regular'].includes(lg.league_mode)) {
-        return new Response(JSON.stringify({ error: 'League mode not eligible for sync' }), { status: 400 })
+        return json({ error: 'League mode not eligible for sync' }, 400)
       }
 
       if (!lg.auto_update_results) {
-        return new Response(JSON.stringify({ error: 'Auto-update is disabled for this league' }), { status: 400 })
+        return json({ error: 'Auto-update is disabled for this league' }, 400)
       }
 
       const phase = lg.league_mode === 'preseason' ? 'preseason' : 'regular'
@@ -412,7 +357,7 @@ serve(async (req) => {
       if (!decision.should) {
         // SKIP — registrar sin consumir API
         await supa.from('sync_runs').insert({
-          provider: 'api-sports',
+          provider: 'espn',
           sport: scope.sport,
           season: scope.season,
           phase: scope.phase,
@@ -438,7 +383,7 @@ serve(async (req) => {
       // ── SYNC — reservar budget y llamar API ─────────────────────────
       const source = isManual ? 'manual' : 'automatic'
       const { data: reservation, error: reserveError } = await supa.rpc('reserve_api_request', {
-        p_provider: 'api-sports',
+        p_provider: 'espn',
         p_source: source,
       })
 
@@ -448,7 +393,7 @@ serve(async (req) => {
       } else if (reservation && !reservation.allowed) {
         // Budget agotado — registrar skip
         await supa.from('sync_runs').insert({
-          provider: 'api-sports',
+          provider: 'espn',
           sport: scope.sport,
           season: scope.season,
           phase: scope.phase,
@@ -474,7 +419,7 @@ serve(async (req) => {
 
       // Crear sync_run en estado running
       const { data: run } = await supa.from('sync_runs').insert({
-        provider: 'api-sports', sport: scope.sport, season: scope.season,
+        provider: 'espn', sport: scope.sport, season: scope.season,
         phase: scope.phase, trigger_type: isManual ? 'manual' : 'cron', status: 'running',
         games_evaluated: decision.games_evaluated || 0,
         games_needing_sync: decision.games_needing_sync || 0,
@@ -487,18 +432,18 @@ serve(async (req) => {
         // Consultar API por fecha (1 request por fecha)
         if (decision.dates && decision.dates.length > 0) {
           for (const date of decision.dates) {
-            const games = await fetchGamesByDate(apiKey, scope.season, date)
+            const games = await fetchGamesByDate(date)
             allGames = allGames.concat(games)
           }
         } else {
           // Fallback: consultar temporada completa (manual sync sin fechas específicas)
-          const games = await fetchGames(apiKey, scope.season, scope.phase)
+          const games = await fetchGamesBySeason(scope.season, scope.phase)
           allGames = games
         }
 
         // Upsert master_games
         const { created, updated, unchanged, rejected } = await upsertMaster(
-          supa, allGames, scope.sport, scope.season, 'api-sports'
+          supa, allGames, scope.sport, scope.season, 'espn'
         )
         totalCreated = created
         totalUpdated = updated
@@ -506,10 +451,10 @@ serve(async (req) => {
         totalRejected = rejected
 
         // Propagar a league_games
-        totalPropagated = await propagate(supa, allGames, 'api-sports')
+        totalPropagated = await propagate(supa, allGames, 'espn')
 
         // Actualizar sync_state
-        await updateSyncState(supa, allGames, 'api-sports', now)
+        await updateSyncState(supa, allGames, 'espn', now)
 
         const dur = Date.now() - t0
         await supa.from('sync_runs').update({
@@ -535,10 +480,8 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, results }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+    return json({ ok: true, results })
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 })
+    return json({ error: err.message }, 500)
   }
 })

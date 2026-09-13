@@ -5,7 +5,7 @@ import { platformRoleFromJwt, isPlatformSuperAdmin } from '../domains/platform'
 import styles from './PlatformReconciliation.module.css'
 
 const DEFAULT_SCOPE = {
-  provider: 'api-sports',
+  provider: 'espn',
   season: '2026',
   phase: 'regular',
   date: '',
@@ -62,13 +62,20 @@ export default function PlatformReconciliation() {
     })
 
     if (fnError) {
-      if (fnError.context?.json?.error === 'Invalid or expired token') {
+      const status = fnError.context?.status
+      const body = fnError.context?.json
+      if (status === 401 || body?.code?.startsWith('PGRST301') || body?.msg?.includes('JWT')) {
+        throw new Error('Sesión expirada. Vuelve a iniciar sesión y reintenta.')
+      }
+      if (body?.error === 'Invalid or expired token') {
         throw new Error('Sesión expirada. Vuelve a iniciar sesión.')
       }
-      if (fnError.context?.status === 403) {
+      if (status === 403) {
         throw new Error('No tienes permisos para ejecutar Provider Reconciliation.')
       }
-      throw new Error(fnError.message || 'Error al invocar reconcile')
+      const detail = body?.error || body?.message
+      if (detail) throw new Error(detail)
+      throw new Error(`Error al invocar reconcile [${status ?? '?'}]: ${JSON.stringify(body ?? fnError)?.slice(0, 500)}`)
     }
 
     if (data?.error) {
@@ -118,7 +125,7 @@ export default function PlatformReconciliation() {
 
   const handleApply = async () => {
     const confirmed = window.confirm(
-      'Esto MAPEARÁ los partidos del calendario maestro a API-Sports y actualizará ' +
+      'Esto MAPEARÁ los partidos del calendario maestro a ESPN y actualizará ' +
       'league_games para TODA la temporada. Esta acción no se puede deshacer desde la UI.\n\n' +
       '¿Continuar?'
     )
@@ -193,7 +200,7 @@ export default function PlatformReconciliation() {
       <div className={styles.header}>
         <h1 className={styles.title}>Provider Reconciliation</h1>
         <div className={styles.subtitle}>
-          Sincronización de partidos con proveedores externos (API-Sports)
+          Sincronización de partidos con proveedores externos (ESPN)
         </div>
       </div>
 
@@ -217,7 +224,7 @@ export default function PlatformReconciliation() {
               onChange={(e) => handleScopeChange('provider', e.target.value)}
               disabled={busy}
             >
-              <option value="api-sports">API-Sports (NFL)</option>
+              <option value="espn">ESPN (NFL)</option>
             </select>
           </div>
 
@@ -438,7 +445,7 @@ export default function PlatformReconciliation() {
               <div className={styles.noMutationIcon}>✅</div>
               <div className={styles.noMutationText}>
                 <strong>Apply completado.</strong> Los partidos mapeados quedaron con provider
-                API-Sports y sus resultados se propagarán automáticamente.
+                ESPN y sus resultados se propagarán automáticamente.
               </div>
             </div>
           )}
