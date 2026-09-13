@@ -149,14 +149,15 @@ async function schedulerDecision(supa: any, now: Date, scope: any, isManual: boo
     }
   }
 
-  // Default cooldowns si no hay config en DB
+  // Default cooldowns si no hay config en DB (frecuencia alta durante el juego:
+  // cron cada 3 min; días NFL jueves/domingo/lunes)
   const defaultCooldowns: Record<string, number> = {
     future: 999999,
     approaching: 240,
-    pregame: 60,
-    imminent: 15,
-    just_finished: 10,
-    past_active: 30,
+    pregame: 15,
+    imminent: 3,
+    just_finished: 3,
+    past_active: 5,
     past_extended: 120,
     past_reconciled: 999999,
   }
@@ -384,41 +385,9 @@ serve(async (req) => {
       }
 
       // ── SYNC — reservar budget y llamar API ─────────────────────────
+      // La reserva se hace POR FECHA (1 request ESPN = 1 fecha). Evita
+      // subestimar consumo cuando un sync consulta varias fechas.
       const source = isManual ? 'manual' : 'automatic'
-      const { data: reservation, error: reserveError } = await supa.rpc('reserve_api_request', {
-        p_provider: 'espn',
-        p_source: source,
-      })
-
-      if (reserveError) {
-        // Si la función no existe (migración no aplicada), continuar sin budget
-        console.warn('[Sync] reserve_api_request RPC not available, proceeding without budget reservation')
-      } else if (reservation && !reservation.allowed) {
-        // Budget agotado — registrar skip
-        await supa.from('sync_runs').insert({
-          provider: 'espn',
-          sport: scope.sport,
-          season: scope.season,
-          phase: scope.phase,
-          trigger_type: isManual ? 'manual' : 'cron',
-          status: 'skipped',
-          skip_reason: 'budget_exhausted',
-          games_evaluated: decision.games_evaluated || 0,
-          games_needing_sync: decision.games_needing_sync || 0,
-          budget_remaining: reservation.remaining || 0,
-          finished_at: new Date().toISOString(),
-          duration_ms: Date.now() - t0,
-        })
-
-        results.push({
-          scope,
-          status: 'skipped',
-          reason: 'budget_exhausted',
-          games_evaluated: decision.games_evaluated,
-          games_needing_sync: decision.games_needing_sync,
-        })
-        continue
-      }
 
       // Crear sync_run en estado running
       const { data: run } = await supa.from('sync_runs').insert({
@@ -428,20 +397,51 @@ serve(async (req) => {
         games_needing_sync: decision.games_needing_sync || 0,
       }).select().single()
 
+      const reserveOne = async () => {
+        const { data: reservation, error: reserveError } = await supa.rpc('reserve_api_request', {
+          p_provider: 'espn',
+          p_source: source,
+        })
+        if (reserveError) return { allowed: true, remaining: null } // sin RPC → no limitar
+        return reservation || { allowed: true, remaining: null }
+      }
+
       try {
         let allGames: any[] = []
         let totalCreated = 0, totalUpdated = 0, totalUnchanged = 0, totalRejected = 0, totalPropagated = 0
+        let budgetRemaining: number | null = null
+        let skippedDates = 0
 
         // Consultar API por fecha (1 request por fecha)
         if (decision.dates && decision.dates.length > 0) {
           for (const date of decision.dates) {
+            const reservation = await reserveOne()
+            if (!reservation.allowed) { skippedDates++; budgetRemaining = reservation.remaining ?? budgetRemaining; continue }
+            budgetRemaining = reservation.remaining ?? budgetRemaining
             const games = await fetchGamesByDate(date)
             allGames = allGames.concat(games)
           }
         } else {
           // Fallback: consultar temporada completa (manual sync sin fechas específicas)
-          const games = await fetchGamesBySeason(scope.season, scope.phase)
-          allGames = games
+          const reservation = await reserveOne()
+          if (reservation.allowed) {
+            const games = await fetchGamesBySeason(scope.season, scope.phase)
+            allGames = games
+          } else {
+            skippedDates = 1
+            budgetRemaining = reservation.remaining ?? null
+          }
+        }
+
+        if (allGames.length === 0 && skippedDates > 0) {
+          // Todas las fechas bloquearon por presupuesto → skippear sin marcar failed
+          await supa.from('sync_runs').update({
+            status: 'skipped', skip_reason: 'budget_exhausted',
+            finished_at: new Date().toISOString(), duration_ms: Date.now() - t0,
+            budget_remaining: budgetRemaining,
+          }).eq('id', run.id)
+          results.push({ scope, status: 'skipped', reason: 'budget_exhausted' })
+          continue
         }
 
         // Upsert master_games
@@ -464,7 +464,7 @@ serve(async (req) => {
           status: 'completed', finished_at: new Date().toISOString(), duration_ms: dur,
           records_fetched: allGames.length, records_created: totalCreated, records_updated: totalUpdated,
           records_unchanged: totalUnchanged, records_propagated: totalPropagated, records_rejected: totalRejected,
-          budget_remaining: reservation?.remaining ?? null,
+          budget_remaining: budgetRemaining,
         }).eq('id', run.id)
 
         results.push({
