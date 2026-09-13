@@ -32,7 +32,7 @@ describe('calcStandings — BUILD-017-C (matching robusto de claves)', () => {
       { user_id: JOE, game_id: 'lg-1', pick: 'KC' },   // clave UUID
       { user_id: JOE, game_id: 'MASTER-2', pick: 'BUF' }, // clave maestro
     ]
-    const rows = calcStandings(picks, lg, {})
+    const rows = calcStandings(picks, lg, {}, { now })
     assert.strictEqual(rows[0].total, 2)
     assert.strictEqual(rows[0].correct, 2)
   })
@@ -43,69 +43,63 @@ describe('calcStandings — BUILD-017-C (matching robusto de claves)', () => {
       { id: 'lg-manual-2', game_id: null, game_time: iso(now - 24 * H), result: 'GB', finished: true },
     ]
     const picks = [{ user_id: MIA, game_id: 'lg-manual-1', pick: 'SEA' }] // correct por UUID
-    const joinedAt = { [MIA]: iso(now - 1 * H) } // se une tras ambos kickoffs
-    const rows = calcStandings(picks, lg, {}, { joinedAt })
-    assert.strictEqual(rows[0].total, 2) // lg-manual-1 (acierto) + lg-manual-2 (fallido pre-cerrado)
+    const rows = calcStandings(picks, lg, {}, { now })
+    assert.strictEqual(rows[0].total, 2) // lg-manual-1 (acierto) + lg-manual-2 (fallido)
     assert.strictEqual(rows[0].correct, 1)
   })
 })
 
-describe('calcStandings — BUILD-017-B (juegos pre-cerrados → fallidos)', () => {
-  it('legacy: sin joinedAt se mantiene el comportamiento histórico', () => {
+describe('calcStandings — BUILD-017-G2 (todo juego cerrado sin pick = fallido)', () => {
+  it('sin picks de un juego cerrado, el fallido se suma aunque haya pickeado otro', () => {
     const picks = [
       { user_id: JOE, game_id: 'A', pick: 'KC' },  // correct
       { user_id: JOE, game_id: 'C', pick: 'CIN' }, // wrong
       { user_id: PAT, game_id: 'C', pick: 'DAL' }, // correct
     ]
-    const rows = calcStandings(picks, games, {})
+    const rows = calcStandings(picks, games, {}, { now })
     const joe = rows.find(r => r.userId === JOE)
     const pat = rows.find(r => r.userId === PAT)
-    assert.strictEqual(joe.total, 2) // solo los juegos que pickeo
+    // Joe: A y C pickeados (1 acierto) + B y X cerrados sin pick = 4.
+    assert.strictEqual(joe.total, 4)
     assert.strictEqual(joe.correct, 1)
-    assert.strictEqual(pat.total, 1)
+    // Pat: C (acierto) + A, B y X cerrados sin pick = 4.
+    assert.strictEqual(pat.total, 4)
     assert.strictEqual(pat.correct, 1)
   })
 
-  it('el que se unió después del deadline de un juego lo cuenta como fallido', () => {
+  it('un juego aún abierto (deadline futuro) no cuenta como fallido', () => {
     const picks = [
       { user_id: JOE, game_id: 'A', pick: 'KC' },  // correct
       { user_id: JOE, game_id: 'B', pick: 'BUF' }, // correct
       { user_id: PAT, game_id: 'C', pick: 'DAL' }, // correct
     ]
-    const joinedAt = {
-      [JOE]: iso(now - 48 * H), // antes de todos los juegos
-      [PAT]: iso(now - 30 * M), // se une después del kickoff de A y B (deadline = kickoff − 5 min)
-    }
-    const rows = calcStandings(picks, games, {}, { joinedAt })
+    const rows = calcStandings(picks, games, {}, { now })
     const joe = rows.find(r => r.userId === JOE)
     const pat = rows.find(r => r.userId === PAT)
-    assert.strictEqual(joe.total, 2)
+    // Joe: A y B (2 aciertos) + X cerrado sin pick = 3. C (future) no cuenta.
+    assert.strictEqual(joe.total, 3)
     assert.strictEqual(joe.correct, 2)
-    assert.strictEqual(pat.total, 4) // C acertado + A, B y X fallidos (X pre-cerrado sin resultado)
+    // Pat: C (acierto) + A, B y X cerrados sin pick = 4.
+    assert.strictEqual(pat.total, 4)
     assert.strictEqual(pat.correct, 1)
-    // Orden: más aciertos primero (Joe > Pat).
-    assert.strictEqual(rows[0].userId, JOE)
   })
 
-  it('un juego abierto al momento de unirse y NO pickeado no penaliza (no es olvido)', () => {
+  it('el olvido sí penitencia: un juego cerrado que pudo elegir y no eligió cuenta', () => {
     const picks = [{ user_id: MIA, game_id: 'A', pick: 'KC' }]
-    // MIA se une recién ahora; C arranca en +2h → deadline en el futuro.
-    const joinedAt = { [MIA]: iso(now) }
-    const rows = calcStandings(picks, games, {}, { joinedAt })
+    // MIA estaba en la liga mucho antes del kickoff; eligió A y se olvidó de B.
+    const rows = calcStandings(picks, games, {}, { now })
     const mia = rows.find(r => r.userId === MIA)
-    assert.strictEqual(mia.total, 3) // A acertado + B y X fallidos (pre-cerrados al unirse)
+    assert.strictEqual(mia.total, 3) // A acertado + B y X fallidos (C sigue abierto)
     assert.strictEqual(mia.correct, 1)
   })
 
-  it('un juego pasado SIN resultado al unirse cuenta como fallido (BUILD-017-G)', () => {
+  it('un juego cerrado SIN resultado cuenta como fallido (con o sin result)', () => {
     const picks = [{ user_id: JOE, game_id: 'A', pick: 'KC' }]
-    const joinedAt = { [JOE]: iso(now + 3 * H) } // se une tras todos los kickoffs
-    const rows = calcStandings(picks, games, {}, { joinedAt })
+    const rows = calcStandings(picks, games, {}, { now })
     const joe = rows.find(r => r.userId === JOE)
-    // A (pick) + B y C (fallidos pre-cerrados al unirse) + X (sin resultado,
-    // pero kickoff ya pasó al unirse) = 4. BUILD-017-G: los pre-cerrados sin
-    // resultado también cuentan como perdidos.
-    assert.strictEqual(joe.total, 4)
+    // A (pick) + B y X (fallidos; X sin resultado pero kickoff ya pasó) = 3.
+    // C (deadline futuro) no cuenta.
+    assert.strictEqual(joe.total, 3)
     assert.strictEqual(joe.correct, 1)
   })
 
@@ -117,58 +111,52 @@ describe('calcStandings — BUILD-017-B (juegos pre-cerrados → fallidos)', () 
     const picks = [
       { user_id: JOE, game_id: 'P2', pick: 'BUF' }, // ya lo eligió
     ]
-    const joinedAt = { [JOE]: iso(now - 30 * M) } // se une tras P1, antes del kickoff de P2
-    const rows = calcStandings(picks, lg, {}, { joinedAt })
+    const rows = calcStandings(picks, lg, {}, { now })
     const joe = rows.find(r => r.userId === JOE)
-    // P1 pre-cerrado (sin pick, kickoff viejo) → fallido; P2 elegido → no cuenta
-    // como fallido y no afecta aún (sin resultado). total 1.
+    // P1 cerrado (sin pick) → fallido; P2 elegido → no cuenta como fallido ni
+    // como acierto (sin resultado). total 1.
     assert.strictEqual(joe.total, 1)
     assert.strictEqual(joe.correct, 0)
   })
 
-  it('Caso reportado: registrado ayer, primer juego ya jugado → fallido (1/1 → 1/2)', () => {
+  it('Caso reportado: primer juego ya jugado sin pick → fallido (1/1 → 1/2)', () => {
     const lg = [
       { game_id: 'V1', game_time: iso(now - 20 * H), finished: false }, // ya jugado, sin resultado
       { game_id: 'V2', game_time: iso(now - 2 * H), result: 'KC', finished: true },
     ]
     const picks = [{ user_id: JOE, game_id: 'V2', pick: 'KC' }] // acierto al segundo
-    const joinedAt = { [JOE]: iso(now - 10 * H) } // se registró "ayer/antes"
-    const rows = calcStandings(picks, lg, {}, { joinedAt })
+    const rows = calcStandings(picks, lg, {}, { now })
     const joe = rows.find(r => r.userId === JOE)
-    assert.strictEqual(joe.total, 2) // V2 acertado + V1 perdido por pre-cerrado
+    assert.strictEqual(joe.total, 2) // V2 acertado + V1 perdido (no pickeado, kickoff pasado)
     assert.strictEqual(joe.correct, 1)
   })
 
-  it('usuarios sin joined_at no reciben fallidos automáticos', () => {
+  it('no usa joined_at: todos los miembros reciben fallidos de juegos cerrados', () => {
     const picks = [{ user_id: MIA, game_id: 'A', pick: 'KC' }]
-    const joinedAt = { [JOE]: iso(now - 48 * H) } // solo Joe tiene joined_at
-    const rows = calcStandings(picks, games, {}, { joinedAt })
+    const rows = calcStandings(picks, games, {}, { now })
     const mia = rows.find(r => r.userId === MIA)
-    assert.strictEqual(mia.total, 1)
+    assert.strictEqual(mia.total, 3) // A + B y X fallidos
     assert.strictEqual(mia.correct, 1)
   })
 
   it('soporta el campo time (formato estático NFL_WEEKS)', () => {
     const staticGames = [{ game_id: 'S1', time: iso(now - 24 * H), result: 'GB', finished: true }]
     const picks = [{ user_id: JOE, game_id: 'S1', pick: 'GB' }]
-    const joinedAt = { [JOE]: iso(now - 1 * H) }
-    const rows = calcStandings(picks, staticGames, {}, { joinedAt })
+    const rows = calcStandings(picks, staticGames, {}, { now })
     assert.strictEqual(rows[0].total, 1)
     assert.strictEqual(rows[0].correct, 1)
   })
 
-  it('deadline usa el grace de 5 minutos (kickoff − 5 min)', () => {
-    // Juego cuyo kickoff es en 4 min → deadline en −1 min → ya cerrado si te unes ahora.
+  it('un juego con deadline recién vencido (kickoff − 5 min, grace) ya cuenta', () => {
+    // Juego cuyo kickoff es en 4 min → deadline en −1 min → cerrado al cómputo.
     const soon = { game_id: 'S2', game_time: iso(now + 4 * M), result: 'SEA', finished: false }
-    const picks = [{ user_id: MIA, game_id: 'S1', pick: 'GB' }].map(p => ({ ...p, game_id: 'Z', pick: 'KC' }))
-    // MIA no pickea S2; joine suscripción: joinedAt ahora.
     const rows = calcStandings(
-      [{ user_id: MIA, game_id: 'Z', pick: 'KC', }],
+      [{ user_id: MIA, game_id: 'Z', pick: 'KC' }],
       [soon, { game_id: 'Z', game_time: iso(now - 24 * H), result: 'KC', finished: true }],
       {},
-      { joinedAt: { [MIA]: iso(now) } },
+      { now },
     )
-    assert.strictEqual(rows[0].total, 2) // Z acertado + S2 fallido (deadline ya pasó al unirse)
+    assert.strictEqual(rows[0].total, 2) // Z acertado + S2 fallido (deadline vencido)
     assert.strictEqual(rows[0].correct, 1)
   })
 })

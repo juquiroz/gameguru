@@ -1,13 +1,12 @@
-// BUILD-017-B — juegos cerrados antes de unirse cuentan como fallidos.
-// Un participante que entra con la liga ya comenzada rinde cuentas por los
-// juegos que ya estaban cerrados al momento de unirse: cuentan en su
-// denominador (total) como fallo, aunque nunca haya podido elegirlos. Un
-// juego cuenta como "cerrado al unirse" cuando su deadline propio (kickoff
-// − 5 min, igual que isGameLocked) ya había pasado en joined_at del miembro.
-// Los juegos que el miembro SÍ pudo elegir pero no eligió siguen sin contar
-// (no se penaliza el olvido): la regla aplica solo a los pre-cerrados.
-// Para activarla hay que pasar `{ joinedAt: { [userId]: epochMs } }`; sin él
-// el comportamiento es exactamente el histórico (solo cuentan los picks).
+// BUILD-017-G2 — cualquier juego cerrado sin pick = fallido para todos.
+// Un juego se considera "cerrado" cuando su deadline (kickoff − 5 min,
+// igual que isGameLocked) ya venció respecto al momento del cómputo.
+// Todo miembro que no haya pickeado un juego cerrado recibe un fallido en
+// su denominador (total), independientemente de cuándo se unió a la liga.
+// Esto penaliza tanto el olvido como la llegada tardía. Un juego cerrado
+// sin resultado cargado también cuenta como perdido (el partido se jugó).
+// Los picks sin resultado cargado cubren el juego (no se duplica fallido)
+// pero no suman acierto hasta que el resultado se cargue.
 const GAME_LOCK_GRACE_MS = 5 * 60 * 1000
 
 // BUILD-017-C — matching de claves robusto: un pick se guarda con el `game_id`
@@ -19,7 +18,9 @@ const resolveResult = (gameId, byMaster, byUuid) =>
   (gameId != null && (byMaster[gameId] || byUuid[gameId])) || null
 
 export const calcStandings = (picks, games, profileMap, opts = {}) => {
-  const joinedAt = opts.joinedAt || {}
+  // BUILD-017-G2: referencia temporal del cómputo. Default, el momento real;
+  // los tests inyectan un `now` fijo para ser deterministas.
+  const now = opts.now != null ? opts.now : Date.now()
 
   const resultByMaster = {}
   const resultByUuid = {}
@@ -52,33 +53,27 @@ export const calcStandings = (picks, games, profileMap, opts = {}) => {
     }
   })
 
-  // Fallidos automáticos: juegos NO elegidos por el usuario y ya cerrados
-  // cuando el usuario se unió a la liga. Cerrado = deadline propio (kickoff −
-  // 5 min) ya pasado al momento de unirse. BUILD-017-G: se cuenta con o sin
-  // resultado — si el kickoff ya pasó el juego se perdió igual aunque todavía
-  // no se haya cargado el resultado (caso reportado: "registrado ayer, primer
-  // juego ya jugado").
-  if (Object.keys(joinedAt).length) {
+  // Fallidos automáticos: juegos NO elegidos por el usuario cuyo deadline
+  // propio (kickoff − 5 min) ya venció al momento del cómputo. BUILD-017-G2:
+  // se cuenta para TODOS los miembros (con o sin resultado, hayan entrado
+  // antes o después) — un juego ya cerrado sin pick es un fallo. Los juegos
+  // con deadline futuro todavía no cuentan.
+  games.forEach(g => {
+    const t = g.game_time || g.time
+    if (!t) return
+    const deadline = new Date(t).getTime() - GAME_LOCK_GRACE_MS
+    if (Number.isNaN(deadline)) return
+    if (deadline >= now) return // juego futuro → aún no cuenta como fallido.
     Object.keys(userMap).forEach(uid => {
-      const rawJoin = joinedAt[uid]
-      if (!rawJoin) return
-      const joinMs = new Date(rawJoin).getTime()
-      if (Number.isNaN(joinMs)) return
       const picked = coveredGameIds[uid]
-      games.forEach(g => {
-        const covered =
-          picked &&
-          ((g.game_id != null && picked.has(g.game_id)) ||
-            (g.id != null && picked.has(g.id)))
-        if (covered) return
-        const t = g.game_time || g.time
-        if (!t) return
-        const deadline = new Date(t).getTime() - GAME_LOCK_GRACE_MS
-        if (Number.isNaN(deadline)) return
-        if (joinMs > deadline) userMap[uid].total++
-      })
+      const covered =
+        picked &&
+        ((g.game_id != null && picked.has(g.game_id)) ||
+          (g.id != null && picked.has(g.id)))
+      if (covered) return
+      userMap[uid].total++
     })
-  }
+  })
 
   return Object.values(userMap).sort((a, b) => b.correct - a.correct || a.total - b.total)
 }
