@@ -305,7 +305,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
 
           {showPicks && (
             <div style={{ marginTop: '1rem' }}>
-              <PublicPicksMatrix league={league} />
+              <PublicPicksMatrix league={league} user={user} />
             </div>
           )}
         </>

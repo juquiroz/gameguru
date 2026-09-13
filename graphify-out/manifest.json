@@ -6,16 +6,16 @@
     "semantic_hash": "cea1706f7e2f17b682469d6f8466a3fd"
   },
   "src/App.jsx": {
-    "mtime": 1788491457.8715847,
-    "seen": 1788641808.4507341,
-    "ast_hash": "58b87671896fd600153d8cc393c4b6ff",
-    "semantic_hash": "58b87671896fd600153d8cc393c4b6ff"
+    "mtime": 1789084727.8667746,
+    "seen": 1789256653.839691,
+    "ast_hash": "38b6c9556cbbdb484e4303d3d83c3c0b",
+    "semantic_hash": ""
   },
   "src/components/BottomNav.jsx": {
-    "mtime": 1785899441.800057,
-    "seen": 1788641808.4507365,
-    "ast_hash": "8279b3a60309116afba7e339f150e665",
-    "semantic_hash": "8279b3a60309116afba7e339f150e665"
+    "mtime": 1788750156.2570972,
+    "seen": 1789256653.8396938,
+    "ast_hash": "84716e301e4eafeb38c333db382f2fcd",
+    "semantic_hash": ""
   },
   "src/components/CreateLeagueModal.jsx": {
     "mtime": 1788490175.6944811,
@@ -54,16 +54,16 @@
     "semantic_hash": "2001332df2f3c1c6024378b158cca078"
   },
   "src/components/LeaderboardTable.jsx": {
-    "mtime": 1788317759.3127835,
-    "seen": 1788641808.4507458,
-    "ast_hash": "3ca03ac2483814e8b241a0a614d91284",
-    "semantic_hash": "3ca03ac2483814e8b241a0a614d91284"
+    "mtime": 1789177697.7075438,
+    "seen": 1789256653.8399441,
+    "ast_hash": "52339f46d1365996529d2a06214dfe08",
+    "semantic_hash": ""
   },
   "src/components/LeagueGamesManager.jsx": {
-    "mtime": 1787891274.2672243,
-    "seen": 1788641808.4507473,
-    "ast_hash": "50eb3de382b96a3ddf8865a6780f5eaa",
-    "semantic_hash": "50eb3de382b96a3ddf8865a6780f5eaa"
+    "mtime": 1788749766.1488626,
+    "seen": 1789256653.8399458,
+    "ast_hash": "e144c8fdc9dd87005b42da7fa5c95412",
+    "semantic_hash": ""
   },
   "src/components/LeagueIdentity.jsx": {
     "mtime": 1786585528.4474304,
@@ -96,16 +96,16 @@
     "semantic_hash": "60b7bd21f366f9b8549ad5b4a3da9a8f"
   },
   "src/components/Topbar.jsx": {
-    "mtime": 1787543512.0889099,
-    "seen": 1788641808.4507594,
-    "ast_hash": "dabb713b63dfd15a101f005ea425e7f5",
-    "semantic_hash": "dabb713b63dfd15a101f005ea425e7f5"
+    "mtime": 1788828336.2735734,
+    "seen": 1789256653.840149,
+    "ast_hash": "54a9c5e24ea705dc4132fc0ccde5196a",
+    "semantic_hash": ""
   },
   "src/data/nflData.js": {
-    "mtime": 1779078842.8947756,
-    "seen": 1788641808.4507604,
-    "ast_hash": "ddbc03e93dae4b9ee3ff15e385b93c11",
-    "semantic_hash": "ddbc03e93dae4b9ee3ff15e385b93c11"
+    "mtime": 1788832531.026442,
+    "seen": 1789256653.8401504,
+    "ast_hash": "faf1aa52b194fafa3ba3e1bd857f268c",
+    "semantic_hash": ""
   },
   "src/data/nflPreseason2026.json": {
     "mtime": 1786585125.4627628,
@@ -150,10 +150,10 @@
     "semantic_hash": "973aa454d282221070ea18945d428685"
   },
   "src/domains/dashboard/components/HomeDashboard.jsx": {
-    "mtime": 1788490175.6819751,
-    "seen": 1788641808.45077,
-    "ast_hash": "4944f1ff74a291069043c8af6ab48289",
-    "semantic_hash": "4944f1ff74a291069043c8af6ab48289"
+    "mtime": 1789084700.4405887,
+    "seen": 1789256653.8404589,
+    "ast_hash": "ae4d2057e1b2a23c97220ebe55d4025d",
+    "semantic_hash": ""
   },
   "src/domains/dashboard/components/HowItWorks.jsx": {
     "mtime": 1785641452.665283,
@@ -210,10 +210,10 @@
     "semantic_hash": "9f7732372586e200ce9e09ada107a796"
   },
   "src/domains/dashboard/hooks/useDashboardData.js": {
-    "mtime": 1788315548.2895486,
-    "seen": 1788641808.450781,
-    "ast_hash": "96d994481e81e3583ee0d1e3256c36c2",
-    "semantic_hash": "96d994481e81e3583ee0d1e3256c36c2"
+    "mtime": 1789178917.3809059,
+    "seen": 1789256653.840925,
+    "ast_hash": "933145c4bfe03856eea6f21c2623de8d",
+    "semantic_hash": ""
   },
   "src/domains/dashboard/hooks/useLeagueData.js": {
     "mtime": 1785639465.2151356,
@@ -258,10 +258,10 @@
     "semantic_hash": "941ce681c290f2fb3d3ecff0559a4ab0"
   },
   "src/domains/event/services/fixtureCalendar.js": {
-    "mtime": 1785980126.2307007,
-    "seen": 1788641808.4507916,
-    "ast_hash": "d3a1875c763e989c7e7e19ffddc403b1",
-    "semantic_hash": "d3a1875c763e989c7e7e19ffddc403b1"
+    "mtime": 1788744811.2635503,
+    "seen": 1789256653.8412774,
+    "ast_hash": "44a66216309953b30aedf83a9efd6d1e",
+    "semantic_hash": ""
   },
   "src/domains/experience/components/ExperiencePicker.jsx": {
     "mtime": 1785900843.8056908,
@@ -270,10 +270,10 @@
     "semantic_hash": "916588de0522cf7f20d9e27ef3230984"
   },
   "src/domains/experience/components/ExperienceWizard.jsx": {
-    "mtime": 1788492683.4092822,
-    "seen": 1788641808.450794,
-    "ast_hash": "80532879878030634c2625696516bfc1",
-    "semantic_hash": "80532879878030634c2625696516bfc1"
+    "mtime": 1788642831.127151,
+    "seen": 1789256653.8413265,
+    "ast_hash": "48e23ca1e9190da40dd95b679d6d859b",
+    "semantic_hash": ""
   },
   "src/domains/experience/components/TrainingCampIntro.jsx": {
     "mtime": 1785900805.804053,
@@ -354,10 +354,10 @@
     "semantic_hash": "095b1e0b49618a0f3a0e62cb7b0c4819"
   },
   "src/domains/league/models/identity.js": {
-    "mtime": 1788317753.2667847,
-    "seen": 1788641808.4508114,
-    "ast_hash": "e2bff3b4c690409a5417d6419d8e802d",
-    "semantic_hash": "e2bff3b4c690409a5417d6419d8e802d"
+    "mtime": 1788829017.944927,
+    "seen": 1789256653.8421037,
+    "ast_hash": "0e88a551cde411ea3b18626212daa525",
+    "semantic_hash": ""
   },
   "src/domains/league/models/modes.js": {
     "mtime": 1786584930.8821192,
@@ -378,10 +378,10 @@
     "semantic_hash": "76476494a347a33ea6fe7803dd79a885"
   },
   "src/domains/league/services/leagueService.js": {
-    "mtime": 1786225489.5648887,
-    "seen": 1788641808.4508154,
-    "ast_hash": "595d9a16993db6476276ed420a5cf3e2",
-    "semantic_hash": "595d9a16993db6476276ed420a5cf3e2"
+    "mtime": 1789084686.5244946,
+    "seen": 1789256653.8422492,
+    "ast_hash": "11bf028fbcf0be9872e4515c782f6862",
+    "semantic_hash": ""
   },
   "src/domains/platform/index.js": {
     "mtime": 1786680525.540506,
@@ -420,10 +420,10 @@
     "semantic_hash": "27c1568a3863875e381407786850e696"
   },
   "src/domains/simulation/MatchSimulator.js": {
-    "mtime": 1786228990.8070285,
-    "seen": 1788641808.4508233,
-    "ast_hash": "dff0056bbf25fc91fe7914704afa1ed2",
-    "semantic_hash": "dff0056bbf25fc91fe7914704afa1ed2"
+    "mtime": 1788744806.545562,
+    "seen": 1789256653.842543,
+    "ast_hash": "887e18fd491652d4f4d242f57844e840",
+    "semantic_hash": ""
   },
   "src/domains/simulation/SimulationDirector.js": {
     "mtime": 1786240529.9482872,
@@ -546,58 +546,58 @@
     "semantic_hash": "e0f45f76232097cf63780744b147aa71"
   },
   "src/domains/training-camp/components/PicksBoard.jsx": {
-    "mtime": 1788489652.8775234,
-    "seen": 1788641808.4508493,
-    "ast_hash": "d283c47c08336ec5285f1bfcdcaf909d",
-    "semantic_hash": "d283c47c08336ec5285f1bfcdcaf909d"
+    "mtime": 1788745062.6659458,
+    "seen": 1789256653.8434086,
+    "ast_hash": "246a35f415c25d5d8842dfb7340eae5e",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/components/SetupWizard.jsx": {
-    "mtime": 1788489607.8773932,
-    "seen": 1788641808.4508505,
-    "ast_hash": "eaa8bd260f681788b9c1a80bb5249509",
-    "semantic_hash": "eaa8bd260f681788b9c1a80bb5249509"
+    "mtime": 1788642802.3420582,
+    "seen": 1789256653.8434103,
+    "ast_hash": "251f29733611c137c70e34cd14cd75a2",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/components/SimulationCampWizard.jsx": {
-    "mtime": 1788492642.9108965,
-    "seen": 1788641808.4508517,
-    "ast_hash": "0b3a9bcf355b7656ce667045b8e850d2",
-    "semantic_hash": "0b3a9bcf355b7656ce667045b8e850d2"
+    "mtime": 1788744092.0102594,
+    "seen": 1789256653.8434114,
+    "ast_hash": "fe60601b48e6fa7f5ab01491626e97b6",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/components/TrainingCampPage.jsx": {
-    "mtime": 1788490175.642976,
-    "seen": 1788641808.4508529,
-    "ast_hash": "50afa30b81f66eb3f779f1bdd8acab30",
-    "semantic_hash": "50afa30b81f66eb3f779f1bdd8acab30"
+    "mtime": 1788748555.8516521,
+    "seen": 1789256653.8434129,
+    "ast_hash": "e081fb62fdde9305aad45c3716995b46",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/components/WeekManager.jsx": {
-    "mtime": 1788489874.716784,
-    "seen": 1788641808.450854,
-    "ast_hash": "169639e9f756f295a03ca90311954d4e",
-    "semantic_hash": "169639e9f756f295a03ca90311954d4e"
+    "mtime": 1788744354.2626865,
+    "seen": 1789256653.8434155,
+    "ast_hash": "267be97abda91af173d2a690951b791c",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/hooks/useTrainingCamp.js": {
-    "mtime": 1788489932.8367674,
-    "seen": 1788641808.4508553,
-    "ast_hash": "838cbd685a3c4260c042ef2508964eb1",
-    "semantic_hash": "838cbd685a3c4260c042ef2508964eb1"
+    "mtime": 1788751353.1093788,
+    "seen": 1789256653.843417,
+    "ast_hash": "fd8f15d4c72a7ec463a2f2d3f81ff31c",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/model.js": {
-    "mtime": 1788489815.4167686,
-    "seen": 1788641808.4508564,
-    "ast_hash": "c3dd2dd537819c796e2bba436b31fc5b",
-    "semantic_hash": "c3dd2dd537819c796e2bba436b31fc5b"
+    "mtime": 1788642478.8467379,
+    "seen": 1789256653.843418,
+    "ast_hash": "f182878be026e58a2e2094acf70fcb02",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/services/picksService.js": {
-    "mtime": 1788489549.1841748,
-    "seen": 1788641808.4508574,
-    "ast_hash": "61bd5b2fb1afc114ee08817d86839540",
-    "semantic_hash": "61bd5b2fb1afc114ee08817d86839540"
+    "mtime": 1788751325.7944634,
+    "seen": 1789256653.8434215,
+    "ast_hash": "0ef06d9cd748feb606016349707121a4",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/services/sessionService.js": {
-    "mtime": 1788489821.0347717,
-    "seen": 1788641808.4508586,
-    "ast_hash": "39b902e695a3815d2a1447e223d7b264",
-    "semantic_hash": "39b902e695a3815d2a1447e223d7b264"
+    "mtime": 1788746086.4486895,
+    "seen": 1789256653.8434224,
+    "ast_hash": "3620f4b27a4ecfed89de4f0c895d5038",
+    "semantic_hash": ""
   },
   "src/domains/training-camp/services/snapshotService.js": {
     "mtime": 1788490175.650143,
@@ -606,10 +606,10 @@
     "semantic_hash": "60701ddb814bbfe377a6e0459f85d2b0"
   },
   "src/domains/training-camp/services/weekService.js": {
-    "mtime": 1788489521.0800493,
-    "seen": 1788641808.450861,
-    "ast_hash": "9abe26ceed57d7db35f90e5b7da820ae",
-    "semantic_hash": "9abe26ceed57d7db35f90e5b7da820ae"
+    "mtime": 1788642572.7294152,
+    "seen": 1789256653.8434703,
+    "ast_hash": "40cb1658b0f4b4a5d7da7ce25a548246",
+    "semantic_hash": ""
   },
   "src/domains/training/components/TrainingCampCountdown.jsx": {
     "mtime": 1786163330.1312647,
@@ -624,10 +624,10 @@
     "semantic_hash": "ba35c7e6f2965c4ffef626657217ce54"
   },
   "src/domains/training/components/TrainingCampLobby.jsx": {
-    "mtime": 1788490175.6659913,
-    "seen": 1788641808.4508643,
-    "ast_hash": "947b913eb49aea98d2088fc9de0602ef",
-    "semantic_hash": "947b913eb49aea98d2088fc9de0602ef"
+    "mtime": 1789084706.3526287,
+    "seen": 1789256653.8435755,
+    "ast_hash": "cc9f56e6d60e134d19c2c467918d0bde",
+    "semantic_hash": ""
   },
   "src/domains/training/components/TrainingCampParticipants.jsx": {
     "mtime": 1785899213.404338,
@@ -702,22 +702,22 @@
     "semantic_hash": "2740d2899897bf49df2d67ef3b3df58e"
   },
   "src/hooks/useAuth.js": {
-    "mtime": 1788317744.872786,
-    "seen": 1788641808.4508793,
-    "ast_hash": "14191f85a0f6ff08e96afb6f20e26631",
-    "semantic_hash": "14191f85a0f6ff08e96afb6f20e26631"
+    "mtime": 1788832526.8075318,
+    "seen": 1789256653.8440883,
+    "ast_hash": "817add52c6d7c64d757897d9ce8f2a52",
+    "semantic_hash": ""
   },
   "src/hooks/useLeague.js": {
-    "mtime": 1788492618.5360153,
-    "seen": 1788641808.4508803,
-    "ast_hash": "1db4b7a32061723ca3bcb72e7166573a",
-    "semantic_hash": "1db4b7a32061723ca3bcb72e7166573a"
+    "mtime": 1789084694.2185466,
+    "seen": 1789256653.8440895,
+    "ast_hash": "89fa13552278ac5255fafc1382f52149",
+    "semantic_hash": ""
   },
   "src/hooks/usePicks.js": {
-    "mtime": 1786325573.2634406,
-    "seen": 1788641808.4508812,
-    "ast_hash": "b7b132407763c1fef02cef9e16246355",
-    "semantic_hash": "b7b132407763c1fef02cef9e16246355"
+    "mtime": 1789085284.4195857,
+    "seen": 1789256653.844091,
+    "ast_hash": "3d0d5ad41883458f884fbe02d239be12",
+    "semantic_hash": ""
   },
   "src/hooks/useSuperAdmin.js": {
     "mtime": 1786672416.3510342,
@@ -732,16 +732,16 @@
     "semantic_hash": "35250b850fff861fff0a6e9710eb54e6"
   },
   "src/i18n/en.js": {
-    "mtime": 1788317729.4187887,
-    "seen": 1788641808.4508848,
-    "ast_hash": "d5262b3b545e8547ad717d7874a27433",
-    "semantic_hash": "d5262b3b545e8547ad717d7874a27433"
+    "mtime": 1789086230.4107366,
+    "seen": 1789256653.8441682,
+    "ast_hash": "ea96aa6218750903ac05be6d6781e11d",
+    "semantic_hash": ""
   },
   "src/i18n/es.js": {
-    "mtime": 1788317728.7257888,
-    "seen": 1788641808.4508862,
-    "ast_hash": "8c5e685f69ad998d6ed711a9d07b7385",
-    "semantic_hash": "8c5e685f69ad998d6ed711a9d07b7385"
+    "mtime": 1789086228.2077374,
+    "seen": 1789256653.8441694,
+    "ast_hash": "103478af9ded863fb4dcdbb3866aeec2",
+    "semantic_hash": ""
   },
   "src/league/LeagueRoute.jsx": {
     "mtime": 1786244709.3646376,
@@ -756,16 +756,16 @@
     "semantic_hash": "ed54743b7b9b33b1634853f57b387bc6"
   },
   "src/league/components/NicknameModal.jsx": {
-    "mtime": 1788492486.8055565,
-    "seen": 1788641808.4508896,
-    "ast_hash": "311d30fa236782d029356aad5597fc8b",
-    "semantic_hash": "311d30fa236782d029356aad5597fc8b"
+    "mtime": 1789086244.265732,
+    "seen": 1789256653.8442457,
+    "ast_hash": "1af351219f34a23cc7c1df2c17fca2fb",
+    "semantic_hash": ""
   },
   "src/league/context/LeagueContext.jsx": {
-    "mtime": 1787018480.6511889,
-    "seen": 1788641808.4508908,
-    "ast_hash": "1079a272d52b14baddae732992aaf2bf",
-    "semantic_hash": "1079a272d52b14baddae732992aaf2bf"
+    "mtime": 1788747907.9037101,
+    "seen": 1789256653.844247,
+    "ast_hash": "6569df9407f9af4ba8c5e3f6bea2107d",
+    "semantic_hash": ""
   },
   "src/league/context/leagueResolution.js": {
     "mtime": 1786244686.1550155,
@@ -780,10 +780,10 @@
     "semantic_hash": "9cb59af95994d0b1c082e3478541cdb4"
   },
   "src/pages/Auth.jsx": {
-    "mtime": 1788317736.7887874,
-    "seen": 1788641808.450894,
-    "ast_hash": "034298bc628c55b44810a95a4628d4ea",
-    "semantic_hash": "034298bc628c55b44810a95a4628d4ea"
+    "mtime": 1788912607.27321,
+    "seen": 1789256653.844324,
+    "ast_hash": "d48946dda8c5d5039a1e67d3e433f06d",
+    "semantic_hash": ""
   },
   "src/pages/Dashboard.jsx": {
     "mtime": 1779067483.981524,
@@ -798,22 +798,22 @@
     "semantic_hash": "dfed0fa296fd71db83328d635900da1a"
   },
   "src/pages/Leaderboard.jsx": {
-    "mtime": 1788315548.291786,
-    "seen": 1788641808.4508975,
-    "ast_hash": "872427648d650f2337cd07afba3a8fba",
-    "semantic_hash": "872427648d650f2337cd07afba3a8fba"
+    "mtime": 1789178948.3001242,
+    "seen": 1789256653.8443992,
+    "ast_hash": "1eb9f0ae7d500d3d6b19bd8c6ca3ef81",
+    "semantic_hash": ""
   },
   "src/pages/LeaguePage.jsx": {
-    "mtime": 1788315548.2920492,
-    "seen": 1788641808.4508986,
-    "ast_hash": "a7f9baea3f44cf1bbabd1c38b97a5aa5",
-    "semantic_hash": "a7f9baea3f44cf1bbabd1c38b97a5aa5"
+    "mtime": 1789086766.3902926,
+    "seen": 1789256653.8444002,
+    "ast_hash": "b5c6019502ab76eaab49c8ae651f6c12",
+    "semantic_hash": ""
   },
   "src/pages/LeagueStandings.jsx": {
-    "mtime": 1786323276.8380888,
-    "seen": 1788641808.4508996,
-    "ast_hash": "14cb7c38f6cec1ab9510cb966f79cfc2",
-    "semantic_hash": "14cb7c38f6cec1ab9510cb966f79cfc2"
+    "mtime": 1788750748.489618,
+    "seen": 1789256653.8444014,
+    "ast_hash": "569f9fd0f25e5a3132a6eeb79e771f02",
+    "semantic_hash": ""
   },
   "src/pages/Lobby.jsx": {
     "mtime": 1786672319.627476,
@@ -822,10 +822,10 @@
     "semantic_hash": "fb3de4937fe7adce3a6fec8692b0101e"
   },
   "src/pages/Picks.jsx": {
-    "mtime": 1788315548.2920492,
-    "seen": 1788641808.450902,
-    "ast_hash": "e9b637539757e0b46889117f28f87ed4",
-    "semantic_hash": "e9b637539757e0b46889117f28f87ed4"
+    "mtime": 1789177292.5235755,
+    "seen": 1789256653.8444397,
+    "ast_hash": "290f19a91a4ac6adf914c6a0416eae62",
+    "semantic_hash": ""
   },
   "src/pages/PlatformLeagueDetail.jsx": {
     "mtime": 1786677283.7247844,
@@ -864,10 +864,10 @@
     "semantic_hash": "89d4f28fc8135cee5a34b8d3cdf63ee1"
   },
   "src/pages/PublicPicks.jsx": {
-    "mtime": 1788315548.2920492,
-    "seen": 1788641808.45091,
-    "ast_hash": "456b6be5b30834250944d895f1e3a2ac",
-    "semantic_hash": "456b6be5b30834250944d895f1e3a2ac"
+    "mtime": 1789177243.9600384,
+    "seen": 1789256653.8446777,
+    "ast_hash": "0336f1c0153a557cd58874ee550bee03",
+    "semantic_hash": ""
   },
   "src/pages/SuperAdmin.jsx": {
     "mtime": 1786589036.6904497,
@@ -888,10 +888,10 @@
     "semantic_hash": "1a9cfb8146034c69ab59e47b2a837ae4"
   },
   "src/router/routes.js": {
-    "mtime": 1787542155.1848881,
-    "seen": 1788641808.4509149,
-    "ast_hash": "1d0fb70107ea534a615ca54c76c01545",
-    "semantic_hash": "1d0fb70107ea534a615ca54c76c01545"
+    "mtime": 1788672015.2934432,
+    "seen": 1789256653.8447905,
+    "ast_hash": "b297d4693fa4a834eab048eed07b9642",
+    "semantic_hash": ""
   },
   "src/router/useHashRoute.js": {
     "mtime": 1786244676.6097097,
@@ -900,16 +900,16 @@
     "semantic_hash": "ed360b6e782ccc69337d009de131c70c"
   },
   "src/supabase.js": {
-    "mtime": 1788317741.1887867,
-    "seen": 1788641808.450917,
-    "ast_hash": "b921031c7cd33edd80e8c02dacfee11a",
-    "semantic_hash": "b921031c7cd33edd80e8c02dacfee11a"
+    "mtime": 1789087048.6542811,
+    "seen": 1789256653.8448298,
+    "ast_hash": "e3c9823ce51173d4492ab81f48cd5f98",
+    "semantic_hash": ""
   },
   "src/utils/dates.js": {
-    "mtime": 1787870036.839814,
-    "seen": 1788641808.4509182,
-    "ast_hash": "36a9721e034d9081cb98d3e4b6d1afff",
-    "semantic_hash": "36a9721e034d9081cb98d3e4b6d1afff"
+    "mtime": 1789085279.1685495,
+    "seen": 1789256653.8448312,
+    "ast_hash": "02bd4aa48d41b9ad76dfb2d36b648300",
+    "semantic_hash": ""
   },
   "src/utils/scores.js": {
     "mtime": 1786673961.1524734,
@@ -918,10 +918,10 @@
     "semantic_hash": "9a767208a543df4fd3eaeb5b96de855b"
   },
   "src/utils/standings.js": {
-    "mtime": 1785638293.6056094,
-    "seen": 1788641808.4509203,
-    "ast_hash": "3b1d94f6f7e28bf0640959ce0d20b4fa",
-    "semantic_hash": "3b1d94f6f7e28bf0640959ce0d20b4fa"
+    "mtime": 1789178909.1817334,
+    "seen": 1789256653.8448703,
+    "ast_hash": "cee0043436a1e58431396ad16edaf720",
+    "semantic_hash": ""
   },
   "supabase/functions/reconcile/index.ts": {
     "mtime": 1787540903.561597,
@@ -960,10 +960,10 @@
     "semantic_hash": "cb3ddb31dd54bb323b1b041300ace1d5"
   },
   "tests/identity.test.js": {
-    "mtime": 1788317791.2877772,
-    "seen": 1788641808.4509282,
-    "ast_hash": "06d0959dbd4e5b422083f61bf0bdae68",
-    "semantic_hash": "06d0959dbd4e5b422083f61bf0bdae68"
+    "mtime": 1788829027.6829035,
+    "seen": 1789256653.845103,
+    "ast_hash": "96528bff5baaefdc19a459b212c76db7",
+    "semantic_hash": ""
   },
   "tests/normalize.test.js": {
     "mtime": 1787365468.8943946,
@@ -1032,15 +1032,351 @@
     "semantic_hash": "42601f52de1d71633e8450751c60e5d6"
   },
   "tests/training-camp.test.js": {
-    "mtime": 1788490003.7397091,
-    "seen": 1788641808.4509437,
-    "ast_hash": "9ca8d9e345aa52739a994683a06eb855",
-    "semantic_hash": "9ca8d9e345aa52739a994683a06eb855"
+    "mtime": 1788642545.423345,
+    "seen": 1789256653.8454947,
+    "ast_hash": "65830bb8e50f6ffecf67fa5eea37314f",
+    "semantic_hash": ""
   },
   "vite.config.js": {
     "mtime": 1788490160.210458,
     "seen": 1788641808.4509451,
     "ast_hash": "9620f426cb115d0f53613685c2d6827c",
     "semantic_hash": "9620f426cb115d0f53613685c2d6827c"
+  },
+  "src/components/ProfileMenu.jsx": {
+    "mtime": 1788828387.4924493,
+    "seen": 1789256653.840026,
+    "ast_hash": "cd847a6691e1e071922c4cd6cbbeb301",
+    "semantic_hash": ""
+  },
+  "src/components/PublicPicksMatrix.jsx": {
+    "mtime": 1789177719.5629926,
+    "seen": 1789256653.8400288,
+    "ast_hash": "9a412226b39664c413d465883be8b66e",
+    "semantic_hash": ""
+  },
+  "src/domains/training-camp/autoResults.js": {
+    "mtime": 1788744812.4825473,
+    "seen": 1789256653.8433607,
+    "ast_hash": "5190948f786dcb12e327189d664730b3",
+    "semantic_hash": ""
+  },
+  "src/domains/training-camp/autoSchedule.js": {
+    "mtime": 1788746075.1787136,
+    "seen": 1789256653.8433623,
+    "ast_hash": "6ff0e8b687c0966402d3bd15a9dcb34a",
+    "semantic_hash": ""
+  },
+  "src/domains/training-camp/components/TrainingCampStandings.jsx": {
+    "mtime": 1788750725.107727,
+    "seen": 1789256653.8434143,
+    "ast_hash": "0a09a6f2d6ef9c9b2341e988681ae637",
+    "semantic_hash": ""
+  },
+  "src/domains/training-camp/services/autoResultsService.js": {
+    "mtime": 1788744835.8674893,
+    "seen": 1789256653.843419,
+    "ast_hash": "d1f5191f480069eeeebd7a1eb90eb824",
+    "semantic_hash": ""
+  },
+  "src/domains/training-camp/services/autoScheduleService.js": {
+    "mtime": 1788744835.0124915,
+    "seen": 1789256653.8434203,
+    "ast_hash": "2081125acb3c2aac64f0c54617e97e3c",
+    "semantic_hash": ""
+  },
+  "src/hooks/pickDraft.js": {
+    "mtime": 1788913184.499555,
+    "seen": 1789256653.8440866,
+    "ast_hash": "78b70891006e6edf0503390b6c8eb06d",
+    "semantic_hash": ""
+  },
+  "src/pages/RecoverPassword.jsx": {
+    "mtime": 1788832015.780983,
+    "seen": 1789256653.8446789,
+    "ast_hash": "4b006b1de0a7d8d17dac94627384d29c",
+    "semantic_hash": ""
+  },
+  "tests/auto-results.test.js": {
+    "mtime": 1788744485.4124074,
+    "seen": 1789256653.8450634,
+    "ast_hash": "1295df846d0a42570f9910209f2302bf",
+    "semantic_hash": ""
+  },
+  "tests/auto-schedule.test.js": {
+    "mtime": 1788746099.0696626,
+    "seen": 1789256653.8450646,
+    "ast_hash": "ba3915d972a9f835262635bd327ee47d",
+    "semantic_hash": ""
+  },
+  "tests/dates.test.js": {
+    "mtime": 1789085389.6963103,
+    "seen": 1789256653.8451016,
+    "ast_hash": "cc2eb6947a273a2930e062185d2ddfad",
+    "semantic_hash": ""
+  },
+  "tests/pickDraft.test.js": {
+    "mtime": 1788913206.114306,
+    "seen": 1789256653.8451393,
+    "ast_hash": "043125bdf2dd2b55f60f596a2410793b",
+    "semantic_hash": ""
+  },
+  "tests/roster.test.js": {
+    "mtime": 1789084719.7747197,
+    "seen": 1789256653.8454537,
+    "ast_hash": "dc3ab1cce33612ab03402ec635cb79cd",
+    "semantic_hash": ""
+  },
+  "tests/routes.test.js": {
+    "mtime": 1788747979.3975985,
+    "seen": 1789256653.8454556,
+    "ast_hash": "8b686d4d329f3ebb7b25484e78af1120",
+    "semantic_hash": ""
+  },
+  "tests/standings.test.js": {
+    "mtime": 1789178936.2741148,
+    "seen": 1789256653.8454583,
+    "ast_hash": "4927964fe7e2c273b562cdc39c6456dd",
+    "semantic_hash": ""
+  },
+  ".github/workflows/deploy.yml": {
+    "mtime": 1779078842.893083,
+    "seen": 1789256653.845537,
+    "ast_hash": "0ee09f2a682956212c149dae91fe390d",
+    "semantic_hash": ""
+  },
+  "DEPLOYMENT.md": {
+    "mtime": 1787429225.1853144,
+    "seen": 1789256653.8455386,
+    "ast_hash": "1d0ef1fa32b475fe5bd5574f5fd0e627",
+    "semantic_hash": ""
+  },
+  "gameguru.md": {
+    "mtime": 1787282559.3283863,
+    "seen": 1789256653.8455403,
+    "ast_hash": "7b890bcbcfe500e2df4fa9e8821af54c",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1788490164.4564493,
+    "seen": 1789256653.845542,
+    "ast_hash": "a97c3f7d62cceb46ffb119f13098f39f",
+    "semantic_hash": ""
+  },
+  "nfl-picks.html": {
+    "mtime": 1779067483.4619555,
+    "seen": 1789256653.845544,
+    "ast_hash": "b87fcc7b8c25992668c9cb164a4ff0c9",
+    "semantic_hash": ""
+  },
+  "opencode/plans/BUILD-010-Adaptive-Sync.md": {
+    "mtime": 1787448438.8925068,
+    "seen": 1789256653.8455462,
+    "ast_hash": "aaaa1dec0d4e6bfd2407315a62bff81b",
+    "semantic_hash": ""
+  },
+  "opencode/plans/BUILD-AUTO-SYNC-002.1.md": {
+    "mtime": 1787429361.4417279,
+    "seen": 1789256653.8455474,
+    "ast_hash": "524abe2bbcf8c4e49acca1058ad0d5f1",
+    "semantic_hash": ""
+  },
+  "opencode/plans/BUILD-AUTO-SYNC-002.md": {
+    "mtime": 1787366908.8403153,
+    "seen": 1789256653.8455489,
+    "ast_hash": "26184fe31df201c1d5fb911c74dc9e08",
+    "semantic_hash": ""
+  },
+  "opencode/plans/BUILD-SUP-004-reconciliation.md": {
+    "mtime": 1787541405.1163886,
+    "seen": 1789256653.8455498,
+    "ast_hash": "e91aad166cab544105efaac5d940595d",
+    "semantic_hash": ""
+  },
+  "opencode/plans/BUILD-SUP-004.1-admin-ui.md": {
+    "mtime": 1787542357.7636023,
+    "seen": 1789256653.8455508,
+    "ast_hash": "a736d06dd39b9c9e79fc034a4aa26756",
+    "semantic_hash": ""
+  },
+  "opencode/plans/BUILD-SUP-004.2-navigation-fix.md": {
+    "mtime": 1787543590.456513,
+    "seen": 1789256653.8455522,
+    "ast_hash": "48b6a446d2ec6967a411fa4267ec5e2e",
+    "semantic_hash": ""
+  },
+  "opencode/plans/HANDOFF-AUTH-NICK-001.md": {
+    "mtime": 1788315548.2889433,
+    "seen": 1789256653.8455536,
+    "ast_hash": "abbb5b3f01c9f4636589d7fec76ffc94",
+    "semantic_hash": ""
+  },
+  "opencode/plans/HANDOFF-PRIVACY-EMAIL-001.md": {
+    "mtime": 1788317881.7267544,
+    "seen": 1789256653.8455548,
+    "ast_hash": "128a48e332be1911bdcf997b486f97d4",
+    "semantic_hash": ""
+  },
+  "opencode/plans/HANDOFF-PURGE-RESET-001.md": {
+    "mtime": 1788319286.7827356,
+    "seen": 1789256653.845556,
+    "ast_hash": "3a6a3b6af7686195f31d2a1471ff7a9e",
+    "semantic_hash": ""
+  },
+  "opencode/plans/HANDOFF-SUP-004.2-navigation-fix.md": {
+    "mtime": 1787543637.6188078,
+    "seen": 1789256653.845557,
+    "ast_hash": "35903483814374f2fa1d31a1127378b5",
+    "semantic_hash": ""
+  },
+  "opencode/plans/PLAN-003.md": {
+    "mtime": 1785813819.8665779,
+    "seen": 1789256653.8455582,
+    "ast_hash": "eb7122e1341d0048190af4b24c1dabe7",
+    "semantic_hash": ""
+  },
+  "opencode/plans/PLAN-004.md": {
+    "mtime": 1785898761.376158,
+    "seen": 1789256653.8455596,
+    "ast_hash": "4dcb8d9805d95507b50869e5527132e9",
+    "semantic_hash": ""
+  },
+  "opencode/plans/QA-010.1-provider-diagnosis.md": {
+    "mtime": 1787538822.0694923,
+    "seen": 1789256653.8455608,
+    "ast_hash": "53f9418de3e55f690a9f015acab12585",
+    "semantic_hash": ""
+  },
+  "opencode/plans/QA-SUP-004.1-dry-run.md": {
+    "mtime": 1787542739.5450683,
+    "seen": 1789256653.8455617,
+    "ast_hash": "99c1f223d7f62f2aab8bde647716d148",
+    "semantic_hash": ""
+  },
+  "opencode/plans/QA-SUP-004.2-navigation-diagnostic.md": {
+    "mtime": 1787543319.3791542,
+    "seen": 1789256653.845563,
+    "ast_hash": "31a4ef1b063f24357ad45bfa58f7aad3",
+    "semantic_hash": ""
+  },
+  "opencode/plans/SUP-004-deployment-qa-report.md": {
+    "mtime": 1787541739.8399217,
+    "seen": 1789256653.845564,
+    "ast_hash": "41c6eca5978b408c761192d768254da2",
+    "semantic_hash": ""
+  },
+  "opencode/plans/auto-results-sync-mvp.md": {
+    "mtime": 1787365599.754084,
+    "seen": 1789256653.845565,
+    "ast_hash": "0a3656ecbf1b040e280cdc9c3e4655f5",
+    "semantic_hash": ""
+  },
+  "opencode/plans/blueprint.md": {
+    "mtime": 1786286097.1598563,
+    "seen": 1789256653.8455803,
+    "ast_hash": "4f4ab2fb7af84d095a89a09b657dfa6f",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-01.md": {
+    "mtime": 1785642453.2413094,
+    "seen": 1789256653.8455815,
+    "ast_hash": "13e1a4ddfa0de3297d05a2a72c2e9cd3",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-03.md": {
+    "mtime": 1785816616.683894,
+    "seen": 1789256653.8455825,
+    "ast_hash": "d33399c7e3833bd191391f8e889242ad",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-04.md": {
+    "mtime": 1785902260.0542803,
+    "seen": 1789256653.8455837,
+    "ast_hash": "51de1906b47484cc8e4b1cbbad79615b",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-05.md": {
+    "mtime": 1785984774.4297175,
+    "seen": 1789256653.8455846,
+    "ast_hash": "a0b9086bcb0d5da3e7c32591114b90df",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-07.md": {
+    "mtime": 1786160622.1598487,
+    "seen": 1789256653.8455856,
+    "ast_hash": "00a680150450b6bbcaf854c86db26c2a",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-08.md": {
+    "mtime": 1786285985.2190847,
+    "seen": 1789256653.845587,
+    "ast_hash": "b53eee94d900415c3c835ed9876e2ae8",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-09.md": {
+    "mtime": 1786325840.4082732,
+    "seen": 1789256653.8455882,
+    "ast_hash": "77f2a9fe130fdafeb1cf7bef206c687d",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-12.md": {
+    "mtime": 1786593443.8832543,
+    "seen": 1789256653.8455892,
+    "ast_hash": "6e9f8430af5653192757032b80190e24",
+    "semantic_hash": ""
+  },
+  "opencode/plans/gameguru-day-2026-08-13.md": {
+    "mtime": 1787282514.6959455,
+    "seen": 1789256653.8455904,
+    "ast_hash": "825e5ba13d36b36e5769e1dc2eda6a71",
+    "semantic_hash": ""
+  },
+  "opencode/plans/plan-league-context-01.1.md": {
+    "mtime": 1786325814.3519428,
+    "seen": 1789256653.8455913,
+    "ast_hash": "3289ecaa2caa0b57708ac4767bda7746",
+    "semantic_hash": ""
+  },
+  "opencode/plans/plan-league-context.md": {
+    "mtime": 1786325846.1965656,
+    "seen": 1789256653.8455923,
+    "ast_hash": "677130ecb7080bdd8fd4fce1521ef2a8",
+    "semantic_hash": ""
+  },
+  "opencode/plans/plan-sup-003.md": {
+    "mtime": 1786680261.0908422,
+    "seen": 1789256653.8455937,
+    "ast_hash": "6c29d9190d5a280e5107a76f5d549ec4",
+    "semantic_hash": ""
+  },
+  "opencode/plans/preseason.md": {
+    "mtime": 1786674502.2678277,
+    "seen": 1789256653.8455946,
+    "ast_hash": "d0577c9c90fd6f272cdaf1aa020df0ef",
+    "semantic_hash": ""
+  },
+  "opencode/plans/regular-season.md": {
+    "mtime": 1785898774.3693388,
+    "seen": 1789256653.8455956,
+    "ast_hash": "2f968f86e85bba2f5f4f3c9d71c0e429",
+    "semantic_hash": ""
+  },
+  "opencode/plans/superadmin.md": {
+    "mtime": 1786681546.7042463,
+    "seen": 1789256653.8455968,
+    "ast_hash": "61e593d86ecd82a1a97eba9662c2af93",
+    "semantic_hash": ""
+  },
+  "opencode/plans/training-camp.md": {
+    "mtime": 1786324573.0787954,
+    "seen": 1789256653.845598,
+    "ast_hash": "9bcf94a527c5634e714191f39a56accd",
+    "semantic_hash": ""
+  },
+  "public/favicon.svg": {
+    "mtime": 1786212692.1692967,
+    "seen": 1789256653.845599,
+    "ast_hash": "771b7008489de070b0a8afbdd57637e7",
+    "semantic_hash": ""
   }
 }
