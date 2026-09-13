@@ -17,6 +17,7 @@ import PlatformLeagueDetail from './pages/PlatformLeagueDetail'
 import PlatformUsers from './pages/PlatformUsers'
 import PlatformUserDetail from './pages/PlatformUserDetail'
 import PlatformReconciliation from './pages/PlatformReconciliation'
+import PlatformApi from './pages/PlatformApi'
 import PlatformDenied from './components/PlatformDenied'
 import TrainingCamp from './pages/TrainingCamp'
 import AuditSnapshotPage from './domains/training-camp/components/AuditSnapshotPage'
@@ -52,7 +53,7 @@ function AppInner() {
   const { t } = useLanguage()
 
   const { user, loading, signIn, signUp, signInWithGoogle, signOut, resetPassword, recovery, updatePassword, completeRecovery } = useAuth()
-  const { isSuperAdmin, checking: adminChecking } = useSuperAdmin(user)
+  const { isSuperAdmin, isPlatformAdmin, checking: adminChecking } = useSuperAdmin(user)
   const leaguesState = useLeague(user)
 
   if (loading || adminChecking) {
@@ -99,6 +100,7 @@ function AppInner() {
       <AppShell
         user={user}
         isSuperAdmin={isSuperAdmin}
+        isPlatformAdmin={isPlatformAdmin}
         signOut={signOut}
         lobbyVersion={lobbyVersion}
         setLobbyVersion={setLobbyVersion}
@@ -120,6 +122,7 @@ function AppInner() {
 function AppShell({
   user,
   isSuperAdmin,
+  isPlatformAdmin,
   signOut,
   lobbyVersion,
   setLobbyVersion,
@@ -175,6 +178,7 @@ function AppShell({
     platformUsers: 'Usuarios de Plataforma',
     platformUser: 'Detalle de Usuario',
     platformReconciliation: 'Provider Reconciliation',
+    platformApi: 'Reglas del API',
   }
 
   // PLAN-LEAGUE-CONTEXT-01.1 §4: la URL es la fuente de verdad. Mantiene el
@@ -310,27 +314,38 @@ function AppShell({
       />
     )
 
-    // BUILD-SUP-000/002/003: rutas de plataforma con deny explícito (nada de
-    // drops silenciosos). Gate por isSuperAdmin (claim JWT, fallback legacy).
-    // League Admin / usuario normal → PlatformDenied. platform_admin queda
-    // dormante (0 usuarios): no se amplía el gate.
+    // BUILD-SUP-000/002/003/005: rutas de plataforma con deny explícito (nada
+    // de drops silenciosos). Gate diferencial:
+    //   - superadmin (calendario maestro) y platformReconciliation (aplica
+    //     cambios de score) → SOLO platform_superadmin (isSuperAdmin).
+    //   - Consola read-only (platform, platformLeagues, platformLeague,
+    //     platformUsers, platformUser, platformApi) → isPlatformAdmin
+    //     (platform_admin O platform_superadmin, BUILD-SUP-005).
+    if (route && route.type === 'platformApi') {
+      if (!isPlatformAdmin) return <PlatformDenied onNavigate={handleNavigate} />
+      return <PlatformApi />
+    }
     if (route && (
-      route.type === 'superadmin' ||
       route.type === 'platform' ||
       route.type === 'platformLeagues' ||
       route.type === 'platformLeague' ||
       route.type === 'platformUsers' ||
-      route.type === 'platformUser' ||
-      route.type === 'platformReconciliation'
+      route.type === 'platformUser'
     )) {
-      if (!isSuperAdmin) return <PlatformDenied onNavigate={handleNavigate} />
-      if (route.type === 'superadmin') return <SuperAdmin />
+      if (!isPlatformAdmin) return <PlatformDenied onNavigate={handleNavigate} />
       if (route.type === 'platform') return <PlatformOverview />
       if (route.type === 'platformLeague') return <PlatformLeagueDetail leagueId={route.leagueId} />
       if (route.type === 'platformUser') return <PlatformUserDetail userId={route.userId} />
       if (route.type === 'platformUsers') return <PlatformUsers />
-      if (route.type === 'platformReconciliation') return <PlatformReconciliation />
       return <PlatformLeagues />
+    }
+    if (route && (
+      route.type === 'superadmin' ||
+      route.type === 'platformReconciliation'
+    )) {
+      if (!isSuperAdmin) return <PlatformDenied onNavigate={handleNavigate} />
+      if (route.type === 'superadmin') return <SuperAdmin />
+      return <PlatformReconciliation />
     }
 
     // Audit público del Training Camp (BUILD-TC-V2): URL de auditoría de picks
@@ -389,6 +404,7 @@ function AppShell({
         }}
         onLogout={signOut}
         isSuperAdmin={isSuperAdmin}
+        isPlatformAdmin={isPlatformAdmin}
         onCreateNew={() => openWizard()}
         onCreateSimulation={() => openWizard('practice')}
         route={route}
@@ -419,6 +435,7 @@ function AppShell({
         activePage={activePage}
         onNavigate={handleNavigate}
         isSuperAdmin={isSuperAdmin}
+        isPlatformAdmin={isPlatformAdmin}
       />
 
       {showWizard && (

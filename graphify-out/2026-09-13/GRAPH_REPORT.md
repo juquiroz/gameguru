@@ -1,31 +1,31 @@
-# Graph Report - gameguru  (2026-09-13)
+# Graph Report - gameguru  (2026-09-12)
 
 ## Corpus Check
-- 264 files · ~192,898 words
+- 249 files · ~183,800 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1770 nodes · 3266 edges · 118 communities (102 shown, 6 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 10 edges (avg confidence: 0.85)
+- 1707 nodes · 3183 edges · 108 communities (90 shown, 9 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 12 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5ff936d1`
+- Built from commit: `d3e69d9e`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- platform/index.js
+- leagues.js
 - useLanguage
 - reconciliation/index.js
 - useTrainingCamp.js
-- training/index.js
-- nflData.js
+- useTrainingSession.js
+- league/index.js
 - navigate
 - package.json
 - App.jsx
 - event/index.js
-- Picks.jsx
+- supabase.js
 - game-week/index.js
 - gameguru — Resumen diario 2026-08-13 (Jue)
 - gameguru — Resumen diario 2026-08-08 (Sáb)
@@ -33,21 +33,21 @@
 - reconcile/index.ts
 - SUP-004 Deployment & QA Report
 - sports/index.js
-- roles.js
-- fixtureCalendar.js
-- HANDOFF — Incidente: "Apply borró resultados" (producción)
+- results-sync/index.ts
+- FixtureGeneratorService.js
+- GameWeekService.js
 - BUILD-AUTO-SYNC-002.1: Fix Supabase Vault Compatibility
 - SUP-004 Requirements
 - BUILD SUP-004.1 — Provider Reconciliation Admin UI
 - Auto-Results Sync - Deployment Guide
 - normalize.test.js
 - sportsService.js
-- standings.test.js
+- espn.js
 - PLAN-SUP-003 — Platform User Management (diseño, READ-ONLY)
 - BUILD-SUP-004 — Provider Game Reconciliation
 - BUILD-010 — Adaptive NFL Results Sync + API Budget
 - SuperAdmin / Plataforma — SUP-000 + SUP-001 + SUP-002 + SUP-003 (implementado 2026-08-13)
-- users.js
+- platform/index.js
 - GameGuru — Blueprint Completo
 - routes.js
 - Preseason Experience (🏈)
@@ -78,7 +78,7 @@
 - Qué se hizo hoy (PLAN-005 diseño + BUILD-TC-001 Lobby + BUILD-TC-002 Entrada oficial + BUILD-TC-003 Event Director)
 - QA-SUP-004.2 — Diagnostic: Reconciliation Navigation Issue
 - 8.3 BUILD-TC-003 — Event Director (implementado 2026-08-04)
-- useLeague.js
+- sessionService.js
 - Qué se hizo hoy (BUILD-TC-005.1 — Persistencia Supabase + flujo Game Week en modo nube)
 - 8.5 BUILD-TC-005 — Game Week & Picks (implementado 2026-08-05; **validado en modo nube 2026-08-07 — BUILD-TC-005.1**)
 - Base de datos (Supabase)
@@ -108,21 +108,12 @@
 - Expected Behavior (Theoretical)
 - Recommendations
 - Problems
-- canManageLeague
+- 🧭 Navegación multi-liga — Fix UX (2026-08-14)
 - Critical Diagnostic
 - Edge Function Validation
 - Frontend UI Review
 - 3. Arquitectura del motor
 - 8.6.1 BUILD-TC-006.1 (2026-08-08) — Simulation Engine: núcleo (sin UX)
-- useDashboardData.js
-- PLAN-021 — Migrar resultados automáticos de API-Sports (free, sin 2026) a scraper ESPN NFL
-- supabase.js
-- HANDOFF — Mejora de frecuencia de actualización de resultados NFL
-- useTrainingSession.js
-- HANDOFF-PLAN-021 — Migración a ESPN (resultados NFL temporada 2026)
-- weekService.js
-- usePicks.js
-- Regular Season Experience (🏆)
 
 ## God Nodes (most connected - your core abstractions)
 1. `useLanguage()` - 90 edges
@@ -151,55 +142,55 @@
 ## Import Cycles
 - None detected.
 
-## Communities (118 total, 6 thin omitted)
+## Communities (108 total, 9 thin omitted)
 
-### Community 0 - "platform/index.js"
-Cohesion: 0.17
-Nodes (28): DEFAULT_TIMEZONE, isValidTimezone(), applyLeagueFilters(), buildOwnerMap(), buildStandingsForLeague(), computeLeagueHealth(), computeLeagueMetrics(), DEFAULT_PAGE_SIZE (+20 more)
+### Community 0 - "leagues.js"
+Cohesion: 0.15
+Nodes (29): getLeagueMode(), isOfficialMode(), isValidMode(), LEAGUE_MODES, DEFAULT_TIMEZONE, applyLeagueFilters(), buildOwnerMap(), buildStandingsForLeague() (+21 more)
 
 ### Community 1 - "useLanguage"
 Cohesion: 0.06
-Nodes (63): LanguageSwitch(), LeagueIdentity(), ProfileMenu(), translateAuthError(), CopyReminder(), CountdownCard(), fmtDeadline(), fmtLeft() (+55 more)
+Nodes (50): InviteModal(), LanguageSwitch(), ProfileMenu(), Topbar(), SPORTS, translateAuthError(), CopyReminder(), CountdownCard() (+42 more)
 
 ### Community 2 - "reconciliation/index.js"
 Cohesion: 0.10
 Nodes (44): AUDIT_ACTIONS, buildAmbiguousPayload(), buildAutoMapPayload(), buildManualOverridePayload(), buildManualRevertPayload(), buildRollbackAppliedPayload(), buildRollbackConflictPayload(), buildSkippedPayload() (+36 more)
 
 ### Community 3 - "useTrainingCamp.js"
-Cohesion: 0.06
-Nodes (67): buildLeaderboard(), resolveGame(), activeWeekOf(), AUTO_GAME_SPACING_MINUTES, AUTO_GAMES_PER_WEEK, AUTO_PICK_DEADLINE_MINUTES, AUTO_WEEK_GAP_DAYS, buildCalendar() (+59 more)
+Cohesion: 0.08
+Nodes (57): resolveGame(), activeWeekOf(), AUTO_GAME_SPACING_MINUTES, AUTO_GAMES_PER_WEEK, AUTO_PICK_DEADLINE_MINUTES, AUTO_WEEK_GAP_DAYS, buildCalendar(), buildWeekStarts() (+49 more)
 
-### Community 4 - "training/index.js"
-Cohesion: 0.24
-Nodes (11): mapPhase(), PHASE_TO_STEP, STEPS, TrainingCampDirector, COUNTDOWN_THRESHOLD_MS, FIXTURE_GENERATION_STATES, getDerivedPhase(), getTrainingState() (+3 more)
+### Community 4 - "useTrainingSession.js"
+Cohesion: 0.21
+Nodes (16): mapPhase(), TrainingCampParticipants(), useTrainingSession(), resolveConfig(), decorateParticipants(), isPresenceAvailable(), ONLINE_SOURCE, presenceAvailability() (+8 more)
 
-### Community 5 - "nflData.js"
-Cohesion: 0.15
-Nodes (13): TEAM_LIST, GameTime(), ScoreEditor(), TeamLogo(), DIVISIONS, INTER_CONF, INTRA_CONF, NFL_TEAMS (+5 more)
+### Community 5 - "league/index.js"
+Cohesion: 0.05
+Nodes (55): TEAM_LIST, GameTime(), LeagueGamesManager(), ScoreEditor(), TeamLogo(), DIVISIONS, genInviteCode(), INTER_CONF (+47 more)
 
 ### Community 6 - "navigate"
-Cohesion: 0.17
-Nodes (19): Topbar(), clearActiveLeagueId(), hasStorage(), loadActiveLeagueId(), saveActiveLeagueId(), LeagueContext, LeagueProvider(), useLeagueContext() (+11 more)
+Cohesion: 0.20
+Nodes (17): clearActiveLeagueId(), hasStorage(), loadActiveLeagueId(), saveActiveLeagueId(), LeagueContext, LeagueProvider(), useLeagueContext(), buildContextValue() (+9 more)
 
 ### Community 7 - "package.json"
 Cohesion: 0.07
 Nodes (27): gh-pages, dependencies, react, react-dom, @supabase/supabase-js, devDependencies, gh-pages, @types/react (+19 more)
 
 ### Community 8 - "App.jsx"
-Cohesion: 0.16
-Nodes (9): App(), BottomNav(), NAV_ITEMS, CreateSimulationModal(), PlatformDenied(), Home(), LeagueStandings(), PublicPicks() (+1 more)
+Cohesion: 0.12
+Nodes (18): App(), AppInner(), BottomNav(), NAV_ITEMS, CreateSimulationModal(), PlatformDenied(), formatLastSync(), SyncStatus() (+10 more)
 
 ### Community 9 - "event/index.js"
 Cohesion: 0.12
-Nodes (11): EVENT_ACTIONS, EVENT_TYPES, EventDirector, FIXTURE_STATES, FixtureGenerationDirector, getFixtureState(), STEPS, GAME_WEEK_STATES (+3 more)
+Nodes (12): EVENT_ACTIONS, EVENT_TYPES, EventDirector, FIXTURE_STATES, FixtureGenerationDirector, getFixtureState(), STEPS, PHASE_TO_STEP (+4 more)
 
-### Community 10 - "Picks.jsx"
-Cohesion: 0.21
-Nodes (12): LeaderboardTable(), PublicPicksMatrix(), tdStyle, thStyle, useLeagueIdentity(), buildLeagueIdentityMap(), useAutoRefresh(), MOCK_ROWS (+4 more)
+### Community 10 - "supabase.js"
+Cohesion: 0.06
+Nodes (52): LeaderboardTable(), LeagueIdentity(), PublicPicksMatrix(), tdStyle, thStyle, useDashboardData(), useLeagueData(), useLeagueIdentity() (+44 more)
 
 ### Community 11 - "game-week/index.js"
-Cohesion: 0.06
-Nodes (45): GameCard(), GameWeekContext, GameWeekProvider(), normGame(), useGameWeek(), GameWeekLeaderboard(), GameWeekResults(), gameWeekService (+37 more)
+Cohesion: 0.08
+Nodes (42): GameCard(), calendarHelpers, GameWeekContext, GameWeekProvider(), normGame(), useGameWeek(), GameWeekLeaderboard(), GameWeekResults() (+34 more)
 
 ### Community 12 - "gameguru — Resumen diario 2026-08-13 (Jue)"
 Cohesion: 0.05
@@ -214,28 +205,24 @@ Cohesion: 0.05
 Nodes (37): 1. Authorization Fix (CRITICAL), 2. Cron Security, 3. Concurrency Protection, 4. Test Coverage, ✅ Authorization Model, Build, BUILD-AUTO-SYNC-002: Security & Scheduler Hardening, ✅ Code Complete (+29 more)
 
 ### Community 15 - "reconcile/index.ts"
-Cohesion: 0.11
-Nodes (23): corsHeaders, executeApply(), executeDryRun(), executeRollback(), isManualOverride(), matchGame(), parseGameTime(), resolveConflict() (+15 more)
+Cohesion: 0.24
+Nodes (14): executeApply(), executeDryRun(), executeRollback(), fetchGamesByDate(), isManualOverride(), matchGame(), normalize(), parseGameTime() (+6 more)
 
 ### Community 16 - "SUP-004 Deployment & QA Report"
 Cohesion: 0.06
 Nodes (35): 8 Action Types, Appendix: Audit Action Types (Complete List), Audit Security, Audit System, Authentication & Authorization, Backfill Status, Before/After State, Build Status (+27 more)
 
 ### Community 17 - "sports/index.js"
-Cohesion: 0.16
-Nodes (16): createApiSportsNflAdapter(), SEASON_TYPE_MAPPING, STATUS_MAPPING, TEAM_MAPPING, apiErrorList(), createEspnNflAdapter(), apiRequest(), espnProvider (+8 more)
+Cohesion: 0.33
+Nodes (6): createApiSportsNflAdapter(), SEASON_TYPE_MAPPING, STATUS_MAPPING, TEAM_MAPPING, SPORTS_PROVIDER_STATUS, SportsDataProvider
 
-### Community 18 - "roles.js"
-Cohesion: 0.16
-Nodes (18): AppInner(), formatLastSync(), SyncStatus(), canReadPlatform(), isPlatformAdmin(), isPlatformSuperAdmin(), isValidPlatformRole(), normalizePlatformRole() (+10 more)
+### Community 18 - "results-sync/index.ts"
+Cohesion: 0.23
+Nodes (9): classifyWindow(), fetchGames(), fetchGamesByDate(), normalize(), schedulerDecision(), SEASON_TYPE_MAP, STATUS_MAP, TEAM_MAP (+1 more)
 
-### Community 19 - "fixtureCalendar.js"
-Cohesion: 0.27
-Nodes (7): buildCalendar(), calendarHelpers, fmtLocal(), mulberry32(), roundRobinRounds(), seededShuffle(), fixtureGeneratorService
-
-### Community 20 - "HANDOFF — Incidente: "Apply borró resultados" (producción)"
-Cohesion: 0.14
-Nodes (13): Agente / Modelo, Archivos y áreas tocadas (sesión previa, ya desplegados), Causa raíz confirmada: cron `results-sync` falla "ESPN 400", Causa raíz (código), Decisiones del PO, Evidencia de QA, Hallazgos verificados (solo lecturas), HANDOFF — Incidente: "Apply borró resultados" (producción) (+5 more)
+### Community 20 - "GameWeekService.js"
+Cohesion: 0.18
+Nodes (5): GameWeekDirector, getWeekState(), lsKey(), readLocalWeeks(), writeLocalWeeks()
 
 ### Community 21 - "BUILD-AUTO-SYNC-002.1: Fix Supabase Vault Compatibility"
 Cohesion: 0.06
@@ -251,15 +238,11 @@ Nodes (32): Apply Status, Authentication Flow, Authorization, Build Status, BUIL
 
 ### Community 24 - "Auto-Results Sync - Deployment Guide"
 Cohesion: 0.06
-Nodes (31): 1. Disable Cron Job, 1. Sourcede datos: ESPN (scoreboard público), 2. Cron Secret, 2. Delete Edge Function, 3. Required Extensions, 3. Revert Database Changes (if needed), Auto-Results Sync - Deployment Guide, Concurrency Protection (+23 more)
+Nodes (31): 1. API-Sports Credentials, 1. Disable Cron Job, 2. Cron Secret, 2. Delete Edge Function, 3. Required Extensions, 3. Revert Database Changes (if needed), Auto-Results Sync - Deployment Guide, Concurrency Protection (+23 more)
 
 ### Community 25 - "normalize.test.js"
 Cohesion: 0.40
 Nodes (3): SEASON_TYPE_MAP, STATUS_MAP, TEAM_MAP
-
-### Community 31 - "standings.test.js"
-Cohesion: 0.21
-Nodes (11): calcStandings(), calcStreak(), calcStreaks(), resolveResult(), sortFinishedByTime(), gameA, gameB, gameC (+3 more)
 
 ### Community 37 - "PLAN-SUP-003 — Platform User Management (diseño, READ-ONLY)"
 Cohesion: 0.06
@@ -277,21 +260,21 @@ Nodes (26): 1. Migración 010.0, 2. Scheduler Adaptativo, 3. API-Sports Batch by
 Cohesion: 0.07
 Nodes (26): API (`src/supabase.js`, `platformApi`), API (`src/supabase.js`, `platformApi`), Aprendizajes QA (script `/tmp/opencode/qae2e/qa-platform-leagues.mjs`), BUILD-SCORE-001 (2026-08-13) — impacto en plataforma, Contexto y regla crítica, Decisión clave — FKs reales de la BD viva (check `check-fks.mjs`), Dominio (lógica pura, `src/domains/platform/models/leagues.js`), Dominio (lógica pura, `src/domains/platform/models/users.js`) (+18 more)
 
-### Community 41 - "users.js"
-Cohesion: 0.21
-Nodes (17): applyUserFilters(), applyUserSearch(), assembleUserIndex(), buildLeagueParticipation(), computeLastActivity(), computeUserHealth(), computeUserList(), computeUserMetrics() (+9 more)
+### Community 41 - "platform/index.js"
+Cohesion: 0.19
+Nodes (23): canReadPlatform(), isPlatformAdmin(), isValidPlatformRole(), normalizePlatformRole(), PLATFORM_ROLE_RANK, PLATFORM_ROLES, PLATFORM_ROLES_LIST, applyUserFilters() (+15 more)
 
 ### Community 42 - "GameGuru — Blueprint Completo"
 Cohesion: 0.08
-Nodes (26): 🎯 Acciones de semana en My Picks — BUILD-UX (2026-08-12), 🎯 Actualizaciones parciales de marcador — BUILD-SCORE-001 (2026-08-13), Archivos legacy / no utilizados, Bugs conocidos y notas, Captura de resultados — PLAN-003 (ScoreEditor universal), Contexto de liga por URL — PLAN-LEAGUE-CONTEXT (Fases 1-3 implementadas, BUILD-LEAGUE-CONTEXT-01 2026-08-09), Convenciones de código, Design Tokens (`global.css`) (+18 more)
+Nodes (24): 🎯 Acciones de semana en My Picks — BUILD-UX (2026-08-12), 🎯 Actualizaciones parciales de marcador — BUILD-SCORE-001 (2026-08-13), Archivos legacy / no utilizados, Bugs conocidos y notas, Captura de resultados — PLAN-003 (ScoreEditor universal), Contexto de liga por URL — PLAN-LEAGUE-CONTEXT (Fases 1-3 implementadas, BUILD-LEAGUE-CONTEXT-01 2026-08-09), Convenciones de código, Design Tokens (`global.css`) (+16 more)
 
 ### Community 43 - "routes.js"
 Cohesion: 0.13
 Nodes (16): AppShell(), buildHash(), LEAGUE_PAGES, LEGACY, LEGACY_PAGES, normalizeHash(), PAGES, parseHash() (+8 more)
 
 ### Community 44 - "Preseason Experience (🏈)"
-Cohesion: 0.18
-Nodes (11): Backlog post-Preseason, BUILD-SCORE-001 (2026-08-13) — Actualizaciones parciales de marcador, Comportamiento, Freeze (2026-08-12) — Go-Live Readiness Audit, Integración con proveedores, Modelo de datos (PLAN-004, BUILD-004.1), Preseason Experience (🏈), Riesgos (+3 more)
+Cohesion: 0.09
+Nodes (18): Backlog post-Preseason, BUILD-SCORE-001 (2026-08-13) — Actualizaciones parciales de marcador, Comportamiento, Freeze (2026-08-12) — Go-Live Readiness Audit, Integración con proveedores, Modelo de datos (PLAN-004, BUILD-004.1), Preseason Experience (🏈), Riesgos (+10 more)
 
 ### Community 45 - "PLAN-005 — Training Camp Experience (🎓)"
 Cohesion: 0.10
@@ -318,8 +301,8 @@ Cohesion: 0.12
 Nodes (15): Archivos y áreas modificadas, BUILD-PRIVACY-EMAIL-001: El correo nunca aparece en pantallas de otros jugadores - Handoff, Datos (migración — sigue NO APLICADA; actualizada con el hardening), Decisiones pendientes, Dominio puro (lógica testeada), Estado Final, Infraestructura de datos cliente, Nivel de Riesgo (+7 more)
 
 ### Community 51 - "PlatformLeagues.jsx"
-Cohesion: 0.24
-Nodes (12): buildFilterOptions(), ownerName(), buildUserFilterOptions(), DEFAULT_PAGE_SIZE, PlatformLeagues(), fmt(), PlatformUsers(), ROLE_LABEL (+4 more)
+Cohesion: 0.20
+Nodes (14): buildFilterOptions(), DEFAULT_PAGE_SIZE, ownerName(), buildUserFilterOptions(), DEFAULT_PAGE_SIZE, USER_NO_FILTER, PlatformLeagues(), fmt() (+6 more)
 
 ### Community 52 - "gameguru — Resumen diario 2026-08-03 (Lun)"
 Cohesion: 0.13
@@ -401,9 +384,9 @@ Nodes (8): Browser Validation Steps, Deployment Status, Files to Modify, QA-SUP-
 Cohesion: 0.22
 Nodes (9): 8.3 BUILD-TC-003 — Event Director (implementado 2026-08-04), Archivos, Arquitectura del dominio, Confirmación en el wizard, Decisiones del usuario (2026-08-04), El Director (dominio `event/`), Personalidad del Lobby, Training Session como entidad (1:N-ready) (+1 more)
 
-### Community 72 - "useLeague.js"
-Cohesion: 0.19
-Nodes (14): LeagueGamesManager(), genInviteCode(), getLeagueSeason(), masterPhaseForMode(), hydrateLeague(), lsKey(), normalize(), readLocal() (+6 more)
+### Community 72 - "sessionService.js"
+Cohesion: 0.31
+Nodes (6): lsKey(), normalize(), readLocal(), trainingCampSessionService, writeLocal(), trainingSessionsApi
 
 ### Community 73 - "Qué se hizo hoy (BUILD-TC-005.1 — Persistencia Supabase + flujo Game Week en modo nube)"
 Cohesion: 0.25
@@ -521,65 +504,25 @@ Nodes (3): If Dry Run Fails, Immediate Actions, Recommendations
 Cohesion: 0.67
 Nodes (3): Problem 1: Frontend Not Deployed, Problem 2: Cannot Execute Dry Run, Problems
 
-### Community 102 - "canManageLeague"
-Cohesion: 0.28
-Nodes (7): InviteModal(), SPORTS, LeaguesOverview(), canManageLeague(), LeaguePage(), Lobby(), leaguesApi
-
-### Community 108 - "useDashboardData.js"
-Cohesion: 0.31
-Nodes (9): useDashboardData(), useLeagueData(), getCurrentWeek(), getWeekDeadline(), isWeekLocked(), iso(), now, single() (+1 more)
-
-### Community 109 - "PLAN-021 — Migrar resultados automáticos de API-Sports (free, sin 2026) a scraper ESPN NFL"
-Cohesion: 0.17
-Nodes (11): Alcance / archivos a modificar, Contexto, Decisiones del PLAN, Decisión del PO: Scrapping de resultados (elegido), Fuente ESPN — endpoint validado hoy, Pendiente antes de BUILD, PLAN-021 — Migrar resultados automáticos de API-Sports (free, sin 2026) a scraper ESPN NFL, QA / validación (mínima para hoy) (+3 more)
-
-### Community 110 - "supabase.js"
-Cohesion: 0.24
-Nodes (6): trainingCampPicksService, authApi, isRecoveryLink, picksApi, pickSubmissionsApi, profilesApi
-
-### Community 111 - "HANDOFF — Mejora de frecuencia de actualización de resultados NFL"
-Cohesion: 0.18
-Nodes (10): Cambios de esta petición (por qué y cómo), Decisiones del PO (2026-09-13), Evidencia de QA en producción (2026-09-13 ~22:18 UTC), Files / áreas cambiadas, HANDOFF — Mejora de frecuencia de actualización de resultados NFL, Límite diario del API y ventanas del calendario (análisis PO), Riesgos residuales, Siguiente paso recomendado (monitoreo) (+2 more)
-
-### Community 112 - "useTrainingSession.js"
-Cohesion: 0.31
-Nodes (8): TrainingCampParticipants(), useTrainingSession(), resolveConfig(), decorateParticipants(), isPresenceAvailable(), ONLINE_SOURCE, presenceAvailability(), LegacyPracticeStandings()
-
-### Community 113 - "HANDOFF-PLAN-021 — Migración a ESPN (resultados NFL temporada 2026)"
-Cohesion: 0.20
-Nodes (9): Agent, model y variant, Files y áreas cambiadas, HANDOFF-PLAN-021 — Migración a ESPN (resultados NFL temporada 2026), Pending decisions, Recommended next step, Residual risks, Risk level, Summary (+1 more)
-
-### Community 114 - "weekService.js"
-Cohesion: 0.29
-Nodes (7): gamesKey(), readLocalGames(), readLocalWeeks(), trainingCampWeekService, weeksKey(), writeLocalGames(), writeLocalWeeks()
-
-### Community 115 - "usePicks.js"
-Cohesion: 0.56
-Nodes (5): draftKey(), dropDraft(), readDraft(), writeDraft(), usePicks()
-
-### Community 116 - "Regular Season Experience (🏆)"
-Cohesion: 0.29
-Nodes (7): Comportamiento, Integración con proveedores, Modelo de datos (PLAN-004, BUILD-004.1), Regular Season Experience (🏆), Riesgos, Roadmap por BUILD (BUILD-RS), Visión
-
 ## Knowledge Gaps
-- **795 isolated node(s):** `name`, `version`, `private`, `type`, `dev` (+790 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 905 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **6 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **757 isolated node(s):** `name`, `version`, `private`, `type`, `dev` (+752 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 862 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `useLanguage()` connect `useLanguage` to `TrainingCampLobby.jsx`, `levels.js`, `useTrainingCamp.js`, `nflData.js`, `navigate`, `canManageLeague`, `App.jsx`, `routes.js`, `game-week/index.js`, `useTrainingSession.js`, `roles.js`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `PLAN-005 — Training Camp Experience (🎓)` connect `PLAN-005 — Training Camp Experience (🎓)` to `8.3 BUILD-TC-003 — Event Director (implementado 2026-08-04)`, `3. Arquitectura del motor`, `8.5 BUILD-TC-005 — Game Week & Picks (implementado 2026-08-05; **validado en modo nube 2026-08-07 — BUILD-TC-005.1**)`, `8.6.1 BUILD-TC-006.1 (2026-08-08) — Simulation Engine: núcleo (sin UX)`, `8.1 BUILD-TC-001 — Lobby del Training Camp (implementado 2026-08-04)`, `gameguru.md`, `8.2 BUILD-TC-002 — Experience Picker + Entrada Oficial (implementado 2026-08-04)`, `8.5.1 BUILD-TC-005 — alcance entregado (2026-08-05)`, `8.6.3 BUILD-TC-006.3 (2026-08-08) — Simulation: UX en vivo + cierre en la nube`, `8.4 BUILD-TC-004 — Fixture Generation Event (implementado 2026-08-05)`, `8.4.1 BUILD-TC-004.2 — Estabilización (implementado 2026-08-05)`?**
-  _High betweenness centrality (0.010) - this node is a cross-community bridge._
-- **Why does `GameGuru — Blueprint de cambios` connect `GameGuru — Blueprint de cambios` to `Archivo modificado`, `Archivo modificado`, `PLAN-004 — Sistema de Temporadas (Practice / Preseason / Regular)`, `Archivos modificados`, `PLAN-LEAGUE-CONTEXT — Gestión de múltiples ligas por usuario`, `BUILD-002.1 — Unificar Home y Dashboard (Experiencia Fantasy First)`, `PRIVACY-001 — Picks privados hasta el cierre`, `Archivos modificados`, `PLAN-004.1 — Persistencia del Sistema de Temporadas (BUILD-004.1)`, `gameguru.md`, `BUILD-002 — MVP del nuevo Home Dashboard (Fase 1 de PLAN-001)`, `PLAN-003 — Rediseño UX de captura de resultados`, `BUILD-001 — Preparación de arquitectura del nuevo Dashboard`?**
-  _High betweenness centrality (0.008) - this node is a cross-community bridge._
+- **Why does `useLanguage()` connect `useLanguage` to `TrainingCampLobby.jsx`, `levels.js`, `useTrainingCamp.js`, `useTrainingSession.js`, `league/index.js`, `App.jsx`, `supabase.js`, `game-week/index.js`, `routes.js`?**
+  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `GameGuru — Blueprint de cambios` connect `GameGuru — Blueprint de cambios` to `Archivo modificado`, `Archivo modificado`, `PLAN-004 — Sistema de Temporadas (Practice / Preseason / Regular)`, `Preseason Experience (🏈)`, `Archivos modificados`, `PLAN-LEAGUE-CONTEXT — Gestión de múltiples ligas por usuario`, `BUILD-002.1 — Unificar Home y Dashboard (Experiencia Fantasy First)`, `PRIVACY-001 — Picks privados hasta el cierre`, `Archivos modificados`, `PLAN-004.1 — Persistencia del Sistema de Temporadas (BUILD-004.1)`, `BUILD-002 — MVP del nuevo Home Dashboard (Fase 1 de PLAN-001)`, `PLAN-003 — Rediseño UX de captura de resultados`, `BUILD-001 — Preparación de arquitectura del nuevo Dashboard`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+- **Why does `PLAN-005 — Training Camp Experience (🎓)` connect `PLAN-005 — Training Camp Experience (🎓)` to `8.3 BUILD-TC-003 — Event Director (implementado 2026-08-04)`, `3. Arquitectura del motor`, `8.5 BUILD-TC-005 — Game Week & Picks (implementado 2026-08-05; **validado en modo nube 2026-08-07 — BUILD-TC-005.1**)`, `Preseason Experience (🏈)`, `8.6.1 BUILD-TC-006.1 (2026-08-08) — Simulation Engine: núcleo (sin UX)`, `8.1 BUILD-TC-001 — Lobby del Training Camp (implementado 2026-08-04)`, `8.2 BUILD-TC-002 — Experience Picker + Entrada Oficial (implementado 2026-08-04)`, `8.5.1 BUILD-TC-005 — alcance entregado (2026-08-05)`, `8.6.3 BUILD-TC-006.3 (2026-08-08) — Simulation: UX en vivo + cierre en la nube`, `8.4 BUILD-TC-004 — Fixture Generation Event (implementado 2026-08-05)`, `8.4.1 BUILD-TC-004.2 — Estabilización (implementado 2026-08-05)`?**
+  _High betweenness centrality (0.009) - this node is a cross-community bridge._
 - **What connects `name`, `version`, `private` to the rest of the system?**
-  _795 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _757 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `leagues.js` be split into smaller, more focused modules?**
+  _Cohesion score 0.14616755793226383 - nodes in this community are weakly interconnected._
 - **Should `useLanguage` be split into smaller, more focused modules?**
-  _Cohesion score 0.055658627087198514 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06435498089920658 - nodes in this community are weakly interconnected._
 - **Should `reconciliation/index.js` be split into smaller, more focused modules?**
   _Cohesion score 0.09525899912203688 - nodes in this community are weakly interconnected._
-- **Should `useTrainingCamp.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.058823529411764705 - nodes in this community are weakly interconnected._

@@ -7,10 +7,12 @@ const NAV_ITEMS = [
   { id: 'league',      label: 'Liga',         icon: '⚙️' },
 ]
 
-export default function BottomNav({ activePage, onNavigate, isSuperAdmin }) {
+export default function BottomNav({ activePage, onNavigate, isSuperAdmin, isPlatformAdmin }) {
   const navItems = isSuperAdmin
     ? [...NAV_ITEMS, { id: 'superadmin', label: 'Admin', icon: '👑' }]
-    : NAV_ITEMS
+    : isPlatformAdmin
+      ? [...NAV_ITEMS, { id: 'platform', label: 'Admin', icon: '🛰️' }]
+      : NAV_ITEMS
 
   return (
     <nav className={styles.nav}>

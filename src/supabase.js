@@ -712,4 +712,35 @@ export const platformApi = {
       error,
     }
   },
+
+  // BUILD-SUP-005 — Reglas de uso del API (pestaña 'api', read-only).
+  // Consulta en vivo de la configuración de cooldowns (sync_cooldown_config,
+  // RLS lectura autenticado), el budget diario por proveedor (api_budget, RLS
+  // platform admins) y el historial reciente de sync_runs (RLS platform admins).
+  // El cron ('*/3') NO es consultable por REST (schema interno cron.job) y se
+  // documenta como constante en el dominio (CRON_REFERENCE).
+  apiConfig: async () => {
+    const [cooldownsRes, budgetRes, runsRes] = await Promise.all([
+      supabase.from('sync_cooldown_config').select('*'),
+      supabase
+        .from('api_budget')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(30),
+      supabase
+        .from('sync_runs')
+        .select('*')
+        .order('started_at', { ascending: false })
+        .limit(50),
+    ])
+    const error = cooldownsRes.error || budgetRes.error || runsRes.error
+    return {
+      data: {
+        cooldowns: cooldownsRes.data || [],
+        budget: budgetRes.data || [],
+        runs: runsRes.data || [],
+      },
+      error,
+    }
+  },
 }
