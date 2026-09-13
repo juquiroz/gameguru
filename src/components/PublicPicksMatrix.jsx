@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { leagueGamesApi, picksApi, leaguesApi } from '../supabase'
-import { getCurrentWeek } from '../utils/dates'
+import { getCurrentWeek, isGameLocked } from '../utils/dates'
 import { calcStreak } from '../utils/standings'
 import TeamLogo from './TeamLogo'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
@@ -9,8 +9,10 @@ const TOTAL_WEEKS = 18
 
 // Matriz de picks de todos los participantes para comparar los juegos de cada
 // miembro. Se reutiliza en la ruta Picks Públicos y embebida (colapsable) en la
-// Tabla de Posiciones (BUILD-017-E).
-export default function PublicPicksMatrix({ league }) {
+// Tabla de Posiciones (BUILD-017-E). BUILD-017-H: mientras la semana en juego
+// siga abierta y el usuario NO haya enviado sus propios picks de esa semana,
+// la matriz queda bloqueada (evita copiar los picks ajenos antes de participar).
+export default function PublicPicksMatrix({ league, user }) {
   const [activeWeek, setActiveWeek] = useState(1)
   const [games, setGames] = useState([])
   const [picks, setPicks] = useState([])
@@ -19,6 +21,8 @@ export default function PublicPicksMatrix({ league }) {
   const syncedRef = useRef(false)
   const memberUserIds = members.map(m => m.user_id)
   const { displayMap } = useLeagueIdentity(league, memberUserIds)
+
+  const activeGames = games.filter(g => g.active !== false)
 
   const loadData = useCallback(async () => {
     if (!league) return
@@ -39,23 +43,28 @@ export default function PublicPicksMatrix({ league }) {
   // Sync activeWeek a la semana en juego, una sola vez al cargar los partidos
   // (después el usuario puede navegar las pestañas libremente). BUILD-017-D.
   useEffect(() => {
-    if (games.length === 0 || syncedRef.current) return
-    const weeks = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
+    if (activeGames.length === 0 || syncedRef.current) return
+    const weeks = [...new Set(activeGames.map(g => g.week))].sort((a, b) => a - b)
     if (weeks.length === 0) return
     syncedRef.current = true
-    const current = getCurrentWeek(games)
+    const current = getCurrentWeek(activeGames)
     setActiveWeek(current != null && weeks.includes(current) ? current : weeks[0])
-  }, [games])
+  }, [activeGames])
 
-  const weekGames = games
-    .filter(g => g.active !== false && g.week === activeWeek)
+  // BUILD-017-H: la semana en juego y si el usuario ya envió sus picks.
+  const currentWeek = getCurrentWeek(activeGames)
+  const currentWeekOpen = currentWeek != null && activeGames.some(g => g.week === currentWeek && !isGameLocked(g))
+  const myWeekPick = picks.some(p => p.user_id === user?.id && p.week === currentWeek)
+  const blockedPicks = !!user?.id && currentWeekOpen && !myWeekPick
+
+  const weekGames = activeGames
     .sort((a, b) => {
       const ta = a.game_time || ''
       const tb = b.game_time || ''
       return ta < tb ? -1 : ta > tb ? 1 : 0
     })
 
-  const weeksWithGames = [...new Set(games.filter(g => g.active !== false).map(g => g.week))].sort((a, b) => a - b)
+  const weeksWithGames = [...new Set(activeGames.map(g => g.week))].sort((a, b) => a - b)
   const weekList = weeksWithGames.length > 0 ? weeksWithGames : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
 
   const weekPicks = picks.filter(p => p.week === activeWeek)
@@ -98,6 +107,21 @@ export default function PublicPicksMatrix({ league }) {
 
   if (members.length === 0) {
     return <div className="empty-state"><div className="big">👥</div>Aún no hay miembros en esta liga.</div>
+  }
+
+  // BUILD-017-H: sin picks propios de la semana en juego no se muestran los de
+  // los demás (ajeno a la semana bloqueada o ya cerrada).
+  if (blockedPicks) {
+    return (
+      <div className="empty-state" style={{ padding: '1.25rem', textAlign: 'center' }}>
+        <div className="big">🔒</div>
+        Envía tus picks de la Semana {currentWeek} para poder ver los picks de los demás.
+        <br />
+        <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
+          Una vez que guardes tus picks de esta semana, esta sección se habilita.
+        </span>
+      </div>
+    )
   }
 
   return (
