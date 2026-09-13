@@ -116,18 +116,13 @@ export function useDashboardData({ user, myLeagues, currentLeague }) {
         displayMap = {}
         for (const uid of Object.keys(identityMap)) displayMap[uid] = identityMap[uid].display
       }
-      // BUILD-017-B: joined_at por usuario para que los juegos ya cerrados al
-      // unirse cuenten como fallidos en los standings de la semana bloqueada.
-      const joinedAt = {}
-      ;(membersRes.data || []).forEach(m => {
-        if (m.joined_at) joinedAt[m.user_id] = new Date(m.joined_at).getTime()
-      })
+      // BUILD-017-G2: juego cerrado sin pick = fallido para todos (sin joinedAt).
       const weekGames = (sourceGames || []).filter(g => g.week === lastLockedWeek)
       const scored = weekGames.filter(g => g.finished && g.result)
       if (active) {
-        // BUILD-017-G: se pasan todos los juegos de la semana para que los
-        // pre-cerrados sin resultado cuenten como fallido para quien entró tarde.
-        setStandings(allPicks && scored.length ? calcStandings(allPicks, weekGames, displayMap, { joinedAt }) : [])
+        // BUILD-017-G2: se pasan todos los juegos de la semana para que los
+        // cerrados sin result cuenten como fallido (kickoff ya vencido).
+        setStandings(allPicks && scored.length ? calcStandings(allPicks, weekGames, displayMap) : [])
       }
     })()
     return () => { active = false }

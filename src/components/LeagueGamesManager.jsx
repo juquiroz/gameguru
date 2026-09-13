@@ -315,10 +315,7 @@ export default function LeagueGamesManager({ league, user, readOnly = false }) {
         ) : (
           <div className={styles.gamesList}>
             {leagueWeekGames.map(g => {
-              const hasResult = g.finished && (
-                g.result ||
-                (g.home_score != null && g.away_score != null)
-              )
+              const hasResult = !!(g.result || (g.home_score != null && g.away_score != null))
               const editing = !readOnly && resultForm === g.id
               return (
                 <div

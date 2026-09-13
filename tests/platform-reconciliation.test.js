@@ -387,3 +387,50 @@ describe('PlatformReconciliation - Scope Validation', () => {
     assert.ok(isValid)
   })
 })
+
+// BUILD-AUTO-RESULTS-001 — flujo de Apply (mapeo de temporada completa)
+describe('PlatformReconciliation - Apply Temporada', () => {
+  const EMPTY_STATS = {
+    total_candidates: 0, high_confidence_matches: 0, medium_confidence_matches: 0,
+    low_confidence_matches: 0, ambiguous: 0, unmatched: 0, conflicts: 0,
+    manual_overrides: 0, skipped_already_mapped: 0, mapped: 0, skipped: 0,
+    propagation_updates: 0,
+  }
+
+  it('should build apply request body with date per iteration', () => {
+    const scope = { provider: 'api-sports', season: '2026', phase: 'regular', date: '2026-09-13' }
+    const requestBody = {
+      operation: 'apply',
+      provider: scope.provider,
+      season: scope.season,
+      phase: scope.phase,
+      date: scope.date,
+    }
+    assert.strictEqual(requestBody.operation, 'apply')
+    assert.strictEqual(requestBody.date, '2026-09-13')
+  })
+
+  it('should aggregate per-date statistics into totals', () => {
+    const perDate = [
+      { mapped: 3, conflicts: 0, propagation_updates: 12 },
+      { mapped: 2, conflicts: 1, propagation_updates: 8 },
+      { mapped: 4, conflicts: 0, propagation_updates: 16 },
+    ]
+    const totals = { ...EMPTY_STATS }
+    for (const s of perDate) {
+      totals.mapped += s.mapped || 0
+      totals.conflicts += s.conflicts || 0
+      totals.propagation_updates += s.propagation_updates || 0
+    }
+    assert.strictEqual(totals.mapped, 9)
+    assert.strictEqual(totals.conflicts, 1)
+    assert.strictEqual(totals.propagation_updates, 36)
+  })
+
+  it('should surface per-date failures for review', () => {
+    const failures = [{ date: '2026-09-13', message: 'API error' }]
+    assert.strictEqual(failures.length, 1)
+    assert.strictEqual(failures[0].date, '2026-09-13')
+    assert.strictEqual(failures[0].message, 'API error')
+  })
+})

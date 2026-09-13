@@ -105,6 +105,9 @@
 }
 
 .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
@@ -120,6 +123,15 @@
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 4px 12px rgba(245, 166, 35, 0.3);
+}
+
+.buttonApply {
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.buttonApply:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
 }
 
 .button:hover:not(:disabled) {

@@ -7,6 +7,11 @@ import LeagueIdentity from '../components/LeagueIdentity'
 import PublicPicksMatrix from '../components/PublicPicksMatrix'
 import { canManageLeague } from '../domains/platform'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
+
+// BUILD-AUTO-RESULTS-002: cada 90 s, si la pestaña está visible, se re-leen
+// los datos (scores/finished vienen del auto-sync server-side) sin recargar.
+const AUTO_REFRESH_MS = 90 * 1000
 
 export default function Leaderboard({ user, league, onNavigate }) {
   // Default por fechas: antes de arrancar la temporada muestra la semana 1;
@@ -20,8 +25,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
   const [weekFinished, setWeekFinished] = useState(false)
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState(null)
-  // BUILD-017-B: joined_at por usuario (juegos pre-cerrados → fallidos).
-  const joinedAtRef = useRef({})
+  // BUILD-017-G2: juego cerrado sin pick = fallido para todos (sin joinedAt).
   // BUILD-017-E: matriz de picks de todos, expandible en la misma página
   // (antes navegaba a otra ruta). Si el usuario aprieta "Ver Picks Públicos"
   // desde la página de Picks, se llega acá con la matriz ya abierta.
@@ -47,10 +51,12 @@ export default function Leaderboard({ user, league, onNavigate }) {
     sessionStorage.removeItem('gg.showPicks')
   }, [])
 
-  const loadStandings = useCallback(async () => {
+  // BUILD-AUTO-RESULTS-002: el refresh periódico no debe borrar la tabla que
+  // ya se ve (silent evita el spinner de carga y el blank-out).
+  const loadStandings = useCallback(async (silent = false) => {
     if (!league) return
-    setLoading(true)
-    setMsg(null)
+    if (!silent) setLoading(true)
+    if (!silent) setMsg(null)
 
     // Get league members (always)
     const { data: memberData } = await leaguesApi.getMembers(league.id)
@@ -62,26 +68,21 @@ export default function Leaderboard({ user, league, onNavigate }) {
         username: displayMap[m.user_id] || m.user_id.slice(0, 8),
         role: m.role,
       })))
-      // BUILD-017-B: joined_at por usuario para que los juegos ya cerrados al
-      // unirse cuenten como fallidos en los standings.
-      joinedAtRef.current = {}
-      memberData.forEach(m => {
-        if (m.joined_at) joinedAtRef.current[m.user_id] = new Date(m.joined_at).getTime()
-      })
     } else {
       setMemberUserIds([])
       setMembers([])
-      joinedAtRef.current = {}
     }
 
     // Get games for this league
     const { data: games, error: gErr } = await leagueGamesApi.getForLeague(league.id)
-    if (gErr) { setMsg('Error al cargar juegos'); setLoading(false); return }
+    if (gErr) { if (!silent) setMsg('Error al cargar juegos'); setLoading(false); return }
 
     if (!games?.length) {
-      setWeeks([])
-      setRows([])
-      setWeekFinished(false)
+      if (!silent) {
+        setWeeks([])
+        setRows([])
+        setWeekFinished(false)
+      }
       setLoading(false)
       return
     }
@@ -108,10 +109,10 @@ export default function Leaderboard({ user, league, onNavigate }) {
       }
 
       const { data: allPicks, error: pErr } = await picksApi.getAllForLeague(league.id)
-      if (pErr) { setMsg('Error al cargar picks'); setRows([]); setLoading(false); return }
+      if (pErr) { if (!silent) setMsg('Error al cargar picks'); if (!silent) setRows([]); setLoading(false); return }
 
       if (!allPicks?.length) {
-        setRows([])
+        if (!silent) setRows([])
         setLoading(false)
         return
       }
@@ -121,7 +122,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
       // BUILD-017-G: se pasan TODOS los juegos (no solo los con resultado)
       // para que los fallidos de quien entró tarde cuenten aunque el juego ya
       // haya pasado y todavía no tenga resultado cargado.
-      const sorted = calcStandings(allPicks, games, displayMap, { joinedAt: joinedAtRef.current })
+      const sorted = calcStandings(allPicks, games, displayMap)
       setRows(sorted)
       // BUILD-017-F: racha global sobre todos los juegos finalizados.
       setStreaks(calcStreaks(allPicks, games, sorted.map(r => r.userId)))
@@ -137,12 +138,12 @@ export default function Leaderboard({ user, league, onNavigate }) {
     setWeekFinished(finished)
 
     const { data: picks, error: pErr } = await picksApi.getLeaderboard(league.id, week)
-    if (pErr) { setMsg('Error al cargar picks'); setRows([]); setLoading(false); return }
+    if (pErr) { if (!silent) setMsg('Error al cargar picks'); if (!silent) setRows([]); setLoading(false); return }
 
     const scoredGames = weekGames.filter(g => g.finished && g.result)
     if (!picks?.length || !scoredGames.length) {
-      setRows([])
-      setStreaks({})
+      if (!silent) setRows([])
+      if (!silent) setStreaks({})
       setLoading(false)
       return
     }
@@ -151,7 +152,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
     setMemberUserIds(prev => [...new Set([...prev, ...pickUserIds])])
     // BUILD-017-G: se pasan todos los partidos de la semana (no solo los con
     // resultado) para que los pre-cerrados sin resultado cuenten como fallido.
-    const sorted = calcStandings(picks, weekGames, displayMap, { joinedAt: joinedAtRef.current })
+    const sorted = calcStandings(picks, weekGames, displayMap)
     setRows(sorted)
     // BUILD-017-F: la racha es global (todos los partidos finalizados de la
     // liga), aunque la vista sea de una semana puntual.
@@ -161,6 +162,9 @@ export default function Leaderboard({ user, league, onNavigate }) {
   }, [league, activeWeek, displayMap])
 
   useEffect(() => { loadStandings() }, [loadStandings])
+
+  // BUILD-AUTO-RESULTS-002: polling suave; silencioso para no borrar la vista.
+  useAutoRefresh(() => { loadStandings(true) }, AUTO_REFRESH_MS)
 
   if (!league) {
     return (
