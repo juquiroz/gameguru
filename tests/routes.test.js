@@ -154,6 +154,14 @@ describe('resolveNavigationTarget — objetivo del menú en el click', () => {
   })
 })
 
+describe('hashRouter — ruta platformApi (BUILD-SUP-005)', () => {
+  it('#/platform/api → { type: platformApi } round-trip', () => {
+    const r = parseHash('#/platform/api')
+    assert.deepEqual(r, { type: 'platformApi' })
+    assert.strictEqual(buildHash(r), '#/platform/api')
+  })
+})
+
 describe('isMemberOf — membresía real', () => {
   it('miembro exacto', () => {
     assert.ok(isMemberOf([leagueA, leagueB], ID_A))

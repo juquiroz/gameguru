@@ -1,10 +1,10 @@
 import { useLanguage } from '../i18n/context'
 import LanguageSwitch from './LanguageSwitch'
 import ProfileMenu from './ProfileMenu'
-import { navigate, platformReconciliationRoute } from '../router/routes'
+import { navigate, platformReconciliationRoute, platformApiRoute } from '../router/routes'
 import styles from './Topbar.module.css'
 
-export default function Topbar({ user, league, myLeagues, onChangeLeague, onSelectLeague, onLogout, activePage, onNavigate, isSuperAdmin, onCreateNew, onCreateSimulation, route }) {
+export default function Topbar({ user, league, myLeagues, onChangeLeague, onSelectLeague, onLogout, activePage, onNavigate, isSuperAdmin, isPlatformAdmin, onCreateNew, onCreateSimulation, route }) {
   const { t } = useLanguage()
 
   const navItems = [
@@ -54,6 +54,22 @@ export default function Topbar({ user, league, myLeagues, onChangeLeague, onSele
             {item.label}
           </button>
         ))}
+        {isPlatformAdmin && (
+          <button
+            className={`${styles.navBtn} ${styles.adminNav} ${activePage === 'platform' ? styles.active : ''}`}
+            onClick={() => onNavigate('platform')}
+          >
+            🛰️ Admin
+          </button>
+        )}
+        {isPlatformAdmin && (
+          <button
+            className={`${styles.navBtn} ${styles.adminNav} ${activePage === 'platformApi' ? styles.active : ''}`}
+            onClick={() => navigate(platformApiRoute())}
+          >
+            🔌 API
+          </button>
+        )}
         {isSuperAdmin && (
           <button
             className={`${styles.navBtn} ${styles.adminNav} ${activePage === 'superadmin' ? styles.active : ''}`}

@@ -60,9 +60,9 @@
     "semantic_hash": ""
   },
   "src/components/LeagueGamesManager.jsx": {
-    "mtime": 1789336380.0532112,
-    "seen": 1789339042.3662794,
-    "ast_hash": "faa930dfd50d3e394328b58f1a188873",
+    "mtime": 1788749766.1488626,
+    "seen": 1789256653.8399458,
+    "ast_hash": "e144c8fdc9dd87005b42da7fa5c95412",
     "semantic_hash": ""
   },
   "src/components/LeagueIdentity.jsx": {
@@ -210,9 +210,9 @@
     "semantic_hash": "9f7732372586e200ce9e09ada107a796"
   },
   "src/domains/dashboard/hooks/useDashboardData.js": {
-    "mtime": 1789320051.8765476,
-    "seen": 1789339042.368359,
-    "ast_hash": "6c6c13a13292634569f1efb3784205e8",
+    "mtime": 1789178917.3809059,
+    "seen": 1789256653.840925,
+    "ast_hash": "933145c4bfe03856eea6f21c2623de8d",
     "semantic_hash": ""
   },
   "src/domains/dashboard/hooks/useLeagueData.js": {
@@ -456,10 +456,10 @@
     "semantic_hash": "039cad48720d971a68bc1b59c66cb917"
   },
   "src/domains/sports/index.js": {
-    "mtime": 1789332312.3604271,
-    "seen": 1789339042.3706944,
-    "ast_hash": "4c8bd885d2c109a98c470a181792b4c1",
-    "semantic_hash": ""
+    "mtime": 1787540771.0855713,
+    "seen": 1788641808.4508307,
+    "ast_hash": "310b42f92fa3ee56ebc843e8c7d7477c",
+    "semantic_hash": "310b42f92fa3ee56ebc843e8c7d7477c"
   },
   "src/domains/sports/models/index.js": {
     "mtime": 1785638297.0040905,
@@ -480,10 +480,10 @@
     "semantic_hash": "d66d8e4d26c1ec5a30d00d0c006ac84a"
   },
   "src/domains/sports/providers/espn.js": {
-    "mtime": 1789332328.432112,
-    "seen": 1789339042.3709466,
-    "ast_hash": "15a21a3c62779d58cbabee26195b21ab",
-    "semantic_hash": ""
+    "mtime": 1785638297.4870803,
+    "seen": 1788641808.4508352,
+    "ast_hash": "3616a4db71d1ae65e373eb8b9fed3a45",
+    "semantic_hash": "3616a4db71d1ae65e373eb8b9fed3a45"
   },
   "src/domains/sports/reconciliation/audit.js": {
     "mtime": 1787540661.580605,
@@ -798,15 +798,15 @@
     "semantic_hash": "dfed0fa296fd71db83328d635900da1a"
   },
   "src/pages/Leaderboard.jsx": {
-    "mtime": 1789321701.6986876,
-    "seen": 1789339042.3742075,
-    "ast_hash": "ab555a8c5d270a82cfeb41e3b0693cc3",
+    "mtime": 1789178948.3001242,
+    "seen": 1789256653.8443992,
+    "ast_hash": "1eb9f0ae7d500d3d6b19bd8c6ca3ef81",
     "semantic_hash": ""
   },
   "src/pages/LeaguePage.jsx": {
-    "mtime": 1789336384.5802379,
-    "seen": 1789339042.3742096,
-    "ast_hash": "2f4bd8eceda35e0a9eaae608fe7857d8",
+    "mtime": 1789086766.3902926,
+    "seen": 1789256653.8444002,
+    "ast_hash": "b5c6019502ab76eaab49c8ae651f6c12",
     "semantic_hash": ""
   },
   "src/pages/LeagueStandings.jsx": {
@@ -822,9 +822,9 @@
     "semantic_hash": "fb3de4937fe7adce3a6fec8692b0101e"
   },
   "src/pages/Picks.jsx": {
-    "mtime": 1789321640.2864883,
-    "seen": 1789339042.3743,
-    "ast_hash": "0211589dd28bed76b47abf30fa799ec0",
+    "mtime": 1789177292.5235755,
+    "seen": 1789256653.8444397,
+    "ast_hash": "290f19a91a4ac6adf914c6a0416eae62",
     "semantic_hash": ""
   },
   "src/pages/PlatformLeagueDetail.jsx": {
@@ -846,10 +846,10 @@
     "semantic_hash": "c359c2bb4c65f32235f98f0de41cf62b"
   },
   "src/pages/PlatformReconciliation.jsx": {
-    "mtime": 1789334136.385199,
-    "seen": 1789339042.374445,
-    "ast_hash": "9035dd7f5d43121fa867f810a5d2bf3e",
-    "semantic_hash": ""
+    "mtime": 1787542023.1065679,
+    "seen": 1788641808.4509065,
+    "ast_hash": "5ee08c2c6d2915b64910e2fa961bebd9",
+    "semantic_hash": "5ee08c2c6d2915b64910e2fa961bebd9"
   },
   "src/pages/PlatformUserDetail.jsx": {
     "mtime": 1786680715.3971477,
@@ -864,9 +864,9 @@
     "semantic_hash": "89d4f28fc8135cee5a34b8d3cdf63ee1"
   },
   "src/pages/PublicPicks.jsx": {
-    "mtime": 1789315202.8747644,
-    "seen": 1789339042.3745332,
-    "ast_hash": "65d8124d197fd03b91d1c7be32429cc6",
+    "mtime": 1789177243.9600384,
+    "seen": 1789256653.8446777,
+    "ast_hash": "0336f1c0153a557cd58874ee550bee03",
     "semantic_hash": ""
   },
   "src/pages/SuperAdmin.jsx": {
@@ -918,28 +918,28 @@
     "semantic_hash": "9a767208a543df4fd3eaeb5b96de855b"
   },
   "src/utils/standings.js": {
-    "mtime": 1789319970.0741518,
-    "seen": 1789339042.3749413,
-    "ast_hash": "dffdba05fee3c933abc21e9ec471cd3c",
+    "mtime": 1789178909.1817334,
+    "seen": 1789256653.8448703,
+    "ast_hash": "cee0043436a1e58431396ad16edaf720",
     "semantic_hash": ""
   },
   "supabase/functions/reconcile/index.ts": {
-    "mtime": 1789333328.0085351,
-    "seen": 1789339042.3749456,
-    "ast_hash": "da0baad2b1ce8ecc03b4b985ed788c00",
-    "semantic_hash": ""
+    "mtime": 1787540903.561597,
+    "seen": 1788641808.4509215,
+    "ast_hash": "f66bf0fbe5dfb45ddb1f9ea278810991",
+    "semantic_hash": "f66bf0fbe5dfb45ddb1f9ea278810991"
   },
   "supabase/functions/results-sync/index.ts": {
-    "mtime": 1789337535.5454288,
-    "seen": 1789339042.374947,
-    "ast_hash": "3d83e775b5f120cb91a7cd9f82f1d1ee",
-    "semantic_hash": ""
+    "mtime": 1787448359.7720227,
+    "seen": 1788641808.4509225,
+    "ast_hash": "9fc8ef79878d690ad6c8006205463c92",
+    "semantic_hash": "9fc8ef79878d690ad6c8006205463c92"
   },
   "tests/adaptive-sync.test.js": {
-    "mtime": 1789336404.393353,
-    "seen": 1789339042.3749483,
-    "ast_hash": "40e9fc0590aaa549a094f0186db2e248",
-    "semantic_hash": ""
+    "mtime": 1787448021.8014235,
+    "seen": 1788641808.4509237,
+    "ast_hash": "cad0c3819b5c702a46aafac1d89e035b",
+    "semantic_hash": "cad0c3819b5c702a46aafac1d89e035b"
   },
   "tests/apiSportsNfl.test.js": {
     "mtime": 1787365423.620167,
@@ -972,10 +972,10 @@
     "semantic_hash": "e110249b1d556ad13f2ea5ab107474dc"
   },
   "tests/platform-reconciliation.test.js": {
-    "mtime": 1789321730.0657694,
-    "seen": 1789339042.3753302,
-    "ast_hash": "5b4304bd5b4857181ac1dd2bc448af25",
-    "semantic_hash": ""
+    "mtime": 1787542285.5106378,
+    "seen": 1788641808.4509304,
+    "ast_hash": "03dcfb71b7b35205c9917eae190170b8",
+    "semantic_hash": "03dcfb71b7b35205c9917eae190170b8"
   },
   "tests/reconciliation-audit.test.js": {
     "mtime": 1787541094.1945786,
@@ -1050,9 +1050,9 @@
     "semantic_hash": ""
   },
   "src/components/PublicPicksMatrix.jsx": {
-    "mtime": 1789315198.2477195,
-    "seen": 1789339042.3665102,
-    "ast_hash": "b375df2ed383fe36bb6ee882d48161c9",
+    "mtime": 1789177719.5629926,
+    "seen": 1789256653.8400288,
+    "ast_hash": "9a412226b39664c413d465883be8b66e",
     "semantic_hash": ""
   },
   "src/domains/training-camp/autoResults.js": {
@@ -1134,9 +1134,9 @@
     "semantic_hash": ""
   },
   "tests/standings.test.js": {
-    "mtime": 1789320028.2147183,
-    "seen": 1789339042.3757448,
-    "ast_hash": "54233152523fddd70555c6434a875a43",
+    "mtime": 1789178936.2741148,
+    "seen": 1789256653.8454583,
+    "ast_hash": "4927964fe7e2c273b562cdc39c6456dd",
     "semantic_hash": ""
   },
   ".github/workflows/deploy.yml": {
@@ -1146,9 +1146,9 @@
     "semantic_hash": ""
   },
   "DEPLOYMENT.md": {
-    "mtime": 1789332438.0630302,
-    "seen": 1789339042.3759153,
-    "ast_hash": "d8d96a312311c29ea679b42abf442f99",
+    "mtime": 1787429225.1853144,
+    "seen": 1789256653.8455386,
+    "ast_hash": "1d0ef1fa32b475fe5bd5574f5fd0e627",
     "semantic_hash": ""
   },
   "gameguru.md": {
@@ -1377,54 +1377,6 @@
     "mtime": 1786212692.1692967,
     "seen": 1789256653.845599,
     "ast_hash": "771b7008489de070b0a8afbdd57637e7",
-    "semantic_hash": ""
-  },
-  "src/hooks/useAutoRefresh.js": {
-    "mtime": 1789321596.764327,
-    "seen": 1789339042.3735409,
-    "ast_hash": "ec62de63011a2997749e3f0ec52856da",
-    "semantic_hash": ""
-  },
-  "supabase/functions/_shared/espn-nfl.ts": {
-    "mtime": 1789333637.6525729,
-    "seen": 1789339042.3749435,
-    "ast_hash": "c470431e9cb8ceb6f33a817d6836434f",
-    "semantic_hash": ""
-  },
-  "tests/espn-nfl.test.js": {
-    "mtime": 1789332367.8283508,
-    "seen": 1789339042.375192,
-    "ast_hash": "36d1969d89454167d909fd9f60b652a2",
-    "semantic_hash": ""
-  },
-  "tests/fixtures/espn-w1.json": {
-    "mtime": 1789332334.2577858,
-    "seen": 1789339042.3751936,
-    "ast_hash": "512a8587d11303d9cf8c7ab2bd02c1d3",
-    "semantic_hash": ""
-  },
-  "docs/handoffs/2026-09-13-frecuencia-resultados.md": {
-    "mtime": 1789338523.6508932,
-    "seen": 1789339042.375917,
-    "ast_hash": "38244c6b3913d0a76158afd1a9a70f80",
-    "semantic_hash": ""
-  },
-  "docs/incidents/2026-09-13-apply-scores.md": {
-    "mtime": 1789336615.8104212,
-    "seen": 1789339042.3759189,
-    "ast_hash": "e04464b6626c9232a13a1ec845ea6b14",
-    "semantic_hash": ""
-  },
-  "opencode/plans/HANDOFF-PLAN-021.md": {
-    "mtime": 1789333395.929082,
-    "seen": 1789339042.3763893,
-    "ast_hash": "7e86d010d0333de3535cecae831e9b14",
-    "semantic_hash": ""
-  },
-  "opencode/plans/PLAN-021-ESP-NFL-RESULTS.md": {
-    "mtime": 1789331984.7156074,
-    "seen": 1789339042.376626,
-    "ast_hash": "a07935f64b4e3ad2dac5ca3ea40a6be1",
     "semantic_hash": ""
   }
 }

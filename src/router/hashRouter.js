@@ -25,6 +25,7 @@ export function normalizeHash(hash) {
 //   '#/platform/users'      → { type: 'platformUsers' } (SUP-003)
 //   '#/platform/users/ID'   → { type: 'platformUser', userId: 'ID' } (SUP-003)
 //   '#/platform/reconciliation' → { type: 'platformReconciliation' } (SUP-004)
+//   '#/platform/api'         → { type: 'platformApi' } (SUP-005, reglas del API)
 //   '#/training/audit/HASH' → { type: 'audit', hash: 'HASH' } (BUILD-TC-V2, público)
 //   '#picks' (legacy)       → { type: 'legacy', page: 'picks' }
 //   '#/league'              → { type: 'league', leagueId: null, page: 'dashboard' }
@@ -45,6 +46,7 @@ export function parseHash(hash) {
     if (parts[1] === 'leagues' && parts[2]) return { type: 'platformLeague', leagueId: parts[2] }
     if (parts[1] === 'leagues') return { type: 'platformLeagues' }
     if (parts[1] === 'reconciliation') return { type: 'platformReconciliation' }
+    if (parts[1] === 'api') return { type: 'platformApi' }
     return { type: 'platform' }
   }
   if (parts[0] === 'league') {
@@ -69,6 +71,7 @@ export function buildHash(route) {
   if (route.type === 'platformUsers') return '#/platform/users'
   if (route.type === 'platformUser') return `#/platform/users/${route.userId}`
   if (route.type === 'platformReconciliation') return '#/platform/reconciliation'
+  if (route.type === 'platformApi') return '#/platform/api'
   if (route.type === 'audit') return route.hash ? `#/training/audit/${route.hash}` : '#/training/audit'
   if (route.type === 'legacy') return `#${route.page}`
   if (route.type === 'league') {
