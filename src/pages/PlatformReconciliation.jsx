@@ -7,15 +7,32 @@ import styles from './PlatformReconciliation.module.css'
 const DEFAULT_SCOPE = {
   provider: 'api-sports',
   season: '2026',
-  phase: 'preseason',
-  date: '2026-08-24',
+  phase: 'regular',
+  date: '',
+}
+
+const EMPTY_STATS = {
+  total_candidates: 0,
+  high_confidence_matches: 0,
+  medium_confidence_matches: 0,
+  low_confidence_matches: 0,
+  ambiguous: 0,
+  unmatched: 0,
+  conflicts: 0,
+  manual_overrides: 0,
+  skipped_already_mapped: 0,
+  mapped: 0,
+  skipped: 0,
+  propagation_updates: 0,
 }
 
 export default function PlatformReconciliation() {
   const { user } = useAuth()
   const [scope, setScope] = useState(DEFAULT_SCOPE)
   const [loading, setLoading] = useState(false)
+  const [applying, setApplying] = useState(false)
   const [result, setResult] = useState(null)
+  const [resultKind, setResultKind] = useState(null)
   const [error, setError] = useState(null)
 
   const platformRole = platformRoleFromJwt(user)
@@ -33,41 +50,119 @@ export default function PlatformReconciliation() {
     )
   }
 
+  const invokeReconcile = async (operation, date) => {
+    const { data, error: fnError } = await supabase.functions.invoke('reconcile', {
+      body: {
+        operation,
+        provider: scope.provider,
+        season: scope.season,
+        phase: scope.phase,
+        date,
+      },
+    })
+
+    if (fnError) {
+      if (fnError.context?.json?.error === 'Invalid or expired token') {
+        throw new Error('Sesión expirada. Vuelve a iniciar sesión.')
+      }
+      if (fnError.context?.status === 403) {
+        throw new Error('No tienes permisos para ejecutar Provider Reconciliation.')
+      }
+      throw new Error(fnError.message || 'Error al invocar reconcile')
+    }
+
+    if (data?.error) {
+      throw new Error(data.error)
+    }
+
+    return data
+  }
+
+  const loadGameDates = async () => {
+    const { data, error: queryError } = await supabase
+      .from('master_games')
+      .select('game_time')
+      .eq('sport', 'NFL')
+      .eq('season', scope.season)
+      .eq('phase', scope.phase)
+      .not('game_time', 'is', null)
+
+    if (queryError) {
+      throw new Error(`No se pudieron leer las fechas del calendario: ${queryError.message}`)
+    }
+
+    const dates = [...new Set((data || []).map(g => String(g.game_time).slice(0, 10)))]
+    return dates.filter(Boolean).sort()
+  }
+
   const handleDryRun = async () => {
+    if (!scope.date) {
+      setError('Selecciona una fecha para el dry run.')
+      return
+    }
     setLoading(true)
     setError(null)
     setResult(null)
+    setResultKind(null)
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('reconcile', {
-        body: {
-          operation: 'dry_run',
-          provider: scope.provider,
-          season: scope.season,
-          phase: scope.phase,
-          date: scope.date,
-        },
-      })
-
-      if (fnError) {
-        if (fnError.context?.json?.error === 'Invalid or expired token') {
-          throw new Error('Sesión expirada. Vuelve a iniciar sesión.')
-        }
-        if (fnError.context?.status === 403) {
-          throw new Error('No tienes permisos para ejecutar Provider Reconciliation.')
-        }
-        throw new Error(fnError.message || 'Error al invocar reconcile')
-      }
-
-      if (data?.error) {
-        throw new Error(data.error)
-      }
-
+      const data = await invokeReconcile('dry_run', scope.date)
       setResult(data)
+      setResultKind('dry_run')
     } catch (err) {
       setError(err.message || 'Error inesperado')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleApply = async () => {
+    const confirmed = window.confirm(
+      'Esto MAPEARÁ los partidos del calendario maestro a API-Sports y actualizará ' +
+      'league_games para TODA la temporada. Esta acción no se puede deshacer desde la UI.\n\n' +
+      '¿Continuar?'
+    )
+    if (!confirmed) return
+
+    setApplying(true)
+    setError(null)
+    setResult(null)
+    setResultKind(null)
+
+    try {
+      const dates = await loadGameDates()
+      if (dates.length === 0) {
+        throw new Error('No hay fechas en el calendario maestro para este scope.')
+      }
+
+      const totals = { ...EMPTY_STATS }
+      const failures = []
+      const byDate = []
+
+      for (const date of dates) {
+        try {
+          const data = await invokeReconcile('apply', date)
+          const stats = data?.statistics || {}
+          for (const key of Object.keys(totals)) {
+            totals[key] += stats[key] || 0
+          }
+          byDate.push({ date, ok: true, ...stats })
+        } catch (err) {
+          failures.push({ date, message: err.message })
+          byDate.push({ date, ok: false, message: err.message })
+        }
+      }
+
+      setResult({
+        statistics: totals,
+        byDate,
+        failures,
+      })
+      setResultKind('apply')
+    } catch (err) {
+      setError(err.message || 'Error inesperado')
+    } finally {
+      setApplying(false)
     }
   }
 
@@ -91,6 +186,8 @@ export default function PlatformReconciliation() {
     return <span className={`${styles.badge} ${styles.badgeDefault}`}>{status}</span>
   }
 
+  const busy = loading || applying
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -100,12 +197,14 @@ export default function PlatformReconciliation() {
         </div>
       </div>
 
-      <div className={styles.warning}>
-        <div className={styles.warningIcon}>⚠️</div>
-        <div className={styles.warningText}>
-          <strong>DRY RUN</strong> — No se modificarán partidos. Solo se evaluarán candidatos.
+      {resultKind !== 'apply' && (
+        <div className={styles.warning}>
+          <div className={styles.warningIcon}>⚠️</div>
+          <div className={styles.warningText}>
+            <strong>DRY RUN</strong> — No se modificarán partidos. Solo se evaluarán candidatos.
+          </div>
         </div>
-      </div>
+      )}
 
       <div className={styles.scopeSection}>
         <h3 className={styles.sectionTitle}>Scope de Ejecución</h3>
@@ -116,7 +215,7 @@ export default function PlatformReconciliation() {
               className={styles.select}
               value={scope.provider}
               onChange={(e) => handleScopeChange('provider', e.target.value)}
-              disabled={loading}
+              disabled={busy}
             >
               <option value="api-sports">API-Sports (NFL)</option>
             </select>
@@ -130,7 +229,7 @@ export default function PlatformReconciliation() {
               value={scope.season}
               onChange={(e) => handleScopeChange('season', e.target.value)}
               placeholder="2026"
-              disabled={loading}
+              disabled={busy}
             />
           </div>
 
@@ -140,7 +239,7 @@ export default function PlatformReconciliation() {
               className={styles.select}
               value={scope.phase}
               onChange={(e) => handleScopeChange('phase', e.target.value)}
-              disabled={loading}
+              disabled={busy}
             >
               <option value="preseason">Preseason</option>
               <option value="regular">Regular</option>
@@ -155,7 +254,7 @@ export default function PlatformReconciliation() {
               className={styles.input}
               value={scope.date}
               onChange={(e) => handleScopeChange('date', e.target.value)}
-              disabled={loading}
+              disabled={busy}
             />
           </div>
         </div>
@@ -165,9 +264,17 @@ export default function PlatformReconciliation() {
         <button
           className={styles.button}
           onClick={handleDryRun}
-          disabled={loading}
+          disabled={busy}
         >
           {loading ? 'Ejecutando...' : 'Ejecutar Dry Run'}
+        </button>
+
+        <button
+          className={`${styles.button} ${styles.buttonApply}`}
+          onClick={handleApply}
+          disabled={busy}
+        >
+          {applying ? 'Aplicando mapeo...' : 'Aplicar mapeo de temporada'}
         </button>
       </div>
 
@@ -180,8 +287,10 @@ export default function PlatformReconciliation() {
 
       {result && (
         <div className={styles.results}>
-          <h3 className={styles.sectionTitle}>Resultados del Dry Run</h3>
-          
+          <h3 className={styles.sectionTitle}>
+            {resultKind === 'apply' ? 'Resultados del Aplicar' : 'Resultados del Dry Run'}
+          </h3>
+
           <div className={styles.statsGrid}>
             <div className={styles.statCard}>
               <div className={styles.statValue}>{result.statistics?.total_candidates || 0}</div>
@@ -202,6 +311,13 @@ export default function PlatformReconciliation() {
               <div className={styles.statValue}>{result.statistics?.low_confidence_matches || 0}</div>
               <div className={styles.statLabel}>Low Confidence</div>
             </div>
+
+            {resultKind === 'apply' && (
+              <div className={styles.statCard}>
+                <div className={styles.statValue}>{result.statistics?.mapped || 0}</div>
+                <div className={styles.statLabel}>Mapeados</div>
+              </div>
+            )}
 
             <div className={styles.statCard}>
               <div className={styles.statValue}>{result.statistics?.ambiguous || 0}</div>
@@ -224,10 +340,55 @@ export default function PlatformReconciliation() {
             </div>
 
             <div className={styles.statCard}>
-              <div className={styles.statValue}>{result.statistics?.skipped_already_mapped || 0}</div>
-              <div className={styles.statLabel}>Already Mapped</div>
+              <div className={styles.statValue}>
+                {resultKind === 'apply'
+                  ? (result.statistics?.skipped || 0)
+                  : (result.statistics?.skipped_already_mapped || 0)}
+              </div>
+              <div className={styles.statLabel}>Skipped</div>
             </div>
+
+            {resultKind === 'apply' && (
+              <div className={styles.statCard}>
+                <div className={styles.statValue}>{result.statistics?.propagation_updates || 0}</div>
+                <div className={styles.statLabel}>league_games actualizados</div>
+              </div>
+            )}
           </div>
+
+          {resultKind === 'apply' && result.byDate && result.byDate.length > 0 && (
+            <div className={styles.detailsSection}>
+              <h4 className={styles.detailsTitle}>Resumen por fecha</h4>
+              <div className={styles.detailsTable}>
+                <div className={styles.tableHeader}>
+                  <span>Fecha</span>
+                  <span>Resultado</span>
+                  <span>Mapeados</span>
+                  <span>Conflicts</span>
+                  <span>league_games</span>
+                </div>
+                {result.byDate.map((row, idx) => (
+                  <div key={idx} className={styles.tableRow}>
+                    <span>{row.date}</span>
+                    <span>{row.ok ? <span className={styles.badgeSuccess + ' ' + styles.badge}>OK</span> : <span className={styles.badgeError + ' ' + styles.badge}>ERROR</span>}</span>
+                    <span>{row.mapped || 0}</span>
+                    <span>{row.conflicts || 0}</span>
+                    <span>{row.propagation_updates || 0}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {resultKind === 'apply' && result.failures && result.failures.length > 0 && (
+            <div className={styles.error}>
+              <div className={styles.errorIcon}>❌</div>
+              <div className={styles.errorText}>
+                {result.failures.length} fecha(s) con error:{' '}
+                {result.failures.map(f => `${f.date} (${f.message})`).join('; ')}
+              </div>
+            </div>
+          )}
 
           {result.details && result.details.length > 0 && (
             <div className={styles.detailsSection}>
@@ -263,14 +424,26 @@ export default function PlatformReconciliation() {
             </div>
           )}
 
-          <div className={styles.noMutation}>
-            <div className={styles.noMutationIcon}>✅</div>
-            <div className={styles.noMutationText}>
-              <strong>No changes applied.</strong> Este dry run no modificó datos.
+          {resultKind === 'dry_run' && (
+            <div className={styles.noMutation}>
+              <div className={styles.noMutationIcon}>✅</div>
+              <div className={styles.noMutationText}>
+                <strong>No changes applied.</strong> Este dry run no modificó datos.
+              </div>
             </div>
-          </div>
+          )}
 
-          {result.duration_ms && (
+          {resultKind === 'apply' && (
+            <div className={styles.noMutation}>
+              <div className={styles.noMutationIcon}>✅</div>
+              <div className={styles.noMutationText}>
+                <strong>Apply completado.</strong> Los partidos mapeados quedaron con provider
+                API-Sports y sus resultados se propagarán automáticamente.
+              </div>
+            </div>
+          )}
+
+          {result.duration_ms && resultKind === 'dry_run' && (
             <div className={styles.duration}>
               Duración: {result.duration_ms}ms
             </div>

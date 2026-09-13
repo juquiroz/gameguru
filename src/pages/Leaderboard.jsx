@@ -7,6 +7,11 @@ import LeagueIdentity from '../components/LeagueIdentity'
 import PublicPicksMatrix from '../components/PublicPicksMatrix'
 import { canManageLeague } from '../domains/platform'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
+
+// BUILD-AUTO-RESULTS-002: cada 90 s, si la pestaña está visible, se re-leen
+// los datos (scores/finished vienen del auto-sync server-side) sin recargar.
+const AUTO_REFRESH_MS = 90 * 1000
 
 export default function Leaderboard({ user, league, onNavigate }) {
   // Default por fechas: antes de arrancar la temporada muestra la semana 1;
@@ -46,10 +51,12 @@ export default function Leaderboard({ user, league, onNavigate }) {
     sessionStorage.removeItem('gg.showPicks')
   }, [])
 
-  const loadStandings = useCallback(async () => {
+  // BUILD-AUTO-RESULTS-002: el refresh periódico no debe borrar la tabla que
+  // ya se ve (silent evita el spinner de carga y el blank-out).
+  const loadStandings = useCallback(async (silent = false) => {
     if (!league) return
-    setLoading(true)
-    setMsg(null)
+    if (!silent) setLoading(true)
+    if (!silent) setMsg(null)
 
     // Get league members (always)
     const { data: memberData } = await leaguesApi.getMembers(league.id)
@@ -68,12 +75,14 @@ export default function Leaderboard({ user, league, onNavigate }) {
 
     // Get games for this league
     const { data: games, error: gErr } = await leagueGamesApi.getForLeague(league.id)
-    if (gErr) { setMsg('Error al cargar juegos'); setLoading(false); return }
+    if (gErr) { if (!silent) setMsg('Error al cargar juegos'); setLoading(false); return }
 
     if (!games?.length) {
-      setWeeks([])
-      setRows([])
-      setWeekFinished(false)
+      if (!silent) {
+        setWeeks([])
+        setRows([])
+        setWeekFinished(false)
+      }
       setLoading(false)
       return
     }
@@ -100,10 +109,10 @@ export default function Leaderboard({ user, league, onNavigate }) {
       }
 
       const { data: allPicks, error: pErr } = await picksApi.getAllForLeague(league.id)
-      if (pErr) { setMsg('Error al cargar picks'); setRows([]); setLoading(false); return }
+      if (pErr) { if (!silent) setMsg('Error al cargar picks'); if (!silent) setRows([]); setLoading(false); return }
 
       if (!allPicks?.length) {
-        setRows([])
+        if (!silent) setRows([])
         setLoading(false)
         return
       }
@@ -129,12 +138,12 @@ export default function Leaderboard({ user, league, onNavigate }) {
     setWeekFinished(finished)
 
     const { data: picks, error: pErr } = await picksApi.getLeaderboard(league.id, week)
-    if (pErr) { setMsg('Error al cargar picks'); setRows([]); setLoading(false); return }
+    if (pErr) { if (!silent) setMsg('Error al cargar picks'); if (!silent) setRows([]); setLoading(false); return }
 
     const scoredGames = weekGames.filter(g => g.finished && g.result)
     if (!picks?.length || !scoredGames.length) {
-      setRows([])
-      setStreaks({})
+      if (!silent) setRows([])
+      if (!silent) setStreaks({})
       setLoading(false)
       return
     }
@@ -153,6 +162,9 @@ export default function Leaderboard({ user, league, onNavigate }) {
   }, [league, activeWeek, displayMap])
 
   useEffect(() => { loadStandings() }, [loadStandings])
+
+  // BUILD-AUTO-RESULTS-002: polling suave; silencioso para no borrar la vista.
+  useAutoRefresh(() => { loadStandings(true) }, AUTO_REFRESH_MS)
 
   if (!league) {
     return (

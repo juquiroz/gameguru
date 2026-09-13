@@ -8,6 +8,7 @@ import { getLeagueTimezone } from '../domains/league'
 import { canManageLeague } from '../domains/platform'
 import { useLeagueIdentity } from '../domains/league/hooks/useLeagueIdentity'
 import { usePicks } from '../hooks/usePicks'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import styles from './Picks.module.css'
 
 export default function Picks({ user, league, onNavigate }) {
@@ -22,22 +23,28 @@ export default function Picks({ user, league, onNavigate }) {
   const { picks, submitted, saving, selectPick, submitPicks } = usePicks(user, league, activeWeek)
 
   // Load league games from Supabase
-  const loadLeagueGames = useCallback(async () => {
+  // BUILD-AUTO-RESULTS-002: silent = refresh periódico sin spinner para que
+  // los resultados (scores) se reflejen sin recargar la página.
+  const loadLeagueGames = useCallback(async (silent = false) => {
     if (!league) return
-    setLoadingGames(true)
+    if (!silent) setLoadingGames(true)
     const { data, error } = await leagueGamesApi.getForLeague(league.id)
     if (error) {
       console.warn('Error al cargar league_games:', error)
-      setLeagueGames(null)
+      if (!silent) setLeagueGames(null)
     } else if (data?.length) {
       setLeagueGames(data)
     } else {
-      setLeagueGames(null)
+      if (!silent) setLeagueGames(null)
     }
-    setLoadingGames(false)
+    if (!silent) setLoadingGames(false)
   }, [league])
 
   useEffect(() => { loadLeagueGames() }, [loadLeagueGames])
+
+  // BUILD-AUTO-RESULTS-002: polling suave (~90 s) para que aparezcan solos los
+  // resultados que el auto-sync server-side vaya propagando a league_games.
+  useAutoRefresh(() => { loadLeagueGames(true) }, 90 * 1000)
 
   // Determine which game source to use
   const useDynamic = leagueGames && leagueGames.length > 0
