@@ -54,8 +54,13 @@ export function normalize(event: any) {
   const statusName = comp.status?.type?.name || event.status?.type?.name || 'STATUS_SCHEDULED'
   const status = STATUS_MAP[statusName] || 'scheduled'
   const finished = status === 'final'
-  const hs = toNumScore(home?.score)
-  const as_ = toNumScore(away?.score)
+  const isLive = status === 'live'
+  // PREEVENT 0-0 (scheduled/pre-game → ESPN manda score '0' o ''): los scores
+  // solo tienen sentido cuando el juego ARRANCÓ. Se persisten únicamente para
+  // partidos FINAL (resultado) o LIVE (parcial). Para cualquier otro estado el
+  // score queda NULL, para que la UI no muestre "0 – 0" en juegos sin jugar.
+  const hs = finished || isLive ? toNumScore(home?.score) : null
+  const as_ = finished || isLive ? toNumScore(away?.score) : null
   let result: string | null = null
   if (hs !== null && as_ !== null && finished) result = hs > as_ ? hAbbr : as_ > hs ? aAbbr : null
 

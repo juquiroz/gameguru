@@ -268,6 +268,65 @@ describe('API consumption estimates', () => {
   })
 })
 
+// ── DATE KEY (US/EASTERN) ─────────────────────────────────────────────────────
+// ESPN filtra scoreboard por `dates=YYYYMMDD` en la fecha local de EE.UU.
+// (America/New_York), pero game_time se almacena en UTC. Un juego nocturno
+// (Monday/Sunday Night: 8:15pm ET = 00:15Z del día siguiente) caería en el
+// día UTC equivocado y nunca aparecería en la consulta.
+describe('toDateKey (US/Eastern)', () => {
+  const etDateFmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  const toDateKey = (gameTime) => {
+    const s = String(gameTime || '')
+    if (s.length <= 10) return s.slice(0, 10)
+    const d = new Date(s)
+    if (!isNaN(d.getTime())) return etDateFmt.format(d)
+    return s.slice(0, 10)
+  }
+
+  it('Monday Night DEN@KC (00:15Z) cae en el día ET del juego', () => {
+    assert.strictEqual(toDateKey('2026-09-15T00:15Z'), '2026-09-14')
+  })
+
+  it('Sunday Night DAL@NYG (00:20Z) cae en el día ET del juego', () => {
+    assert.strictEqual(toDateKey('2026-09-14T00:20Z'), '2026-09-13')
+  })
+
+  it('games de tarde (17:00Z) mantienen la misma fecha', () => {
+    assert.strictEqual(toDateKey('2026-09-13T17:00Z'), '2026-09-13')
+    assert.strictEqual(toDateKey('2026-09-13T20:25Z'), '2026-09-13')
+  })
+
+  it('game_time con formato espacio (sin T) se convierte a ET', () => {
+    assert.strictEqual(toDateKey('2026-09-11 00:35:00Z'), '2026-09-10')
+  })
+
+  it('medianoche ET: 03:59Z es día anterior, 04:00Z es el mismo día EDT', () => {
+    assert.strictEqual(toDateKey('2026-09-15T03:59Z'), '2026-09-14')
+    assert.strictEqual(toDateKey('2026-09-15T04:00Z'), '2026-09-15')
+  })
+
+  it('valor no parseable conserva el fallback por slice', () => {
+    assert.strictEqual(toDateKey('2026-09-13'), '2026-09-13')
+    assert.strictEqual(toDateKey(null), '')
+  })
+
+  it('dedupe: fecha clave en ET, 1 request por día local', () => {
+    const games = [
+      { game_time: '2026-09-14T20:00Z' }, // tarde ET
+      { game_time: '2026-09-15T00:15Z' }, // MNF noche ET
+      { game_time: '2026-09-15T02:00Z' }, // 10pm ET mismo día
+    ]
+    const dates = [...new Set(games.map(g => toDateKey(g.game_time)))]
+    assert.strictEqual(dates.length, 1)
+    assert.strictEqual(dates[0], '2026-09-14')
+  })
+})
+
 // ── RECONCILIATION ───────────────────────────────────────────────────────────
 describe('Reconciliation', () => {
   it('should detect score change', () => {

@@ -419,7 +419,7 @@ SuperAdmin.jsx → carga `master_games` desde `nflSchedule2026.json` → CRUD de
 - Estadísticas: total juegos, semanas.
 
 ### Picks Públicos
-PublicPicks.jsx → tabla de matrix: miembros × juegos bloqueados (de la semana activa). Accesible solo desde botones dentro de Picks o Leaderboard (no desde la navegación principal).
+PublicPicks.jsx → PublicPicksMatrix: tabla de matrix miembros × juegos, con pestañas por semana. La pestaña de la semana activa queda bloqueada si esa semana sigue abierta y el usuario no envió sus picks (BUILD-017-H); las semanas finalizadas se muestran siempre. Accesible solo desde botones dentro de Picks o Leaderboard (no desde la navegación principal).
 
 ---
 
@@ -506,7 +506,7 @@ Genera calendario NFL programático (división, inter-conference, intra-conferen
 
 **Cómo se aplica en el código:**
 - **Standings/posiciones (dashboard)**: `useDashboardData` calcula los standings solo a partir de la **última semana bloqueada** (`lastLockedWeek` = deadline vencido o finalizada). Nunca de la semana abierta → nunca hay agregación de picks pre-cierre. `position`/`correctCount` del usuario derivan de esos standings (semana cerrada).
-- **PublicPicks**: solo muestra picks de juegos bloqueados (`lockedGames`); semanas abiertas muestran estado vacío.
+- **PublicPicks** (BUILD-017-H): la matriz bloquea por **semana activa (pestaña seleccionada)** — esa pestaña solo muestra picks ajenos si la semana ya cerró o el usuario envió sus propios picks (evita copiar antes de participar). Las semanas cerradas/finalizadas se muestran **siempre**, incluso con una semana más nueva abierta (auditoría completa).
 - **Export auditoría** (`Picks.jsx`): el botón solo aparece con `weekLocked`.
 - **Contador de participación (admin)**: muestra `n de total` miembros que ya enviaron (distinct `user_id` de la semana abierta vía `getLeaderboard`), **sin nombres**. Solo admin, solo mientras la semana está abierta.
 - **Copiar recordatorio (admin)**: botón en el dashboard que copia un mensaje con liga/semana/hora de cierre, sin identidades ni progreso.

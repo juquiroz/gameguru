@@ -203,10 +203,10 @@ async function schedulerDecision(supa: any, now: Date, scope: any, isManual: boo
     }
   }
 
-  // 5. Obtener fechas únicas para consultar (game_time puede venir como
-  //    ISO `2026-09-13T17:00:00Z` o con espacio `2026-09-11 00:35:00Z`;
-  //    solo interesa la parte de fecha YYYY-MM-DD → `dates=YYYYMMDD`).
-  const toDateKey = (gameTime: any) => String(gameTime || '').slice(0, 10)
+  // 5. Obtener fechas únicas para consultar. game_time puede venir como ISO
+  //    `2026-09-13T17:00Z` o con espacio `2026-09-11 00:35:00Z`. La clave de
+  //    fecha se deriva en America/New_York (ESPN filtra `dates=` por la fecha
+  //    local del juego, no por UTC) → `dates=YYYYMMDD`.
   const dates = [...new Set(needsSync.map((g: any) => toDateKey(g.game_time)))]
 
   return {
@@ -216,6 +216,28 @@ async function schedulerDecision(supa: any, now: Date, scope: any, isManual: boo
     games_needing_sync: needsSync.length,
     dates,
   }
+}
+
+// ── DATE KEY (US/Eastern) ─────────────────────────────────────────────────────
+// ESPN filtra scoreboard por `dates=YYYYMMDD` en la fecha local de EE.UU.
+// (America/New_York). game_time se almacena en UTC, y un juego nocturno
+// (p.ej. Monday Night: 8:15pm ET = 00:15Z del día siguiente) caería en el día
+// UTC equivocado y nunca aparecería en la consulta. Convertimos a ET antes
+// de derivar la clave de fecha.
+const etDateFmt = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+
+function toDateKey(gameTime: any): string {
+  const s = String(gameTime || '')
+  // Fecha pura (sin hora) o valor no parseable: se conserva el día tal cual
+  if (s.length <= 10) return s.slice(0, 10)
+  const d = new Date(s)
+  if (!isNaN(d.getTime())) return etDateFmt.format(d) // 'YYYY-MM-DD' en ET
+  return s.slice(0, 10)
 }
 
 // ── CORS ───────────────────────────────────────────────────────────────────────
