@@ -9,9 +9,11 @@ const TOTAL_WEEKS = 18
 
 // Matriz de picks de todos los participantes para comparar los juegos de cada
 // miembro. Se reutiliza en la ruta Picks Públicos y embebida (colapsable) en la
-// Tabla de Posiciones (BUILD-017-E). BUILD-017-H: mientras la semana en juego
-// siga abierta y el usuario NO haya enviado sus propios picks de esa semana,
-// la matriz queda bloqueada (evita copiar los picks ajenos antes de participar).
+// Tabla de Posiciones (BUILD-017-E). BUILD-017-H: la pestaña de la semana
+// seleccionada (activa) solo se bloquea si esa semana sigue abierta y el usuario
+// NO envió sus propios picks (evita copiar picks ajenos antes de participar).
+// Las semanas cerradas se muestran SIEMPRE, incluso con una semana más nueva
+// abierta, para permitir auditar la matriz completa.
 export default function PublicPicksMatrix({ league, user }) {
   const [activeWeek, setActiveWeek] = useState(1)
   const [games, setGames] = useState([])
@@ -51,11 +53,11 @@ export default function PublicPicksMatrix({ league, user }) {
     setActiveWeek(current != null && weeks.includes(current) ? current : weeks[0])
   }, [activeGames])
 
-  // BUILD-017-H: la semana en juego y si el usuario ya envió sus picks.
-  const currentWeek = getCurrentWeek(activeGames)
-  const currentWeekOpen = currentWeek != null && activeGames.some(g => g.week === currentWeek && !isGameLocked(g))
-  const myWeekPick = picks.some(p => p.user_id === user?.id && p.week === currentWeek)
-  const blockedPicks = !!user?.id && currentWeekOpen && !myWeekPick
+  // BUILD-017-H: bloqueo por SEMANA ACTIVA (pestaña seleccionada), no global.
+  // El sync inicial de la pestaña usa getCurrentWeek en el efecto de arriba.
+  const activeWeekOpen = activeGames.some(g => g.week === activeWeek && !isGameLocked(g))
+  const myPickActiveWeek = picks.some(p => p.user_id === user?.id && p.week === activeWeek)
+  const blockedActiveWeek = !!user?.id && activeWeekOpen && !myPickActiveWeek
 
   const weekGames = activeGames
     .sort((a, b) => {
@@ -109,21 +111,8 @@ export default function PublicPicksMatrix({ league, user }) {
     return <div className="empty-state"><div className="big">👥</div>Aún no hay miembros en esta liga.</div>
   }
 
-  // BUILD-017-H: sin picks propios de la semana en juego no se muestran los de
-  // los demás (ajeno a la semana bloqueada o ya cerrada).
-  if (blockedPicks) {
-    return (
-      <div className="empty-state" style={{ padding: '1.25rem', textAlign: 'center' }}>
-        <div className="big">🔒</div>
-        Envía tus picks de la Semana {currentWeek} para poder ver los picks de los demás.
-        <br />
-        <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
-          Una vez que guardes tus picks de esta semana, esta sección se habilita.
-        </span>
-      </div>
-    )
-  }
-
+  // BUILD-017-H: sin picks propios de la SEMANA ACTIVA (si sigue abierta) no se
+  // muestran los picks ajenos de esa semana. Las semanas cerradas se ven siempre.
   return (
     <>
       <div className="week-tabs" style={{ marginBottom: '1rem' }}>
@@ -138,7 +127,16 @@ export default function PublicPicksMatrix({ league, user }) {
         ))}
       </div>
 
-      {weekGames.length === 0 ? (
+      {blockedActiveWeek ? (
+        <div className="empty-state" style={{ padding: '1.25rem', textAlign: 'center' }}>
+          <div className="big">🔒</div>
+          Envía tus picks de la Semana {activeWeek} para poder ver los picks de los demás.
+          <br />
+          <span style={{ fontSize: '0.82rem', color: 'var(--text3)' }}>
+            Una vez que guardes tus picks de esta semana, esta sección se habilita.
+          </span>
+        </div>
+      ) : weekGames.length === 0 ? (
         <div className="empty-state">
           <div className="big">📭</div>
           No hay partidos para la Semana {activeWeek}.
