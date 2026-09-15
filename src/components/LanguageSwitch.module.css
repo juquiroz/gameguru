@@ -1,0 +1,34 @@
+.switch {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s;
+}
+.switch:hover { border-color: var(--border2); }
+
+.opt {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .65rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--text3);
+  padding: 1px 3px;
+  border-radius: 2px;
+  transition: all .15s;
+}
+.opt.active {
+  color: var(--accent);
+  background: rgba(245,166,35,.15);
+}
+
+.divider {
+  color: var(--border);
+  font-size: .65rem;
+  line-height: 1;
+}

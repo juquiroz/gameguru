@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#070B14"/>
+<title>NFL Picks · Liga de Pronósticos</title>
+
+<!-- ════════════════════════════════════════════════════════
+     🔧 CONFIGURACIÓN DE SUPABASE
+     Reemplaza los valores de abajo con los de tu proyecto.
+     Los encuentras en: supabase.com → tu proyecto → Settings → API
+     ════════════════════════════════════════════════════════ -->
+<script>
+  const SUPABASE_URL  = "https://yzssihtflqmgolyajhvb.supabase.co";   // ← cambia esto
+  const SUPABASE_KEY  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl6c3NpaHRmbHFtZ29seWFqaHZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MDI1MTEsImV4cCI6MjA5NDM3ODUxMX0.npr0R1l6e0MLedmCW_vQ8O0wLktTX12ZmyOLdhFg_xs";                        // ← cambia esto
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+<style>
+/* ── Reset & Base ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+body {
+  font-family: 'Barlow', sans-serif;
+  background: #070B14;
+  color: #F0F4FF;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Design Tokens ────────────────────────────────────── */
+:root {
+  --bg:       #070B14;
+  --bg2:      #0D1525;
+  --bg3:      #131E32;
+  --surface:  #1A2740;
+  --surface2: #243450;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.14);
+  --text:     #F0F4FF;
+  --text2:    #8B9ABB;
+  --text3:    #4A5A7A;
+  --accent:   #F5A623;
+  --accent2:  #FF4B4B;
+  --green:    #22C55E;
+  --red:      #EF4444;
+  --r:        12px;
+  --r-sm:     8px;
+  --r-lg:     16px;
+  --r-xl:     20px;
+}
+
+/* ── Utility ──────────────────────────────────────────── */
+.hide { display: none !important; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+input  { font-family: inherit; }
+
+/* ── Page Router ──────────────────────────────────────── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ══════════════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════════════ */
+#view-auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(ellipse at 20% 60%, rgba(1,51,105,.45) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(213,10,10,.2) 0%, transparent 50%),
+    var(--bg);
+}
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl);
+  padding: 2.5rem 2rem;
+}
+@media(max-width:400px){ .auth-card { padding: 2rem 1.25rem; } }
+
+.auth-logo { text-align: center; margin-bottom: 2rem; }
+.auth-logo .brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 8vw, 3rem);
+  letter-spacing: .08em;
+  background: linear-gradient(135deg, #F5A623, #FF4B4B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+.auth-logo .sub {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .8rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg3);
+  border-radius: var(--r-sm);
+  padding: 4px;
+  margin-bottom: 1.75rem;
+  gap: 4px;
+}
+.auth-tab {
+  padding: .65rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .95rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text2);
+  border-radius: 6px;
+  transition: all .2s;
+}
+.auth-tab.active { background: var(--surface2); color: var(--accent); }
+
+.field { margin-bottom: 1.1rem; }
+.field label {
+  display: block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .75rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: .45rem;
+}
+.field input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: 1rem;
+  padding: .8rem 1rem;
+  outline: none;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+}
+.field input:focus { border-color: var(--accent); }
+.field input::placeholder { color: var(--text3); }
+
+.btn-primary {
+  width: 100%;
+  padding: .9rem;
+  background: linear-gradient(135deg, #F5A623, #E8941A);
+  color: #0D0D0D;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: .1em;
+  border-radius: var(--r-sm);
+  margin-top: .5rem;
+  transition: opacity .2s, transform .1s;
+}
+.btn-primary:hover  { opacity: .92; }
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+.msg {
+  margin-top: .9rem;
+  padding: .7rem 1rem;
+  border-radius: var(--r-sm);
+  font-size: .85rem;
+  text-align: center;
+  line-height: 1.4;
+}
+.msg.error   { background: rgba(239,68,68,.12);  color: #FCA5A5; border: 1px solid rgba(239,68,68,.3); }
+.msg.success { background: rgba(34,197,94,.12);  color: #86EFAC; border: 1px solid rgba(34,197,94,.3); }
+.msg.info    { background: rgba(99,102,241,.1);  color: #A5B4FC; border: 1px solid rgba(99,102,241,.3); }
+
+/* ══════════════════════════════════════════════════════
+   APP SHELL
+══════════════════════════════════════════════════════ */
+#view-app { display: none; flex-direction: column; min-height: 100vh; }
+#view-app.active { display: flex; }
+
+/* Top Bar */
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  height: 60px;
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  gap: .75rem;
+}
+.topbar-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: .08em;
+  background: linear-gradient(135deg, #F5A623, #FF4B4B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.topbar-user {
+  font-size: .78rem;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.btn-logout {
+  padding: .38rem .85rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .78rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: var(--r-sm);
+  transition: all .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-logout:hover { border-color: var(--accent2); color: var(--accent2); }
+
+/* Main Content */
+.main-content { flex: 1; padding-bottom: 80px; }
+
+/* Bottom Nav (mobile-first) */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 200;
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.bnav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  transition: color .15s;
+  padding: .5rem 0;
+}
+.bnav-btn .icon { font-size: 1.4rem; line-height: 1; }
+.bnav-btn.active { color: var(--accent); }
+.bnav-btn.active .icon-dash::after { content: "🏠"; }
+
+/* Desktop: top nav instead of bottom nav */
+@media(min-width: 768px) {
+  .bottom-nav { display: none; }
+  .main-content { padding-bottom: 0; }
+  .desktop-nav { display: flex !important; gap: 4px; }
+  .topbar { padding: 0 2rem; }
+  .topbar-user { max-width: 200px; }
+}
+.desktop-nav { display: none; }
+.dnav-btn {
+  padding: .5rem 1.1rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text2);
+  border-radius: var(--r-sm);
+  transition: all .15s;
+}
+.dnav-btn:hover  { background: var(--surface); color: var(--text); }
+.dnav-btn.active { background: var(--surface2); color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════
+   PAGE WRAPPER
+══════════════════════════════════════════════════════ */
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+@media(min-width: 768px) { .page { padding: 2rem 1.5rem; } }
+
+.page-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  letter-spacing: .06em;
+  line-height: 1;
+  margin-bottom: .25rem;
+}
+.page-sub { color: var(--text2); font-size: .88rem; margin-bottom: 1.75rem; }
+
+/* ══════════════════════════════════════════════════════
+   WEEK TABS
+══════════════════════════════════════════════════════ */
+.week-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.week-tab {
+  padding: .45rem 1.1rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 999px;
+  transition: all .15s;
+}
+.week-tab:hover  { border-color: var(--border2); color: var(--text); }
+.week-tab.active { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+.week-tab .fin-tag {
+  font-size: .6rem;
+  opacity: .55;
+  margin-left: 5px;
+}
+
+/* ══════════════════════════════════════════════════════
+   GAME CARDS GRID
+══════════════════════════════════════════════════════ */
+.games-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .85rem;
+  margin-bottom: 1.5rem;
+}
+@media(min-width: 560px)  { .games-grid { grid-template-columns: repeat(2, 1fr); } }
+@media(min-width: 900px)  { .games-grid { grid-template-columns: repeat(3, 1fr); } }
+@media(min-width: 1100px) { .games-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.game-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1rem;
+  transition: border-color .2s;
+}
+.game-card:hover:not(.locked) { border-color: var(--border2); }
+.game-card.locked { opacity: .72; }
+
+.game-time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .7rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .85rem;
+}
+
+.teams-row {
+  display: grid;
+  grid-template-columns: 1fr 28px 1fr;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: .75rem;
+}
+.team-btn {
+  background: var(--bg3);
+  border: 2px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: .65rem .5rem;
+  text-align: center;
+  transition: all .15s;
+  width: 100%;
+  -webkit-appearance: none;
+  touch-action: manipulation;
+}
+.team-btn:not(.locked):hover  { border-color: var(--border2); background: var(--surface); }
+.team-btn:not(.locked):active { transform: scale(.97); }
+.team-btn.selected { border-color: var(--accent); background: rgba(245,166,35,.1); }
+.team-btn.correct  { border-color: var(--green); background: rgba(34,197,94,.1); }
+.team-btn.wrong    { border-color: var(--red); background: rgba(239,68,68,.07); opacity: .6; }
+.team-btn.locked   { cursor: default; }
+
+.t-emoji { font-size: 1.6rem; display: block; margin-bottom: 3px; line-height: 1; }
+.t-abbr  {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: .04em;
+  display: block;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.t-name  { font-size: .65rem; color: var(--text2); line-height: 1.2; display: block; }
+
+.vs { font-family: 'Bebas Neue', sans-serif; font-size: .85rem; color: var(--text3); text-align: center; }
+
+.pick-row {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.pick-row.sel     { color: var(--accent); }
+.pick-row.correct { color: var(--green); }
+.pick-row.wrong   { color: var(--red); }
+
+/* ══════════════════════════════════════════════════════
+   SUBMIT BOTTOM BAR
+══════════════════════════════════════════════════════ */
+.submit-bar {
+  position: sticky;
+  bottom: 64px; /* above bottom nav on mobile */
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: .85rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  z-index: 150;
+}
+@media(min-width: 768px) { .submit-bar { bottom: 0; } }
+
+.picks-count { color: var(--text2); font-size: .875rem; }
+.picks-count strong { color: var(--accent); }
+.submit-msg { font-size: .78rem; color: var(--green); margin-top: 3px; }
+
+.btn-submit {
+  padding: .7rem 1.6rem;
+  background: linear-gradient(135deg, #F5A623, #E8941A);
+  color: #0D0D0D;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: .08em;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  transition: opacity .2s;
+  flex-shrink: 0;
+}
+.btn-submit:hover   { opacity: .9; }
+.btn-submit:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ══════════════════════════════════════════════════════
+   RESULT BANNER
+══════════════════════════════════════════════════════ */
+.result-banner {
+  background: rgba(34,197,94,.07);
+  border: 1px solid rgba(34,197,94,.2);
+  border-radius: var(--r);
+  padding: .9rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+}
+.result-banner .rb-icon { font-size: 1.4rem; flex-shrink: 0; }
+.rb-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .7rem;
+  letter-spacing: .15em;
+  color: #86EFAC;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.rb-score { font-size: .95rem; font-weight: 500; }
+.rb-score strong { color: var(--green); }
+
+/* Lock notice */
+.lock-notice {
+  text-align: center;
+  padding: .7rem;
+  background: var(--bg3);
+  border-radius: var(--r-sm);
+  font-size: .78rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .06em;
+}
+
+/* ══════════════════════════════════════════════════════
+   LEADERBOARD
+══════════════════════════════════════════════════════ */
+.lb-table {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.lb-head {
+  display: grid;
+  grid-template-columns: 48px 1fr 72px 64px;
+  padding: .65rem 1rem;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .68rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+@media(min-width: 480px) {
+  .lb-head { grid-template-columns: 56px 1fr 80px 72px; padding: .7rem 1.25rem; }
+}
+.lb-row {
+  display: grid;
+  grid-template-columns: 48px 1fr 72px 64px;
+  padding: .85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  transition: background .15s;
+}
+@media(min-width: 480px) {
+  .lb-row { grid-template-columns: 56px 1fr 80px 72px; padding: .9rem 1.25rem; }
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover  { background: rgba(255,255,255,.02); }
+.lb-row.is-me  { background: rgba(245,166,35,.05); }
+
+.lb-rank {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  color: var(--text3);
+}
+.lb-rank.g { color: #FFD700; }
+.lb-rank.s { color: #C0C0C0; }
+.lb-rank.b { color: #CD7F32; }
+
+.lb-user { display: flex; align-items: center; gap: .65rem; }
+.lb-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .95rem;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.lb-uname { font-size: .9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.lb-me-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  background: rgba(245,166,35,.14);
+  color: var(--accent);
+  border: 1px solid rgba(245,166,35,.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.lb-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  color: var(--text);
+  text-align: right;
+}
+.lb-pct { font-size: .82rem; color: var(--text2); text-align: right; }
+
+/* ══════════════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════════════ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+@media(min-width: 600px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+
+.stat-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+}
+.s-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .66rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: .4rem;
+}
+.s-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: .02em;
+  line-height: 1;
+}
+.s-sub { font-size: .78rem; color: var(--text2); margin-top: 4px; }
+
+.alert-card {
+  background: rgba(245,166,35,.07);
+  border: 1px solid rgba(245,166,35,.22);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .85rem;
+}
+.alert-icon { font-size: 1.5rem; flex-shrink: 0; }
+.alert-body { flex: 1; min-width: 160px; }
+.alert-title { font-weight: 600; font-size: .95rem; }
+.alert-title strong { color: var(--accent); }
+.alert-sub { font-size: .8rem; color: var(--text2); margin-top: 3px; }
+.btn-cta {
+  padding: .55rem 1.2rem;
+  background: var(--accent);
+  color: #0D0D0D;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .95rem;
+  letter-spacing: .07em;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  transition: opacity .2s;
+  flex-shrink: 0;
+}
+.btn-cta:hover { opacity: .88; }
+
+.sec-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: .06em;
+  margin-bottom: .85rem;
+}
+
+/* ══════════════════════════════════════════════════════
+   EMPTY / PLACEHOLDER
+══════════════════════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .05em;
+  font-size: .95rem;
+  line-height: 1.7;
+}
+.empty-state .big { font-size: 2.5rem; margin-bottom: .5rem; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ AUTH VIEW ════════════════════ -->
+<div id="view-auth" class="view active">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="brand">NFL PICKS</div>
+      <div class="sub">Liga de Pronósticos</div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('login')" id="tab-login">Entrar</button>
+      <button class="auth-tab"        onclick="switchTab('register')" id="tab-reg">Registrarse</button>
+    </div>
+    <div id="field-name" class="field hide">
+      <label>Nombre de usuario</label>
+      <input type="text" id="inp-name" placeholder="Tu nombre en la liga" autocomplete="nickname"/>
+    </div>
+    <div class="field">
+      <label>Correo electrónico</label>
+      <input type="email" id="inp-email" placeholder="tu@email.com" autocomplete="email" inputmode="email"/>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-primary" id="btn-auth" onclick="doAuth()">Entrar a la Liga</button>
+    <div id="auth-msg"></div>
+  </div>
+</div>
+
+<!-- ════════════════════ APP VIEW ════════════════════ -->
+<div id="view-app" class="view">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <span class="topbar-brand">NFL PICKS</span>
+    <!-- Desktop nav -->
+    <nav class="desktop-nav">
+      <button class="dnav-btn active" onclick="goto('dashboard')" id="dnav-dashboard">Dashboard</button>
+      <button class="dnav-btn"        onclick="goto('picks')"     id="dnav-picks">Mis Picks</button>
+      <button class="dnav-btn"        onclick="goto('board')"     id="dnav-board">Tabla</button>
+    </nav>
+    <div style="display:flex;align-items:center;gap:.65rem">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- ── DASHBOARD ── -->
+    <section id="pg-dashboard" class="page">
+      <div class="page-title">DASHBOARD</div>
+      <div class="page-sub" id="db-sub">Temporada NFL 2025 · Liga de Pronósticos</div>
+
+      <div class="alert-card">
+        <span class="alert-icon">🏈</span>
+        <div class="alert-body">
+          <div class="alert-title"><strong>Semana 2</strong> está activa</div>
+          <div class="alert-sub">6 partidos para pronosticar · Deadline: Dom 14 Sep 5:00 PM</div>
+        </div>
+        <button class="btn-cta" onclick="goto('picks')">Hacer Picks →</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="s-label">Mi Posición</div>
+          <div class="s-val" id="db-rank" style="color:var(--accent)">#1</div>
+          <div class="s-sub" id="db-rank-of">de 5 jugadores</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-label">Aciertos Sem 1</div>
+          <div class="s-val" id="db-hits" style="color:var(--green)">7</div>
+          <div class="s-sub">de 8 partidos</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-label">Efectividad</div>
+          <div class="s-val" id="db-pct">88%</div>
+          <div class="s-sub">Semana 1</div>
+        </div>
+        <div class="stat-card">
+          <div class="s-label">Semana Activa</div>
+          <div class="s-val" style="color:var(--accent)">2</div>
+          <div class="s-sub">6 partidos</div>
+        </div>
+      </div>
+
+      <div class="sec-title">TOP JUGADORES · SEMANA 1</div>
+      <div class="lb-table" id="db-lb"></div>
+    </section>
+
+    <!-- ── PICKS ── -->
+    <section id="pg-picks" class="page hide">
+      <div class="page-title">MIS PICKS</div>
+      <div class="page-sub">Selecciona el ganador de cada partido</div>
+
+      <div class="week-tabs" id="picks-week-tabs"></div>
+      <div id="picks-result-banner"></div>
+      <div class="games-grid" id="games-grid"></div>
+      <div id="picks-lock-notice"></div>
+
+      <div class="submit-bar" id="submit-bar">
+        <div>
+          <div class="picks-count" id="picks-count-label">0 / 0 seleccionados</div>
+          <div class="submit-msg hide" id="submit-ok">✓ Picks guardados correctamente</div>
+        </div>
+        <button class="btn-submit" id="btn-submit" onclick="submitPicks()" disabled>Enviar Picks</button>
+      </div>
+    </section>
+
+    <!-- ── LEADERBOARD ── -->
+    <section id="pg-board" class="page hide">
+      <div class="page-title">TABLA DE POSICIONES</div>
+      <div class="page-sub">El que más aciertos logre gana la semana</div>
+      <div class="week-tabs" id="board-week-tabs"></div>
+      <div id="board-content"></div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV (mobile) -->
+  <nav class="bottom-nav">
+    <button class="bnav-btn active" onclick="goto('dashboard')" id="bnav-dashboard">
+      <span class="icon">🏠</span><span>Inicio</span>
+    </button>
+    <button class="bnav-btn" onclick="goto('picks')" id="bnav-picks">
+      <span class="icon">🏈</span><span>Picks</span>
+    </button>
+    <button class="bnav-btn" onclick="goto('board')" id="bnav-board">
+      <span class="icon">🏆</span><span>Tabla</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ════════════════════ SCRIPTS ════════════════════ -->
+<script>
+// ─── STATE ──────────────────────────────────────────────
+let SESSION   = null;   // { user, token }
+let activePg  = 'dashboard';
+let picksWeek = 2;
+let boardWeek = 1;
+let userPicks = {};     // { week: { gameId: teamAbbr } }
+let submitted = {};     // { week: bool }
+
+// ─── NFL DATA ───────────────────────────────────────────
+const WEEKS = {
+  1: {
+    label: 'Semana 1',
+    games: [
+      { id:'g1', home:'Kansas City Chiefs',    away:'Baltimore Ravens',    hA:'KC',  aA:'BAL', time:'Dom 8:20 PM' },
+      { id:'g2', home:'Dallas Cowboys',        away:'Philadelphia Eagles', hA:'DAL', aA:'PHI', time:'Dom 4:25 PM' },
+      { id:'g3', home:'San Francisco 49ers',   away:'Seattle Seahawks',    hA:'SF',  aA:'SEA', time:'Dom 1:00 PM' },
+      { id:'g4', home:'Buffalo Bills',         away:'New York Jets',       hA:'BUF', aA:'NYJ', time:'Dom 1:00 PM' },
+      { id:'g5', home:'Miami Dolphins',        away:'New England Patriots',hA:'MIA', aA:'NE',  time:'Dom 1:00 PM' },
+      { id:'g6', home:'Green Bay Packers',     away:'Chicago Bears',       hA:'GB',  aA:'CHI', time:'Sáb 8:15 PM' },
+      { id:'g7', home:'Los Angeles Rams',      away:'Detroit Lions',       hA:'LAR', aA:'DET', time:'Jue 8:20 PM' },
+      { id:'g8', home:'Cincinnati Bengals',    away:'Pittsburgh Steelers', hA:'CIN', aA:'PIT', time:'Dom 1:00 PM' },
+    ],
+    results: { g1:'KC', g2:'PHI', g3:'SF', g4:'BUF', g5:'MIA', g6:'GB', g7:'DET', g8:'CIN' },
+    finished: true,
+  },
+  2: {
+    label: 'Semana 2',
+    games: [
+      { id:'g9',  home:'Kansas City Chiefs',   away:'Cincinnati Bengals',  hA:'KC',  aA:'CIN', time:'Dom 8:20 PM' },
+      { id:'g10', home:'Philadelphia Eagles',  away:'Minnesota Vikings',   hA:'PHI', aA:'MIN', time:'Dom 4:25 PM' },
+      { id:'g11', home:'San Francisco 49ers',  away:'Los Angeles Rams',    hA:'SF',  aA:'LAR', time:'Dom 4:05 PM' },
+      { id:'g12', home:'Buffalo Bills',        away:'Miami Dolphins',      hA:'BUF', aA:'MIA', time:'Dom 1:00 PM' },
+      { id:'g13', home:'Dallas Cowboys',       away:'New York Giants',     hA:'DAL', aA:'NYG', time:'Dom 1:00 PM' },
+      { id:'g14', home:'Detroit Lions',        away:'Tampa Bay Buccaneers',hA:'DET', aA:'TB',  time:'Dom 1:00 PM' },
+    ],
+    results: null,
+    finished: false,
+  },
+};
+
+const LOGOS = {
+  KC:'🏈',BAL:'🦅',DAL:'⭐',PHI:'🦅',SF:'🔴',SEA:'🌊',BUF:'🐃',
+  NYJ:'✈️',MIA:'🐬',NE:'⚓',GB:'🧀',CHI:'🐻',LAR:'🐏',DET:'🦁',
+  CIN:'🐯',PIT:'🔨',MIN:'⚔️',NYG:'🏈',TB:'🏴‍☠️',
+};
+const emo = a => LOGOS[a] || '🏈';
+
+const MOCK_LB = [
+  { email:'tu@email.com',       isSelf:true,  c:7, t:8 },
+  { email:'carlos.m@gmail.com', isSelf:false, c:6, t:8 },
+  { email:'juan.p@gmail.com',   isSelf:false, c:6, t:8 },
+  { email:'andrea.v@gmail.com', isSelf:false, c:5, t:8 },
+  { email:'rob.c@gmail.com',    isSelf:false, c:4, t:8 },
+];
+
+// ─── SUPABASE MINI CLIENT ───────────────────────────────
+const SB = {
+  h: { apikey: SUPABASE_KEY, 'Content-Type':'application/json' },
+  ah(tok) { return { ...this.h, Authorization:`Bearer ${tok}` }; },
+  async signIn(e,p) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      { method:'POST', headers:this.h, body:JSON.stringify({email:e,password:p}) });
+    return r.json();
+  },
+  async signUp(e,p) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/signup`,
+      { method:'POST', headers:this.h, body:JSON.stringify({email:e,password:p}) });
+    return r.json();
+  },
+  async signOut(tok) {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`,
+      { method:'POST', headers:this.ah(tok) });
+  },
+  async upsertPicks(tok, rows) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/picks`,
+      { method:'POST',
+        headers:{ ...this.ah(tok), Prefer:'resolution=merge-duplicates' },
+        body: JSON.stringify(rows) });
+    return r.status < 300;
+  },
+  async getPicks(tok, userId) {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/picks?select=*&user_id=eq.${userId}`,
+      { headers:this.ah(tok) });
+    return r.json();
+  },
+};
+
+const isDemo = () => SUPABASE_URL.includes('TU_PROYECTO');
+
+// ─── AUTH ───────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-reg').classList.toggle('active',   tab === 'register');
+  document.getElementById('field-name').classList.toggle('hide', tab === 'login');
+  document.getElementById('inp-pass').autocomplete = tab === 'login' ? 'current-password' : 'new-password';
+  document.getElementById('btn-auth').textContent  = tab === 'login' ? 'Entrar a la Liga' : 'Unirse a la Liga';
+  document.getElementById('auth-msg').innerHTML = '';
+  window._authTab = tab;
+}
+window._authTab = 'login';
+
+function setAuthMsg(txt, type) {
+  const el = document.getElementById('auth-msg');
+  el.innerHTML = txt ? `<div class="msg ${type}">${txt}</div>` : '';
+}
+
+async function doAuth() {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const tab   = window._authTab;
+  if (!email || !pass) return setAuthMsg('Completa todos los campos.', 'error');
+
+  const btn = document.getElementById('btn-auth');
+  btn.disabled = true; btn.textContent = 'Cargando...';
+
+  if (isDemo()) {
+    await delay(700);
+    if (tab === 'register' && pass.length < 6)
+      { btn.disabled=false; btn.textContent='Unirse a la Liga'; return setAuthMsg('La contraseña debe tener al menos 6 caracteres.','error'); }
+    startSession({ email, id:'demo-'+Date.now() }, 'demo-token');
+    return;
+  }
+
+  try {
+    const res = tab === 'login' ? await SB.signIn(email,pass) : await SB.signUp(email,pass);
+    if (res.error) {
+      setAuthMsg(res.error.message, 'error');
+      btn.disabled=false; btn.textContent = tab==='login'?'Entrar a la Liga':'Unirse a la Liga';
+    } else if (tab === 'register') {
+      setAuthMsg('¡Registro exitoso! Revisa tu correo para confirmar tu cuenta.','success');
+      btn.disabled=false; btn.textContent='Unirse a la Liga';
+    } else {
+      startSession(res.user, res.access_token);
+    }
+  } catch {
+    setAuthMsg('Error de conexión. Verifica tu configuración de Supabase.','error');
+    btn.disabled=false; btn.textContent='Entrar a la Liga';
+  }
+}
+
+function startSession(user, token) {
+  SESSION = { user, token };
+  try { localStorage.setItem('nfl_session', JSON.stringify(SESSION)); } catch{}
+  document.getElementById('topbar-user').textContent = user.email?.split('@')[0] || 'Jugador';
+  document.getElementById('view-auth').classList.remove('active');
+  document.getElementById('view-app').classList.add('active');
+
+  // Update dashboard rank/stats for current user
+  const me = MOCK_LB.find(p=>p.isSelf);
+  if (me) me.email = user.email || me.email;
+  renderDashboardLB();
+  renderDashboardStats();
+
+  // Show demo badge
+  if (isDemo()) {
+    const dc = document.createElement('div');
+    dc.className='msg info';
+    dc.style.cssText='margin:0 1rem 1rem;font-size:.78rem;';
+    dc.textContent='🚀 Modo demo — conecta tu Supabase editando las dos primeras líneas del <script>';
+    document.getElementById('pg-dashboard').prepend(dc);
+  }
+
+  goto('dashboard');
+}
+
+async function doLogout() {
+  if (SESSION?.token && !SESSION.token.startsWith('demo'))
+    await SB.signOut(SESSION.token).catch(()=>{});
+  SESSION = null;
+  try { localStorage.removeItem('nfl_session'); } catch{}
+  document.getElementById('view-app').classList.remove('active');
+  document.getElementById('view-auth').classList.add('active');
+}
+
+// ─── NAVIGATION ─────────────────────────────────────────
+function goto(pg) {
+  ['dashboard','picks','board'].forEach(p => {
+    document.getElementById(`pg-${p==='board'?'board':p}`).classList.toggle('hide', p!==pg);
+    const pgId = p==='board'?'board':p;
+    document.getElementById(`pg-${pgId===pg?pg:pgId}`);
+  });
+  document.getElementById('pg-dashboard').classList.toggle('hide', pg!=='dashboard');
+  document.getElementById('pg-picks').classList.toggle('hide',     pg!=='picks');
+  document.getElementById('pg-board').classList.toggle('hide',     pg!=='board');
+
+  ['dashboard','picks','board'].forEach(p => {
+    document.getElementById(`bnav-${p}`).classList.toggle('active', p===pg);
+    document.getElementById(`dnav-${p}`).classList.toggle('active', p===pg);
+  });
+  activePg = pg;
+
+  if (pg==='picks')     renderPicks();
+  if (pg==='board')     renderBoard();
+  if (pg==='dashboard') renderDashboardLB();
+  window.scrollTo(0,0);
+}
+
+// ─── PICKS PAGE ─────────────────────────────────────────
+function renderPicks() {
+  // Week tabs
+  const tabs = document.getElementById('picks-week-tabs');
+  tabs.innerHTML = Object.entries(WEEKS).map(([w,d]) =>
+    `<button class="week-tab ${picksWeek==w?'active':''}" onclick="switchPicksWeek(${w})">
+      ${d.label}${d.finished?'<span class="fin-tag">FINAL</span>':''}
+    </button>`).join('');
+
+  const week = WEEKS[picksWeek];
+  const wp   = userPicks[picksWeek] || {};
+  const locked = week.finished || submitted[picksWeek];
+
+  // Result banner
+  const rb = document.getElementById('picks-result-banner');
+  if (week.finished) {
+    const corr = week.games.filter(g=>wp[g.id]===week.results[g.id]).length;
+    const tot  = week.games.length;
+    rb.innerHTML = `<div class="result-banner">
+      <span class="rb-icon">🏆</span>
+      <div>
+        <div class="rb-label">Semana Finalizada</div>
+        <div class="rb-score">Acertaste <strong>${corr} de ${tot}</strong> partidos</div>
+      </div>
+    </div>`;
+  } else { rb.innerHTML=''; }
+
+  // Games
+  const grid = document.getElementById('games-grid');
+  grid.innerHTML = week.games.map(g => gameCardHTML(g, wp[g.id], week.results, locked)).join('');
+
+  // Submit bar
+  const bar = document.getElementById('submit-bar');
+  if (week.finished) { bar.style.display='none'; }
+  else {
+    bar.style.display='flex';
+    updateSubmitBar();
+  }
+
+  // Lock notice
+  const ln = document.getElementById('picks-lock-notice');
+  if (week.finished) { ln.innerHTML='<div class="lock-notice">🔒 Esta semana ya finalizó — los picks están bloqueados</div>'; }
+  else { ln.innerHTML=''; }
+}
+
+function gameCardHTML(g, pick, results, locked) {
+  const res  = results?.[g.id];
+
+  const cls = (abbr) => {
+    if (!res) return pick===abbr ? 'selected' : '';
+    if (pick===abbr) return res===abbr ? 'correct' : 'wrong';
+    return '';
+  };
+
+  const indicatorCls = () => {
+    if (res && pick) return res===pick ? 'correct' : 'wrong';
+    if (pick) return 'sel';
+    return '';
+  };
+  const indicatorTxt = () => {
+    if (res && pick) return res===pick ? '✓ CORRECTO' : '✗ FALLIDO';
+    if (pick) return `✓ ${pick}`;
+    return locked ? '—' : 'SIN SELECCIÓN';
+  };
+
+  const lockedAttr = locked ? 'locked' : '';
+
+  return `<div class="game-card ${locked?'locked':''}">
+    <div class="game-time">${g.time}</div>
+    <div class="teams-row">
+      <button class="team-btn ${cls(g.aA)} ${lockedAttr}"
+        onclick="${locked?'':'pickTeam('+JSON.stringify(g.id)+','+JSON.stringify(g.aA)+')'}">
+        <span class="t-emoji">${emo(g.aA)}</span>
+        <span class="t-abbr">${g.aA}</span>
+        <span class="t-name">${g.away.split(' ').slice(-1)[0]}</span>
+      </button>
+      <span class="vs">@</span>
+      <button class="team-btn ${cls(g.hA)} ${lockedAttr}"
+        onclick="${locked?'':'pickTeam('+JSON.stringify(g.id)+','+JSON.stringify(g.hA)+')'}">
+        <span class="t-emoji">${emo(g.hA)}</span>
+        <span class="t-abbr">${g.hA}</span>
+        <span class="t-name">${g.home.split(' ').slice(-1)[0]}</span>
+      </button>
+    </div>
+    <div class="pick-row ${indicatorCls()}">${indicatorTxt()}</div>
+  </div>`;
+}
+
+function pickTeam(gameId, teamAbbr) {
+  if (!userPicks[picksWeek]) userPicks[picksWeek] = {};
+  userPicks[picksWeek][gameId] = teamAbbr;
+  renderPicks();
+}
+
+function switchPicksWeek(w) {
+  picksWeek = w;
+  document.getElementById('submit-ok').classList.add('hide');
+  renderPicks();
+}
+
+function updateSubmitBar() {
+  const week = WEEKS[picksWeek];
+  const wp   = userPicks[picksWeek] || {};
+  const cnt  = Object.keys(wp).length;
+  const tot  = week.games.length;
+  const isub = submitted[picksWeek];
+
+  document.getElementById('picks-count-label').innerHTML =
+    `<strong>${cnt}</strong> / ${tot} partidos seleccionados`;
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled  = cnt < tot || isub;
+  btn.textContent = isub ? '✓ Enviado' : 'Enviar Picks';
+}
+
+async function submitPicks() {
+  const week = WEEKS[picksWeek];
+  const wp   = userPicks[picksWeek] || {};
+  if (Object.keys(wp).length < week.games.length) return;
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  if (!isDemo() && SESSION) {
+    const rows = Object.entries(wp).map(([gameId, pick]) => ({
+      user_id: SESSION.user.id,
+      week: picksWeek,
+      game_id: gameId,
+      pick,
+    }));
+    await SB.upsertPicks(SESSION.token, rows).catch(()=>{});
+  } else {
+    await delay(600);
+  }
+
+  submitted[picksWeek] = true;
+  document.getElementById('submit-ok').classList.remove('hide');
+  updateSubmitBar();
+}
+
+// ─── LEADERBOARD PAGE ────────────────────────────────────
+function renderBoard() {
+  // Tabs
+  const tabs = document.getElementById('board-week-tabs');
+  tabs.innerHTML = Object.entries(WEEKS).map(([w,d]) =>
+    `<button class="week-tab ${boardWeek==w?'active':''}" onclick="switchBoardWeek(${w})">
+      ${d.label}${d.finished?'<span class="fin-tag">FINAL</span>':''}
+    </button>`).join('');
+
+  const content = document.getElementById('board-content');
+  if (!WEEKS[boardWeek].finished) {
+    content.innerHTML = `<div class="empty-state">
+      <div class="big">🔒</div>
+      La Semana ${boardWeek} aún no ha finalizado.<br>
+      <span style="font-size:.82rem;color:var(--text3)">Los resultados estarán disponibles cuando terminen los partidos.</span>
+    </div>`;
+    return;
+  }
+  content.innerHTML = lbTableHTML(MOCK_LB);
+}
+
+function switchBoardWeek(w) {
+  boardWeek = w;
+  renderBoard();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────
+function renderDashboardStats() {
+  const me   = MOCK_LB.find(p=>p.isSelf);
+  const rank = MOCK_LB.sort((a,b)=>b.c-a.c).findIndex(p=>p.isSelf)+1;
+  const pct  = me ? Math.round(me.c/me.t*100) : 0;
+  document.getElementById('db-rank').textContent    = '#'+rank;
+  document.getElementById('db-rank-of').textContent = `de ${MOCK_LB.length} jugadores`;
+  document.getElementById('db-hits').textContent    = me?.c || 0;
+  document.getElementById('db-pct').textContent     = pct+'%';
+}
+
+function renderDashboardLB() {
+  document.getElementById('db-lb').innerHTML = lbTableHTML(
+    MOCK_LB.sort((a,b)=>b.c-a.c).slice(0,5)
+  );
+}
+
+function lbTableHTML(lb) {
+  const sorted = [...lb].sort((a,b)=>b.c-a.c);
+  const rows   = sorted.map((p,i) => {
+    const rankCls = i===0?'g':i===1?'s':i===2?'b':'';
+    const medal   = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+    const init    = p.email.slice(0,2).toUpperCase();
+    const uname   = p.email.split('@')[0];
+    const pct     = Math.round(p.c/p.t*100);
+    return `<div class="lb-row ${p.isSelf?'is-me':''}">
+      <div class="lb-rank ${rankCls}">${medal}</div>
+      <div class="lb-user">
+        <div class="lb-avatar">${init}</div>
+        <div>
+          <div class="lb-uname">${uname}</div>
+          ${p.isSelf?'<span class="lb-me-badge">Tú</span>':''}
+        </div>
+      </div>
+      <div class="lb-score">${p.c}/${p.t}</div>
+      <div class="lb-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="lb-head">
+    <div>#</div><div>Jugador</div>
+    <div style="text-align:right">Aciertos</div>
+    <div style="text-align:right">%</div>
+  </div>${rows}`;
+}
+
+// ─── UTILS ──────────────────────────────────────────────
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+// ─── INIT ────────────────────────────────────────────────
+(function init() {
+  // Restore session
+  try {
+    const saved = JSON.parse(localStorage.getItem('nfl_session'));
+    if (saved?.user && saved?.token) { startSession(saved.user, saved.token); return; }
+  } catch{}
+
+  // Show demo notice on auth screen
+  if (isDemo()) {
+    const n = document.createElement('div');
+    n.className='msg info';
+    n.style.marginTop='1.25rem';
+    n.innerHTML='🚀 <strong>Modo demo</strong> — ingresa cualquier email y contraseña (mín 6 chars) para explorar la app';
+    document.getElementById('btn-auth').after(n);
+  }
+
+  // Enter on inputs
+  ['inp-email','inp-pass','inp-name'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if(e.key==='Enter') doAuth(); });
+  });
+})();
+</script>
+</body>
+</html>
