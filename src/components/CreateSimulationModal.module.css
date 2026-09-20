@@ -1,0 +1,155 @@
+.overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl);
+  padding: 1.75rem 1.5rem;
+  width: 100%; max-width: 520px;
+  position: relative;
+  max-height: 90vh; overflow-y: auto;
+}
+
+@media (max-width: 480px) {
+  .modal { padding: 1.25rem 1rem; }
+}
+
+.header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.headerTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: .06em;
+}
+
+.headerClose {
+  background: none; border: none; color: var(--text3);
+  font-size: 1.2rem; cursor: pointer; padding: 4px;
+}
+
+.gamesList {
+  margin-bottom: 1rem;
+}
+
+.gamesListLabel {
+  display: block; margin-bottom: .35rem;
+  font-size: .82rem; color: var(--text2);
+}
+
+.gameItem {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); padding: .5rem .7rem;
+  border-radius: var(--r-sm);
+}
+
+@media (max-width: 480px) {
+  .gameItem { flex-wrap: wrap; gap: 4px; }
+}
+
+.gameItemTeams {
+  display: flex; align-items: center; gap: 4px; flex: 1;
+  min-width: 0;
+}
+
+.gameItemMeta {
+  font-size: .75rem; color: var(--text3);
+  white-space: nowrap;
+}
+
+.addGameForm {
+  background: var(--bg3); border-radius: var(--r);
+  padding: 1rem; margin-bottom: 1rem;
+}
+
+@media (max-width: 480px) {
+  .addGameForm { padding: .75rem; }
+}
+
+.addGameLabel {
+  display: block; margin-bottom: .5rem;
+  font-size: .82rem; color: var(--text2);
+}
+
+.teamRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.teamSelect {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  min-width: 0;
+}
+
+.teamVs {
+  color: var(--text3); font-size: .85rem;
+  text-align: center; white-space: nowrap;
+}
+
+.input {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+}
+
+.inputDate {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  flex: 1;
+}
+
+.inputTime {
+  padding: .5rem; border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: .82rem;
+  flex: 1;
+}
+
+.dateRow {
+  display: flex; gap: 8px; align-items: center;
+}
+
+@media (max-width: 480px) {
+  .dateRow {
+    flex-wrap: wrap;
+  }
+  .inputDate { flex: 1 1 100%; }
+  .inputTime { flex: 1; min-width: 0; }
+  .addBtn { flex: 1 1 100%; }
+}
+
+.addBtn {
+  padding: .5rem 1rem; background: var(--accent); color: #000;
+  border: none; border-radius: var(--r-sm); cursor: pointer;
+  font-weight: 600; white-space: nowrap;
+}
+
+.createBtn {
+  width: 100%;
+}
+
+.successModal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-xl);
+  padding: 1.75rem 1.5rem;
+  width: 100%; max-width: 440px;
+  position: relative;
+}

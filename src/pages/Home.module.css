@@ -1,0 +1,375 @@
+.wrap {
+  padding: 2rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.loading {
+  font-family: 'Barlow Condensed', sans-serif;
+  color: var(--text3);
+  letter-spacing: .08em;
+  padding: 3rem 0;
+}
+
+/* ─── Hero ─────────────────────────────── */
+.hero { text-align: center; max-width: 520px; margin-bottom: .5rem; }
+.heroTight { width: 100%; max-width: 520px; margin-bottom: .5rem; }
+.heroBrand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.2rem, 8vw, 3.2rem);
+  letter-spacing: .08em;
+  background: linear-gradient(135deg, #F5A623, #FF4B4B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+}
+.heroBrandTight {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  letter-spacing: .06em;
+  color: var(--text);
+  line-height: 1.1;
+  text-align: left;
+}
+.heroSub {
+  font-size: .9rem;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-top: .75rem;
+}
+
+/* ─── Features (new user) ──────────────── */
+.features {
+  display: flex;
+  gap: .75rem;
+  width: 100%;
+  max-width: 520px;
+}
+.feature {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1rem .75rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+}
+.featureIcon { font-size: 1.6rem; }
+.featureTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: .9rem;
+  letter-spacing: .04em;
+  color: var(--text);
+}
+.featureDesc {
+  font-size: .72rem;
+  color: var(--text2);
+  line-height: 1.4;
+}
+
+/* ─── Actions ──────────────────────────── */
+.actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 520px;
+}
+
+/* ─── Preview games ────────────────────── */
+.preview {
+  width: 100%;
+  max-width: 520px;
+}
+.previewTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: .05em;
+  margin-bottom: .65rem;
+}
+.gameList {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.gameCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: .7rem .85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  font-size: .8rem;
+}
+.gameTeam {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.gameVs { color: var(--text3); font-size: .7rem; }
+
+/* ─── League grid (overview) ───────────── */
+.leagueGrid {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  width: 100%;
+  max-width: 520px;
+}
+.leagueCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: .9rem 1.1rem;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.leagueCard:hover { border-color: var(--border2); background: var(--surface); }
+.leagueCardTop {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+.leagueCardIcon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  background: var(--surface2);
+  flex-shrink: 0;
+}
+.leagueCardInfo { flex: 1; min-width: 0; }
+.leagueCardName {
+  font-weight: 600;
+  font-size: .95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.leagueCardMeta {
+  font-size: .78rem;
+  color: var(--text2);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .05em;
+  margin-top: 2px;
+}
+.arrow { color: var(--text3); font-size: 1.2rem; }
+
+/* ─── In-league dashboard ──────────────── */
+.leagueHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+.leagueTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.3rem, 5vw, 1.7rem);
+  letter-spacing: .05em;
+}
+.leagueMeta {
+  font-size: .78rem;
+  color: var(--text2);
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: .05em;
+  margin-top: 2px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: .6rem;
+  width: 100%;
+  max-width: 520px;
+}
+.statCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1rem .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.statLabel {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.statVal {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: .04em;
+  line-height: 1.1;
+}
+.statSub {
+  font-size: .7rem;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.alertCard {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  max-width: 520px;
+}
+.alertIcon { font-size: 1.5rem; }
+.alertBody { flex: 1; }
+.alertTitle { font-size: .9rem; }
+.alertSub {
+  font-size: .78rem;
+  color: var(--text2);
+  margin-top: 2px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+.inviteBox {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 520px;
+}
+.inviteLabel {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text3);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.inviteCode {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: .12em;
+  color: var(--accent);
+  line-height: 1.1;
+}
+.inviteCopy {
+  font-size: .78rem;
+  padding: .35rem .85rem;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: var(--r-sm);
+  transition: all .15s;
+}
+.inviteCopy:hover { border-color: var(--accent); color: var(--accent); }
+
+.quickActions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.emptySection {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+  padding: 2rem 1rem;
+  background: var(--bg2);
+  border: 1px dashed var(--border);
+  border-radius: var(--r);
+}
+.emptyIcon { font-size: 2.5rem; margin-bottom: .5rem; }
+.emptyTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: .04em;
+  margin-bottom: .35rem;
+}
+.emptyDesc {
+  font-size: .82rem;
+  color: var(--text2);
+  line-height: 1.5;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: .04em;
+  width: 100%;
+  max-width: 520px;
+  margin-top: .25rem;
+}
+
+.leaderRow {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: .7rem .9rem;
+  width: 100%;
+  max-width: 520px;
+}
+.leaderMe {
+  border-color: rgba(245,166,35,.4);
+  background: rgba(245,166,35,.05);
+}
+.leaderRank { width: 28px; text-align: center; font-size: .9rem; }
+.leaderName { flex: 1; font-size: .85rem; font-weight: 500; }
+.leaderScore { font-size: .82rem; color: var(--text2); }
+.leaderPct { font-size: .72rem; color: var(--text3); }
+
+/* ─── Shared ───────────────────────────── */
+.adminBadge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: rgba(245,166,35,.15);
+  color: var(--accent);
+  border: 1px solid rgba(245,166,35,.3);
+  border-radius: 4px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+.simTag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: rgba(245,166,35,.15);
+  color: var(--accent);
+  border: 1px solid rgba(245,166,35,.3);
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-left: .5rem;
+  vertical-align: middle;
+}
+.deleteBtn {
+  background: none;
+  border: none;
+  color: var(--danger, #ff4b4b);
+  font-size: .85rem;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+  opacity: .5;
+  transition: opacity .15s;
+}
+.deleteBtn:hover { opacity: 1; }
