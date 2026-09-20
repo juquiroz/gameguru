@@ -140,7 +140,7 @@ export default function Leaderboard({ user, league, onNavigate }) {
     const { data: picks, error: pErr } = await picksApi.getLeaderboard(league.id, week)
     if (pErr) { if (!silent) setMsg('Error al cargar picks'); if (!silent) setRows([]); setLoading(false); return }
 
-    const scoredGames = weekGames.filter(g => g.finished && g.result)
+    const scoredGames = weekGames.filter(g => g.result)
     if (!picks?.length || !scoredGames.length) {
       if (!silent) setRows([])
       if (!silent) setStreaks({})

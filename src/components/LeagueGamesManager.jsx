@@ -52,11 +52,14 @@ export default function LeagueGamesManager({ league, user, readOnly = false }) {
   const weekList = masterWeeks.length > 0 ? masterWeeks : Array.from({ length: TOTAL_WEEKS }, (_, i) => i + 1)
 
   useEffect(() => {
-    if (weekList.length > 0 && !weekList.includes(activeWeek)) {
-      const current = getCurrentWeek(masterGames)
-      setActiveWeek(current || weekList[weekList.length - 1])
+    if (masterGames.length === 0) return
+    const current = getCurrentWeek(masterGames)
+    if (current && current !== activeWeek) {
+      setActiveWeek(current)
+    } else if (!current && weekList.length > 0 && !weekList.includes(activeWeek)) {
+      setActiveWeek(weekList[weekList.length - 1])
     }
-  }, [weekList.join(','), activeWeek])
+  }, [masterGames])
 
   const availableMaster = masterGames.filter(g => !leagueGameIds.has(g.game_id) && g.week === activeWeek)
   const leagueWeekGames = leagueGames
