@@ -60,6 +60,7 @@ export default function PublicPicksMatrix({ league, user }) {
   const blockedActiveWeek = !!user?.id && activeWeekOpen && !myPickActiveWeek
 
   const weekGames = activeGames
+    .filter(g => g.week === activeWeek)
     .sort((a, b) => {
       const ta = a.game_time || ''
       const tb = b.game_time || ''
